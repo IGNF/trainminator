@@ -478,8 +478,8 @@ class TraiNminaTorDialog(QMainWindow):
               
     def openDocumentation(self):
         #print(f"line:{self.lineno()},TraiNminaTorDialog ->openDocumentation()")
-        standardPaths_list=QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)    
-        documentation_url=standardPaths_list[0]+"/profiles/default/python/plugins/train_minator_3/docs/"
+        standardPaths_list=QStandardPaths.standardLocations(QStandardPaths.AppDataLocation) 
+        documentation_url=standardPaths_list[0]+"/profiles/default/python/plugins/trainminator_3/docs/"
       
         self.web = QWebView()
         self.web.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(documentation_url+"trainStyle.css"));

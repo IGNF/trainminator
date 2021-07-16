@@ -6,17 +6,17 @@
 </head>
   <body>
     
-  <H2>Présentation.</H2>
-  <H2>Chargement d'un project</H2>
-  	Lancer Qgis depuis votre poste de travail.<br>
-	L’état de votre session QGIS s’appelle un projet. QGIS ne peut travailler que sur un projet à la fois.<br> 
+  <H2 id="PRESENTATION">Présentation.</H2>
+  <p>
+  L’état de votre session QGIS s’appelle un projet. QGIS ne peut travailler que sur un projet à la fois.<br>
+  Lancer Qgis depuis votre poste de travail.<br>
+ </p>
 
-
- 	<h4>Ouverture d'un projet Qgis.</h4>
+ 	<h4 id="OUVERTURE_PROJET_QGIS">Ouverture d'un projet Qgis.</h4>
  	<p> 
   	<table>
   		<tr>
-  			<td>aller sur Projet ▶ Ouvrir.</td><td></td><td>Selectionner le fichier du projet (.qgz/.qgs)</td><td></td><td>Cliquez sur ouvrir, le projet est chargé.</td><td></td>
+  			<td>Aller sur Projet ▶ Ouvrir.</td><td></td><td>Selectionner le fichier de projet (.qgz/.qgs)</td><td></td><td>Cliquez sur ouvrir, le projet sélectionné est chargé dans Qgis.</td><td></td>
   		</tr>
   		<tr>
   			<td><img src="./img/Qgis_project_open1.png" alt="Qgis_project_open1"/></td>
@@ -27,46 +27,53 @@
   		</tr>
 	</table>
 	</p>
-   <h4>Lancement du plugin.</h4>
-   <p>
+  <h4 id="EXECUTION_PLUGIN">Exécution du plugin.</h4>
+  <p>Vous ne devez lancer le plugin, que si un projet à été chargé dans QGIS.</p>
 	<table>
-  		<tr>
-  			<td>Aller sur Extensions ▶ TraiNmiNaTor_3.▶TraiNmiNaTor_3</td><td>.</td><td>Le plugin chargé</td>
-  		</tr>
-  		<tr>
-  			<td><img src="./img/Qgis_loading_plugin2.png" alt="Structure Project"/></td>
-  		    <td><img src="./img/triangle_icon.png" alt="triangle_icon"/><br></td>
-  			<td><img src="./img/Qgis_loading_plugin3.png" alt="Structure Project"/></td>
-  		</tr>
-  		<tr><td colspan="3"><img src="./img/triangle_bas_icon.png" alt="triangle_icon"/><br></td></tr>
-  		<tr><td colspan="3">Le frontal graphique du plugin TraiNminaTor_3.</td></tr>
-  		<tr><td colspan="3"><img src="./img/Qgis_loaded_plugin1.png" alt="Structure Project"/></td></tr>
+  <tr><td>Aller sur Extensions ▶ TraiNmiNaTor_3.▶TraiNmiNaTor_3</td><td>.</td><td>Le plugin chargé.</td></tr>
+  <tr>
+      <td><img src="./img/Qgis_loading_plugin2.png" alt="Qgis_loading_plugin2"/></td>
+  		<td><img src="./img/triangle_icon.png" alt="triangle_icon"/><br></td>
+  		<td><img src="./img/Qgis_loading_plugin3.png" alt="SQgis_loading_plugin3"/></td>
+  </tr>
+  <tr><td colspan="3"><img src="./img/triangle_bas_icon.png" alt="triangle_icon"/><br></td></tr>
+  <tr><td colspan="3">Interface graphique du plugin. (Présentation voir section suivante).</td></tr>
+  <tr><td colspan="3"><img src="./img/Qgis_loaded_plugin1.png" alt="Qgis_loaded_plugin1"/></td></tr>
 	</table>
 	</p>
 
-	<h4>Tour d'horizon du frontal graphique.</h4>
+	<h4 id="TOUR_HORIZON_INTERFACE_GRAPHIQUE">Tour d'horizon de l'interface graphique.</h4>
 	<p>
-	Le frontal graphique du plugin se présente sous cette forme.<br>
-	<img src="./img/Number-1-icon.png" alt="Number"/> En haut à gauche menu d'accès aux nomenclatures, aux outils annexes, à l'aide en ligne.<br>
-	<img src="./img/Number-2-icon.png" alt="Number"/>A gauche, dans une fenetre dockable, la table des contenus du projet.<br>
-	<img src="./img/Number-3-icon.png" alt="Number"/>Au centre, Une zone graphique d'affichage et de saisie.<br>
+	L'interface graphique du plugin se présente sous cette forme.<br>
+	<img src="./img/Number-1-icon.png" alt="Number"/>En haut à gauche menu d'accès aux nomenclatures, aux outils annexes, à l'aide en ligne.<br>
+	<img src="./img/Number-2-icon.png" alt="Number"/>A gauche, dans une fenêtre "dockable". La table des contenus du projet.<br>
+	<img src="./img/Number-3-icon.png" alt="Number"/>Au centre. Une zone graphique d'affichage et de saisie.<br>
 	Au dessus de cette zone d'affichage:<br>
 	<img src="./img/Number-4-icon.png" alt="Number"/>Un zoom sur l'emprise de chantier.<br> 
-	<img src="./img/Number-5-icon.png" alt="Number"/>Un bouton d'ouverture d'une fenêtre additionelle, synchrone ou non en zoom et pan avec la zone graphique principale.<br>
+	<img src="./img/Number-5-icon.png" alt="Number"/>Un bouton d'ouverture d'une fenêtre additionelle, synchronisable ou non en zoom et pan avec la zone graphique d'affichage et de saisie.<br>
 	<img src="./img/Number-6-icon.png" alt="Number"/>Une glissière de sélection des niveaux de segmentation.<br>
 	<img src="./img/Number-7-icon.png" alt="Number"/>Différentes indications quand à la nomenclature active, et classe selectionnée.<br>
-	<img src="./img/Number-8-icon.png" alt="Number"/>Immédiatement à droite de la zone graphique d'affichage et de saisie, un panneau d'outils d'aide à la saisie des geometries de selection des segments à labeliser<br>
-	<img src="./img/Number-9-icon.png" alt="Number"/> A l'extrème droite, une fenêtre également dockable, contenant la table des classes de la nomenclature ouverte et selectionnée par l'opérateur.<br>
+	<img src="./img/Number-8-icon.png" alt="Number"/>Immédiatement à droite de la zone graphique d'affichage et de saisie, un panneau d'outils d'aide à la saisie des geometries de sélection des segments à labeliser.<br>
+	<img src="./img/Number-9-icon.png" alt="Number"/> A l'extrème droite, une fenêtre également "dockable", contenant la table des classes de la nomenclature ouverte et selectionnée par l'opérateur.<br>
 	<img class="displayed_center" src="./img/Qgis_loaded_plugin3.png" alt="Structure Project"/>
 	</p>
 
-	<h4>Mise en route rapide.</h4>
-	Projet Qgis chargé, plugin lancé. Vous devez sélectionner une nomenclature de labelisation à appliquer sur les<br>données segmentées. Les données segmentées ne sont pas modifiées, un nouveau jeu de données est créée pour chaque<br> nomenclature utilisée. Le nouveau jeu de données est visible dans le groupe "LABELED_DATA" table des contenus.<br>
-	<h4>Ouverture d'une nomenclature</h4>
-	Vous pouvez ouvrir une ou des nomenclatures à partir du menu. Le choix de la nomenclature à appliquer sur les <br>données se fera à l'aide du menu déroulant se trouvant en début de table des nomenclatures.<br>
+	<h4 id="MISE_EN_ROUTE_RAPIDE">Mise en route rapide.</h4>
+  <p>
+	Projet Qgis chargé, plugin lancé.<br>
+  Vous devez sélectionner une nomenclature de labelisation à appliquer sur les données segmentées.<br> 
+  Les données segmentées ne sont pas modifiées, un nouveau jeu de données est créée pour chaque nomenclature utilisée.<br> 
+  Le nouveau jeu de données sera visible dans le groupe <b>"LABELED_DATA"</b> de la table des contenus.<br>
+  </p>
+
+	<h4>Ouverture de nomenclatures.</h4>
+  <p>Ouvrir une ou des nomenclatures à partir du menu dédié (<b>Nomenclature▶Open</b>).<br>
+    Selectionner à partir du menu déroulant de la fenetre d'affichage des nomenclatures, la nomenclature à appliquer sur les données.<br>
+  Vous pouvez rajouter à cette liste de nouvelles nomenclatures par simple sélection à partir du menu <b>Nomenclature ▶ Open</b>.<br>
+  </p>
 	<table>
   		<tr>
-  			<td>Aller sur Nomenclature ▶ Open</td><td>.</td><td>Selectionner une (des) nomenclature(s)</td>
+  			<td>Aller sur Nomenclature ▶ Open</td><td>.</td><td>Sélectionner une (des) nomenclature(s).</td>
   		</tr>
   		<tr>
   			<td><img src="./img/Plugin_nomenclature_open1.png" alt="Structure Project"/></td>
@@ -74,12 +81,76 @@
   			<td><img src="./img/Plugin_nomenclature_open2.png" alt="Structure Project"/></td>
   		</tr>
   		<tr><td colspan="3"><img src="./img/triangle_bas_icon.png" alt="triangle_icon"/><br></td></tr>
-  		<tr><td colspan="3">Selection d'une nomenclature dans la liste des nomenclatures ouverte.</td></tr>
+  		<tr><td colspan="3">Sélection d'une nomenclature, et affichage de son contenu.</td></tr>
   		<tr><td><img src="./img/Plugin_nomenclature_selectionOcs.png" alt="Structure Project"/></td>
   			<td>....</td>
   			<td><img src="./img/Plugin_nomenclature_selectionForet.png" alt="Structure Project"/></td>
   		</tr>
 	</table>
+
+  <h4 id="DEMARRAGE_SESSION_LABELISATION">Démarrage d'une session de labelisation.</h4>
+  <p>
+    Nomenclature choisie à partir du menu déroulant, clicker sur le bouton Start.
+
+    <table>
+      <tr>
+        <td>..</td><td>.</td><td>..</td>
+      </tr>
+      <tr>
+        <td><img src="./img/" alt=""/></td>
+          <td><img src="./img/triangle_icon.png" alt="triangle_icon"/><br></td>
+        <td><img src="./img/" alt="Structure Project"/></td>
+      </tr>
+      <tr><td colspan="3"><img src="./img/triangle_bas_icon.png" alt="triangle_icon"/></td></tr>
+      <tr><td colspan="3">Sélection d'une nomenclature, et affichage de son contenu.</td></tr>
+      <tr><td><img src="./img/" alt=""/></td>
+        <td>....</td>
+        <td><img src="./img/" alt=""/></td>
+      </tr>
+  </table>
+  </p>
+
+  <h4 id="OUTILS_SAISIE">Outils de saisie.</h4>
+  <p>
+    <p>Regroupé par type de tache, par mode de sélection.<br>
+      A la première utilisation la tache 
+      <img src="./img/Plugin_bouton_LabelingActif.png" alt="Plugin_bouton_LabelingActif"/> en mode
+      <img src="./img/Plugin_bouton_PointActif.png" alt="Plugin_bouton_PointActif"/> est activée.</p>
+    <p>
+    <table>
+      <tr><th colspan="3">Type de tache</th></tr>
+      <tr>
+        <td rowspan="3"><img src="./img/Plugin_Group_Task.png" alt="Plugin_Group_Task"/></td>
+        <td><img src="./img/Plugin_bouton_Labeling.png" alt="Plugin_bouton_Labeling"/></td>
+        <td class="left">Labelisation des segments selectionnés.</td>
+      <tr>
+        <td><img src="./img/Plugin_bouton_DeleteAll.png" alt="Plugin_bouton_DeleteAll"/></td>
+        <td class="left">Suppression des labelisations sur les segments selectionnés.</td>
+      </tr>
+      <tr>
+        <td><img src="./img/Plugin_bouton_DeleteCurrent.png" alt="Plugin_bouton_DeleteCurrent"/></td>
+        <td class="left">Suppression conditionnelle des labelisations sur les segments selectionnés.</td>
+      </tr>
+
+      <tr><th colspan="3">Mode de sélection</th></tr>
+      <tr>
+        <td rowspan="4"><img src="./img/Plugin_Group_SelectionBy.png" alt="Plugin_Group_SelectionBy"/></td>
+        <td><img src="./img/Plugin_bouton_Point.png" alt="Plugin_bouton_Point"/></td>
+        <td class="left">Sélection de segments par intersection avec un/des points.</td>
+      <tr>
+        <td><img src="./img/Plugin_bouton_Line.png" alt="Plugin_bouton_Line" /></td>
+        <td class="left">Sélection de segments par intersection avec une ligne.</td>
+      </tr>
+      <tr>
+        <td><img src="./img/Plugin_bouton_LargePolygon.png" alt="Plugin_bouton_LargePolygon"/></td>
+        <td class="left">Sélection de segments par intersection avec un polygone.</td>
+      </tr>
+      <tr>
+        <td><img src="./img/Plugin_bouton_StrictPolygon.png" alt="Plugin_bouton_StrictPolygon"/></td>
+        <td class="left">Sélection de segments contenu dans un polygone.</td>
+      </tr>
+    </table>
+  </p>
 
 
 

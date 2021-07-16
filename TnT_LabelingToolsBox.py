@@ -554,9 +554,9 @@ class TnTlabelingToolsBox(QGroupBox):
         groupBoxDisplay=self.setupGroup("Display")
         
         pushButton_label= self.setupButton(groupBoxDisplay, 
-    		                          "Show Labels", 
-    		                          "show or hide labels of the data of LABELED_DATA group. (Alt+L)",
-    		                          "show or hide labels of the data of LABELED_DATA group.", 
+    		                          "Show Codes", 
+    		                          "show or hide code value of the data of LABELED_DATA group. (Alt+L)",
+    		                          "show or hide code value of the data of LABELED_DATA group.", 
     		                          styleSheet2,
                                       "Alt+L",
                                       True)
@@ -709,10 +709,10 @@ class TnTlabelingToolsBox(QGroupBox):
     def showHideLabels(self): 
         #print(f"line:{self.lineno()}, TnTlabelingToolsBox->showHideLabels()")
         buttonSource=self.sender()
-        if buttonSource.text() == "Show Labels": self.showLabels()
-        elif buttonSource.text() == "Hide Labels": self.hideLabels()
+        if buttonSource.text() == "Show Codes": self.showLabels()
+        elif buttonSource.text() == "Hide Codes": self.hideLabels()
         else : print(f"line 1093 , showHideLabels(): bad state:{self.sender().text()}")
-        self.toggleTextButton(buttonSource, "Show Labels", "Hide Labels")
+        self.toggleTextButton(buttonSource, "Show Codes", "Hide Codes")
                 
     def showLabels(self, state=True):
         #print(f"line:{self.lineno()}, TnTlabelingToolsBox ->showLabels()")
