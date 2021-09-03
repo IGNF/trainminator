@@ -39,3 +39,7 @@ class TnTcommunicate(QtCore.QObject):
     
     #Signal emit when userMode changed state
     userModeSignal=pyqtSignal()
+    
+    enableCustomizeWindowHint=pyqtSignal()
+    disableWindowCloseButtonHint=pyqtSignal()
+    

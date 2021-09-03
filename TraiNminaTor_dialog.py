@@ -41,14 +41,13 @@ from qgis.core import QgsProject
 from PyQt5                 import QtCore
 from PyQt5.QtCore          import (Qt, QEvent, QUrl, 
                                    QStandardPaths)
-from PyQt5.QtGui           import (QIcon, QPixmap, QKeyEvent, QKeySequence)
+from PyQt5.QtGui           import (QKeyEvent)
 from PyQt5.QtWebKitWidgets import  QWebView
 from PyQt5.QtWidgets       import (QSizePolicy, QWidget, QFileDialog,  
                                    QPushButton, QVBoxLayout, QGridLayout,
                                    QHBoxLayout, QSpacerItem, QGroupBox, 
                                    QDockWidget, QMenu, QMenuBar, 
-                                   QStatusBar, QAction, QShortcut, 
-                                   QMainWindow)
+                                   QStatusBar, QAction, QMainWindow)
 
 from .TnT_NomenclatureWidget import TnTnomenclatureWidget
 from .TnT_LayerTreeView      import TnTLayerTreeView
@@ -68,14 +67,12 @@ class TraiNminaTorDialog(QMainWindow):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-
-        
+    
         self.tableName=["TILING","SEGMENTING","LABELING"]
         self.UserPreferences      = {"QTabWidget":["LABELING"]}
         
         self.root = QgsProject.instance()
 
-        
         #Project 
         self.projectPath=None
         self.projectName=None
@@ -97,29 +94,43 @@ class TraiNminaTorDialog(QMainWindow):
               
         self.comm = TnTcommunicate()
         
+        
+        #self.root.projectSaved.connect(self.projectSaved)
+         
         #Fermeture projet qgis courant, ouverture d'un nouveau project qgis
         # Rechargement du nouveau projet, plugin en fonction
         # A reactiver plus tard, des reinitialisations sont incorrectes.
-        #self.root.cleared.connect(self.clear)
-        #self.root.readProject.connect(self.readProject)
-          
-          
+        self.root.cleared.connect(self.clear)
+        self.root.readProject.connect(self.readProject)
+        
+                
     def lineno(self):
          "Returns the current line number"
          return inspect.currentframe().f_back.f_lineno 
      
     def flocals(self):   
         return inspect.currentframe().f_back.f_locals
-    
-    
-    def clear(self): 
+        
+    # def projectSaved(self):
+    #     #print(f"line:{self.lineno()},TraiNminaTorDialog ->projectSaved()")
+    #     pass
+          
+    def clear(self):
+        #print(f"line:{self.lineno()},TraiNminaTorDialog ->clear()")   
         self.labelingToolsBox.projectDataManager.clear()
         self.nomenclatureWidget.clear()
-            
-    def readProject(self):       
+        self.labelingToolsBox.clear()
+        
+        self.disableMenu(self.menuNomenclature)
+        self.disableMenu(self.menutools)
+        
+    def readProject(self):
+        #print(f"line:{self.lineno()},TraiNminaTorDialog ->readProject()")
         self.labelingToolsBox.projectDataManager.readProject()
         
-    
+        self.enableMenu( self.menuNomenclature)
+        self.enableMenu(self.menutools)
+          
     def getCanvas(self):
         #print(f"line:{self.lineno()},TraiNminaTorDialog ->getCanvas()")
         return self.getActiveCanvas()
@@ -158,6 +169,7 @@ class TraiNminaTorDialog(QMainWindow):
         return self.tntLayerTreeView.model.rootGroup()
           
     def setupUi(self, mainWindow):
+        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setupUi()")
         mainWindow.setObjectName("TrainMinaTor-Master Window")
         mainWindow.resize(1600, 900)
            
@@ -346,6 +358,12 @@ class TraiNminaTorDialog(QMainWindow):
         self.verticalLayout_top.addWidget(self.groupBox_view)
        
         return widget
+     
+    def disableMenu(self, menu):
+        menu.setEnabled(False)
+        
+    def enableMenu(self, menu):
+        menu.setEnabled(True)
     
     def setMenu(self, widget:QMenuBar, widgetName):
         #print(f"line:{self.lineno()},TraiNminaTorDialog ->setMenu()")
@@ -462,7 +480,7 @@ class TraiNminaTorDialog(QMainWindow):
             #If default value key, remove it
             if self.nomenclatureWidget.defaultNomenclatureName in self.nomenclatureWidget.nomenclatureFilesDict:
                 self.nomenclatureWidget.nomenclatureFilesDict.pop(self.nomenclatureWidget.defaultNomenclatureName)
-                index=self.nomenclatureWidget.nomenclatureSelector.findText(self.nomenclatureWidget.defaultNomenclatureName);
+                index=self.nomenclatureWidget.nomenclatureSelector.findText(self.nomenclatureWidget.defaultNomenclatureName)
                 self.nomenclatureWidget.nomenclatureSelector.removeItem(index)
              
             for i in range(len(listNomenclatures[0])) :
@@ -475,6 +493,7 @@ class TraiNminaTorDialog(QMainWindow):
             self.nomenclatureWidget.drawNomenclature(self.nomenclatureWidget.getIndexCurrentNomenclature())
         else :
             pass
+        #print(f"line:{self.lineno()},TraiNminaTorDialog <<-- openNomenclature()")
               
     def openDocumentation(self):
         #print(f"line:{self.lineno()},TraiNminaTorDialog ->openDocumentation()")
@@ -575,6 +594,7 @@ class TraiNminaTorDialog(QMainWindow):
         self.getActiveCanvas().zoomToFullExtent()
 
     def closeEvent(self, event):
+        #print(f"{self.lineno()} TraiNminaTorDialog --> closeEvent({event})")
         try : self.additionnalView.comm.closeAdditionalView.emit()     
         except AttributeError: pass
 
@@ -585,5 +605,19 @@ class TraiNminaTorDialog(QMainWindow):
                 return True  
         else:
             return QMainWindow.event(self,event)
+        
+    
+    def disableWindowCloseButton(self):
+        self.setWindowFlags(self.windowFlags() # reuse initial flags
+                            & ~QtCore.Qt.WindowCloseButtonHint # and unset flag
+                           )
+        self.show()
+        
+    def enableWindowCloseButton(self):
+        self.setWindowFlags(self.windowFlags() # reuse initial flags
+                            | QtCore.Qt.WindowCloseButtonHint # and set flag
+                           )
+        self.show()
+        
         
         

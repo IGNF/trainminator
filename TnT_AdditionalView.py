@@ -56,7 +56,10 @@ class TnTadditionalView(QMainWindow):
         self.canvas=None      
             
         self.setupUi()
-          
+        
+        self.setWindowFlags(self.windowFlags() # reuse initial flags
+                            & ~QtCore.Qt.WindowCloseButtonHint # and unset flag
+                           )
         self.show()
         
     def lineno(self):
@@ -175,7 +178,6 @@ class TnTadditionalView(QMainWindow):
         target.setWindowTitle(_translate("Additional View", "Additional View"))
         
     
-   
     def setTopWidget(self, widget):
         
         # Init layout of this widget_top
@@ -230,7 +232,7 @@ class TnTadditionalView(QMainWindow):
      
     
     def synchro_AdditionalView(self):  
-        # Change state of button Open/Close         
+        # Change state of button Synchro/UnSynchro         
         self.toggleTextButton(self.synchro_pushButton, "Synchro View", "UnSynchro View")
         
         wp=self.windowParent
@@ -261,4 +263,6 @@ class TnTadditionalView(QMainWindow):
            
     def centerAll(self):
         self.getCanvas().zoomToFullExtent()
+        
+    
     

@@ -27,9 +27,10 @@ import inspect
 from qgis.utils import iface
 from qgis.core  import (QgsProject, QgsVectorLayer,
                         QgsLayerTreeLayer, QgsWkbTypes, QgsRuleBasedRenderer,
-                        QgsVectorFileWriter, QgsFillSymbol, QgsField,
+                        QgsVectorFileWriter, QgsFillSymbol, QgsLineSymbol, 
+                        QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer, QgsField,
                         QgsPalLayerSettings, QgsTextFormat, QgsTextBufferSettings,
-                        QgsVectorLayerSimpleLabeling )
+                        QgsVectorLayerSimpleLabeling, QgsSimpleFillSymbolLayer, QgsLinePatternFillSymbolLayer )
 
 from PyQt5           import QtCore
 from PyQt5.QtGui     import QKeySequence
@@ -41,11 +42,12 @@ class TnTprojectDataManager():
     
     def __init__(self, parent):
         self.parent=parent
-        self.root = QgsProject.instance()
-        self.projectName=QgsProject.instance().baseName() 
-        self.absoluteFilePath=QgsProject.instance().absoluteFilePath()
-        self.projectAbsolutePath=QgsProject.instance().absolutePath()
-        self.layerTreeRoot=QgsProject.instance().layerTreeRoot()
+        
+        self.root = None
+        self.projectName=None
+        self.absoluteFilePath=None
+        self.projectAbsolutePath=None
+        self.layerTreeRoot=None
         
         self.dataAbsolutePath=None
         
@@ -61,10 +63,11 @@ class TnTprojectDataManager():
         self.raster_extensions=['tif','tiff']
         self.vector_extensions=['shp','gpkg']
         
+        self.dictCodeRuleKey={}
+        
         # self.root.cleared.connect(self.clear)
         # self.root.readProject.connect(self.readProject)
            
-        Safety_orange='#FF5A00'
         self.styleSheet_segmentedData = {'color':'', 
                                          'outline_color':'#eeff01',
                                          'line_color':'#eeff01', 
@@ -88,10 +91,10 @@ class TnTprojectDataManager():
                                    'style':'no' }
         
         
-        self.styleSheet_NoLabel = {'color':Safety_orange, 
-                                     'outline_color':'black', 
-                                     'width_border':'0.25', 
-                                     'style':'no' }
+        self.styleSheet_NoLabel = {'color':'transparent', 
+                                   'outline_color':'black', 
+                                   'width_border':'0,70', 
+                                   'style':'solid line' }
         
                 
     def info (self):
@@ -109,7 +112,6 @@ class TnTprojectDataManager():
     def getListLabeledLayers(self):
         return self.projectStructure[self.mandatoryGroups[2]]['TREELAYERS']
 
-
     def setProjectValid(self, projectValid=False):
         self.projectValid=projectValid
         
@@ -122,19 +124,35 @@ class TnTprojectDataManager():
     def getRootGroup(self):
         return self.layerTreeRoot
     
+    def setProjectAttr(self):
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->setProjectAttr()")
+        self.root=QgsProject.instance()
+        self.projectName=QgsProject.instance().baseName() 
+        self.absoluteFilePath=QgsProject.instance().absoluteFilePath()
+        self.projectAbsolutePath=QgsProject.instance().absolutePath()
+        self.layerTreeRoot=QgsProject.instance().layerTreeRoot()
+    
     def init(self):
         #print(f"line:{self.lineno()}, TnTprojectDataManager->init()")
+        self.setProjectAttr()
         
-        layerTreeRoot=self.getRootGroup()
-        self.checkMandatoryGroups(layerTreeRoot)
+        if QgsProject.instance().absoluteFilePath() :
+            layerTreeRoot=self.getRootGroup()
+           
+            #group LABELED_DATA and FINAL_DATA must be contain no layers
+            self.cleanGroup(self.mandatoryGroups[2])
+            self.cleanGroup(self.mandatoryGroups[3])
         
-
-        if self.getProjectValid():      
-            # Sort segmented data from most to least segmented 
-            sorted_segs=[]
-            sorted_segs=self.sortingSegmentedData(self.mandatoryGroups[1])
-            self.sortingSegmentedLayer(self.mandatoryGroups[1], sorted_segs)   
-        else:
+            self.checkMandatoryGroups(layerTreeRoot)
+        
+            if self.getProjectValid():      
+                # Sort segmented data from most to least segmented 
+                sorted_segs=[]
+                sorted_segs=self.sortingSegmentedData(self.mandatoryGroups[1])
+                self.sortingSegmentedLayer(self.mandatoryGroups[1], sorted_segs)   
+            else:
+                pass
+        else :
             pass
        
     def clear(self):
@@ -147,7 +165,7 @@ class TnTprojectDataManager():
         Execute when the project is cleared (and additionally when an open project is cleared just before a new project is read).
 
         """
-       # print(f"line:{self.lineno()}, TnTprojectDataManager->cleared()")
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->clear()")
         self.dataAbsolutePath=None  
         self.projectSaved=False
         self.projectValid=False
@@ -155,6 +173,7 @@ class TnTprojectDataManager():
         self.projectStructure.clear()
         
     def readProject(self):
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->readProject()")
         """
         ----------
         layerTreeRoot : TYPE.
@@ -164,12 +183,8 @@ class TnTprojectDataManager():
         Execute when a project is being read.
 
         """
-        #print(f"line:{self.lineno()}, TnTprojectDataManager->readProject()")
         self.init()
-        
-       
-
-              
+                        
     def checkMandatoryGroups(self, layerTreeRoot):
         #print(f"line:{self.lineno()}, TnTprojectDataManager->checkMandatoryGroups()")
         """
@@ -189,7 +204,26 @@ class TnTprojectDataManager():
             else:          
                 #print(f"line:{self.lineno()}, Mandatory group:{mandatoryGroupsName} exist")
                 self.setGroupInfo(mandatoryGroupsName)
-                
+     
+    def cleanGroup(self, groupName):
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->setGroupInfo(cleanGroup:{groupName})")
+        """
+        Remove all maps from the target group "groupName" 
+        ----------
+        groupName : The name of the group to clean 
+
+        Returns
+        -------
+        None.
+
+        """      
+        group=self.getRootGroup().findGroup(groupName)
+        tLayers=group.findLayers()
+        for tLayer in tLayers:
+            id_layer=tLayer.layer().id()
+            QgsProject.instance().removeMapLayer(id_layer)    
+            
+          
     def setGroupInfo(self, groupName):
         #print(f"line:{self.lineno()}, TnTprojectDataManager->setGroupInfo(groupName:{groupName})")
         """
@@ -226,43 +260,75 @@ class TnTprojectDataManager():
             head_tail = os.path.split(result)
             self.projectStructure[groupName]['DATASOURCE']=head_tail[0]
     
-    def creatSimpleFillSymbol(self, vlayer, styleSheet):
-        #print(f"line:{self.lineno()}, TnTprojectDataManager->creatSimpleFillSymbol(vlayer:{vlayer})")
-        symbol = QgsFillSymbol.createSimple({'color'        :  styleSheet['color'], 
-                                             'outline_color':  styleSheet['outline_color'], 
-                                             'width_border' :  styleSheet['width_border'], 
-                                             'style'        :  styleSheet['style']})
-        symbol.setOpacity(1)
-        vlayer.renderer().setSymbol(symbol)
+    # def creatSimpleFillSymbol(self, vlayer, styleSheet):
+    #     #print(f"line:{self.lineno()}, TnTprojectDataManager->creatSimpleFillSymbol(vlayer:{vlayer})")
+    #     symbol_lyr_line = QgsLinePatternFillSymbolLayer()
+    #     symbol_lyr_line.setLineAngle(45)
+    #     symbol_lyr_line.setDistance(2)
+    #     symbol_lyr_line.setLineWidth(0.9)
+    #     symbol_lyr_line.setColor(QColor("orange"))
+        
+    #     symbol_line = QgsFillSymbol()
+    #     symbol_line = QgsFillSymbol.createSimple({'color'        : styleSheet['color'],
+    #                                               'outline_color': styleSheet['outline_color'], 
+    #                                               'width_border' : styleSheet['width_border'], 
+    #                                               'style'        : styleSheet['style']})
+    #     symbol_line.setOpacity(1)  
+    #     #symbol_line.deleteSymbolLayer(0)
+    #     symbol_line.appendSymbolLayer(symbol_lyr_line)
+        
+    #     #symbol_line = QgsLineSymbol.createSimple({'line_style': 'dash', 'color': 'black'})     
+           
+    #     vlayer.renderer().setSymbol(symbol_line)
      
         
     def createFillSymbol(self, nomenclatureWidget, vlayer):
-        #print(f"line:{self.lineno()}, TnTlabelingToolsBox->createFillSymbol()") 
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->createFillSymbol()") 
         rootrule = QgsRuleBasedRenderer.Rule(None)
-        sym0 = QgsFillSymbol.createSimple({'color'        : self.styleSheet_unlabeled['color'], 
-                                           'outline_color': self.styleSheet_unlabeled['outline_color'], 
-                                           'width_border' : self.styleSheet_unlabeled['width_border'], 
-                                           'style'        : self.styleSheet_unlabeled['style']})
+        sym0 = QgsFillSymbol.createSimple({'color'        : self.styleSheet_unlabeled['color'],
+                                            'outline_color': self.styleSheet_unlabeled['outline_color'], 
+                                            'width_border' : self.styleSheet_unlabeled['width_border'], 
+                                            'style'        : self.styleSheet_unlabeled['style']})
         sym0.setOpacity(1)
+        
         rx0=QgsRuleBasedRenderer.Rule(sym0, 0, 0, 'ELSE')
         rootrule.appendChild(rx0)
+        
+        self.dictCodeRuleKey[vlayer.name()]={}
               
         for key in nomenclatureWidget.colorClassAssociation:   
             Hex_color=nomenclatureWidget.colorClassAssociation[key]
             Int_color=  int(Hex_color.split('#')[1],16)         
             sym = QgsFillSymbol.createSimple({'color'        : str(Hex_color), 
                                               'outline_color': self.styleSheet_labeled['outline_color'],
-                                              #'outline_color': str(Hex_color),
                                               'width_border' : self.styleSheet_labeled['width_border']})
             sym.setOpacity(0.60)
-            rx=QgsRuleBasedRenderer.Rule(sym, 0, 0, '"color" = {}'.format(Int_color))
-            rootrule.appendChild(rx)
+            rx1=QgsRuleBasedRenderer.Rule(sym, 0, 0, '"color" = {}'.format(Int_color))
+            
+            self.dictCodeRuleKey[vlayer.name()][key]=rx1.ruleKey()
+            rx0.appendChild(rx1)
             
         vlayer.setRenderer(QgsRuleBasedRenderer(rootrule))
+    
         
+    def setStateOfOneRule(self, tlayers, dictCodeRuleKey, currentLabel, state):
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->setStateOfOneRule()")      
+        self.setStatesOfAllRules(tlayers, not state)
+        for tlayer in tlayers :        
+            rule_target=(tlayer.layer().renderer().rootRule().children())[0].findRuleByKey(dictCodeRuleKey[tlayer.layer().name()][currentLabel])
+            rule_target.setActive(state)
+        
+        
+    def setStatesOfAllRules(self, tlayers, state):
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->setStateAllRules({state})")
+        for tlayer in tlayers : 
+            rules=(tlayer.layer().renderer().rootRule().children())[0].children()
+            for rule in rules : rule.setActive(state)
+            tlayer.layer().triggerRepaint()
+    
         
     def createFillSymbolControl(self, vlayer, elseRule):
-        #print(f"line:{self.lineno()}, TnTlabelingToolsBox->createFillSymbolControl()") 
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->createFillSymbolControl()") 
         rootrule = QgsRuleBasedRenderer.Rule(None)
         sym0 = QgsFillSymbol.createSimple({'color'        : self.styleSheet_Default['color'], 
                                            'outline_color': self.styleSheet_Default['outline_color'], 
@@ -273,13 +339,31 @@ class TnTprojectDataManager():
         sym0.setOpacity(0.75)
         rx0=QgsRuleBasedRenderer.Rule(sym0, 0, 0, 'ELSE')
         rootrule.appendChild(rx0)
-        sym = QgsFillSymbol.createSimple({'color'        : str(self.styleSheet_NoLabel['color']), 
-                                          'outline_color': self.styleSheet_NoLabel['outline_color'], 
-                                          'width_border' : self.styleSheet_NoLabel['width_border']
-                                          })
+        
+        symbol_lyr_line = QgsLinePatternFillSymbolLayer()
+        symbol_lyr_line.setLineAngle(45)
+        symbol_lyr_line.setDistance(2)
+        symbol_lyr_line.setLineWidth(0.9)
+        symbol_lyr_line.setColor(QColor(255,121,0))
+        
+        #symbol_line = QgsFillSymbol()
+        symbol_line = QgsFillSymbol.createSimple({ 'color'        : self.styleSheet_NoLabel['color'],
+                                                   'outline_color': self.styleSheet_NoLabel['outline_color'], 
+                                                   'width_border' : self.styleSheet_NoLabel['width_border']}) 
+
+        symbol_line.setOpacity(1)  
+        #symbol_line.deleteSymbolLayer(0)
+        symbol_line.appendSymbolLayer(symbol_lyr_line)
+    
+        
+        # sym = QgsFillSymbol.createSimple({'color'        : str(self.styleSheet_NoLabel['color']), 
+        #                                   'outline_color': self.styleSheet_NoLabel['outline_color'], 
+        #                                   'width_border' : self.styleSheet_NoLabel['width_border']
+        #                                   })
                                          
-        sym.setOpacity(0.60)
-        rx=QgsRuleBasedRenderer.Rule(sym, 0, 0, elseRule )
+        # sym.setOpacity(0.60)
+        
+        rx=QgsRuleBasedRenderer.Rule(symbol_line, 0, 0, elseRule )
         rootrule.appendChild(rx)
             
         vlayer.setRenderer(QgsRuleBasedRenderer(rootrule))
@@ -305,10 +389,9 @@ class TnTprojectDataManager():
             print(f"Group : {k}")
             for k1 in self.projectStructure[k]:
                 print(f"    {k1} : {self.projectStructure[k][k1]}") 
-                                         
-               
+                                                    
     def sortingSegmentedData(self, segmentedDataGroupName):
-        #print(f"line:{self.lineno()}, TnTlabelingToolsBox->sortingSegmentedData(segmentedDataGroupName:{segmentedDataGroupName})")   
+        #print(f"line:{self.lineno()}, TnTprojectDataManager->sortingSegmentedData(segmentedDataGroupName:{segmentedDataGroupName})")   
         segmentedDataGroup=self.getRootGroup().findGroup(segmentedDataGroupName)
         sorted_segments=[]
         segments={}
@@ -355,9 +438,6 @@ class TnTprojectDataManager():
             shortCut.activated.connect(self.setVisibility)
             listShortCuts.append(shortCut)
       
-    def setVisibility(self):
-        pass
-      
     def setVisibilityGroup(self, groupName , visibility):
        groupTarget=self.getRootGroup().findGroup(groupName)
        groupTarget.setItemVisibilityChecked(visibility)
@@ -370,7 +450,7 @@ class TnTprojectDataManager():
         currentNomenclatureName=nomenclatureWidget.nomenclatureSelector.currentText()
         AbsolutePath_DataLabeled=self.projectAbsolutePath+"/LABELED_DATA"+"/"+currentNomenclatureName.upper()
         
-             
+        
         listDataSegmented=self.projectStructure[self.mandatoryGroups[1]]['TREELAYERS']
         
         progress=self.showDialog(self.parent, "Loading", "Loading labeled data...")
@@ -438,8 +518,7 @@ class TnTprojectDataManager():
         progress.setValue(progress.maximum())
         progress.close() 
     
-     
-        
+          
     def removeAllChildren(self, groupName):
         #print(f"line:{self.lineno()}, TnTprojectDataManager->removeAllChildren(groupName:{groupName})") 
         treeRoot=self.getRootGroup()
@@ -479,7 +558,7 @@ class TnTprojectDataManager():
         labels = QgsVectorLayerSimpleLabeling(settings)
         return labels  
      
-     
+        
     def showDialog(self, parent, windowTitle, labelText):
         #print(f"line:{self.lineno()}, ->TnTprojectDataManager:showDialog(windowTitle:{},labelText:{labelText} )")
         progress = QProgressDialog(parent)

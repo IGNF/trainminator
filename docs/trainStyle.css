@@ -32,19 +32,41 @@ IMG.displayed_center {
     margin-right: auto
 }
 
+.info {
+  border: 2px solid #FFA500;
+  border-radius:4px;
+  background-color: #E0F0EF;
+  padding: 10px
+}
+
 table {
   width: 90%;
   border-collapse: collapse;
   background-color: #eef0fc;
-  text-align: center
+  text-align: center;
 }
 
 table, td, th {
   border: 1px solid #3b3b3b;
 }
 
-td.left {
+th.header {
+  background-color: #88b;
+  border: 1px solid grey;
+  color: white;
   text-align: left;
+  padding: 10 px;
+}
+
+.noBorder {
+  border-style: hidden;
+}
+
+.left {
+  text-align: left;
+  padding-left: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 caption {
@@ -52,10 +74,11 @@ caption {
     background-color: #3b3b3b;
 }
 
+
 .ui_group {
    color: white;
    text-align: left;
-   background-color: #3695dd
+   background-color: #3695dd;
 }
 
 button { 
@@ -64,7 +87,7 @@ button {
     font-weight:bold;
     background-color:#e7eaf9 ;
     min-height: 16px;
-    min-width: 100px
+    min-width: 100px;
 }
 
 

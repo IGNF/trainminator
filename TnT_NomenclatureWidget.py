@@ -51,12 +51,13 @@ class TnTnomenclatureWidget (QWidget):
                              self.fieldNameHeader[1]:QVariant.String,
                              self.fieldNameHeader[2]:QVariant.Int}
         
-        #Used for contruct screening rule 
+        #Used for contruct screening rules 
         self.colorClassAssociation={}
         
         self.classSelected=['NO_CODE', 'NO_LABEL', '#FFFFFF']
                
-        self.defaultNomenclatureName="no_nomenclature"
+        #self.defaultNomenclatureName="no_nomenclature"
+        self.defaultNomenclatureName="Please open nomenclature from menu."
         self.defaultNomenclatureFile=""
     
         #Dictionnary of nomenclatures <key>=nomenclatureName  <value> fullPath to nomenclatureFile
@@ -111,24 +112,22 @@ class TnTnomenclatureWidget (QWidget):
         return self.currentNomenclatureName   
         
     def setupUi(self):
-           self.layout = QVBoxLayout(self) 
-           self.layout.setContentsMargins(-1, 1, -1, 1)
+        #print(f"line:{self.lineno()}, TnTnomenclatureWidget->setupUi()")
+        self.layout = QVBoxLayout(self) 
+        self.layout.setContentsMargins(-1, 1, -1, 1)
                
-           self.nomenclatureSelector= QComboBox(self)
-           self.nomenclatureSelector.addItems( self.nomenclatureFilesDict.keys() )
-           self.layout.addWidget(self.nomenclatureSelector)
+        self.nomenclatureSelector= QComboBox(self) 
+        self.nomenclatureSelector.addItems( self.nomenclatureFilesDict.keys() )
+        self.layout.addWidget(self.nomenclatureSelector)
            
-           self.nomenclatureTree= QTreeWidget(self)
-           self.nomenclatureTree.headerItem().setText(0, self.fieldNameHeader[0])
-           self.nomenclatureTree.headerItem().setText(1, self.fieldNameHeader[1])
-           self.nomenclatureTree.headerItem().setText(2, self.fieldNameHeader[2])
+        self.nomenclatureTree= QTreeWidget(self)
+        self.nomenclatureTree.headerItem().setText(0, self.fieldNameHeader[0])
+        self.nomenclatureTree.headerItem().setText(1, self.fieldNameHeader[1]) 
+        self.nomenclatureTree.headerItem().setText(2, self.fieldNameHeader[2])
            
-           #self.nomenclatureTree.setItemDelegateForColumn(1, Delegate())
-           
-           self.layout.addWidget(self.nomenclatureTree)
-          
-           spacerItem = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
-           self.layout.addItem(spacerItem)
+        self.layout.addWidget(self.nomenclatureTree) 
+        spacerItem = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.layout.addItem(spacerItem)
        
            
     def clear(self):
@@ -185,7 +184,7 @@ class TnTnomenclatureWidget (QWidget):
             return row
 
     def dumpCSVFile(self, fileNamePath):
-        #print(f"line:{self.lineno()}, ->TnTnomenclatureWidget: dumpCSVFile(fileNamePath:{fileNamePath})")
+        #print(f"line:{self.lineno()}, TnTnomenclatureWidget->dumpCSVFile(fileNamePath:{fileNamePath})")
 
         try :
             csvFile=open(fileNamePath)
@@ -228,10 +227,10 @@ class TnTnomenclatureWidget (QWidget):
             csvFile.close()
         except FileNotFoundError :
             twi=QTreeWidgetItem(self.nomenclatureTree, ["0","No LABEL","#000000"])
-            
-          
+        #print(f"line:{self.lineno()}, TnTnomenclatureWidget <<-- dumpCSVFile(fileNamePath:{fileNamePath})")
+                     
     def drawNomenclature(self, index):
-        #print(f"line:{self.lineno()}, ->TnTnomenclatureWidget: drawNomenclature(index:{index})")
+        #print(f"line:{self.lineno()},TnTnomenclatureWidget->drawNomenclature(index:{index})")
         self.nomenclatureTree.clear()
         self.setIndexCurrentNomenclature(index)
         iname=self.nomenclatureSelector.itemText(index)
@@ -242,10 +241,9 @@ class TnTnomenclatureWidget (QWidget):
         self.nomenclatureTree.resizeColumnToContents(1)
         if self.nomenclatureTree.columnWidth(1) > self.limit_width: self.nomenclatureTree.setColumnWidth(1, self.limit_width)
         self.nomenclatureTree.resizeColumnToContents(2)
-       
-        
+              
     def keyPressEvent(self, event):
-        #print(f"line:{self.lineno()}, ->TnTnomenclatureWidget: keyPressEvent()")
+        #print(f"line:{self.lineno()}, TnTnomenclatureWidget -> keyPressEvent()")
         if Qt.Key_0 <= event.key() <= Qt.Key_9 :
             self.searchCode=self.searchCode+str( event.text() )
         elif event.key() == Qt.Key_Return :
@@ -259,7 +257,7 @@ class TnTnomenclatureWidget (QWidget):
             return QWidget.keyPressEvent(self, event)
         
     def classSelectionChanged(self):
-        #print(f"line:{self.lineno()}, ->TnTnomenclatureWidget: classSelectionChanged()")
+        #print(f"line:{self.lineno()}, TnTnomenclatureWidget -> classSelectionChanged()")
         try : 
             newClass=self.nomenclatureTree.selectedItems()[0]
             self.classSelected=[newClass.text(0), newClass.text(1), newClass.text(2)]

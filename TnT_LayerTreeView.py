@@ -52,8 +52,21 @@ class TnTLayerTreeView(QWidget):
         self.slider.valueChanged.connect(self.sliderGroup_label.setNum)
         self.slider.valueChanged.connect(self.changeOpacity)
         self.layerTreeView.currentLayerChanged.connect(self.currentLayerChanged)
+   
+        #TODO update treeView in additionnel view.
+        # When Add view is open and something change in treeView source.
+        #self.model.dataChanged.connect(self.updateModel)    
+        # connect to the signal
+        # self.layerTreeView.dataChanged.connect(self.onChange)
+       
         
-
+    # def onChange(self, layer):
+    #     print(f"line:{self.lineno()},TnTLayerTreeView->onChange({str(layer)})")
+        
+    # def updateModel(self):
+    #     print(f"line:{self.lineno()},TnTLayerTreeView->updateModel()")
+    
+             
     def lineno(self):
          "Returns the current line number"
          return inspect.currentframe().f_back.f_lineno 
