@@ -881,7 +881,7 @@ class TnTlabelingToolsBox(QGroupBox):
         self.mainWindow.disableWindowCloseButton()
              
     def enterStopMode(self):
-       print(f"line:{self.lineno()}, TnTlabelingToolsBox->enterStopMode()") 
+        #print(f"line:{self.lineno()}, TnTlabelingToolsBox->enterStopMode()") 
 
         #Check if additionnel view is open: close it if user click on Stop button
         b_t=self.mainWindow.additionalView_pushButton
@@ -953,7 +953,7 @@ class TnTlabelingToolsBox(QGroupBox):
         self.mainWindow.nomenclatureWidget.nomenclatureTree.itemSelectionChanged.emit()
                
     def  stopLabelingData(self):
-        print(f"line:{self.lineno()}, TnTlabelingToolsBox->stopLabelingData()")
+        #print(f"line:{self.lineno()}, TnTlabelingToolsBox->stopLabelingData()")
         
         self.comm.sliderResetValue.emit()
         self.getSlider().setValue(1)
@@ -1002,7 +1002,7 @@ class TnTlabelingToolsBox(QGroupBox):
  
    
     def event(self, event: QEvent):
-        print(f"{self.lineno()} TnTlabelingToolsBox-->event(event:{event})")
+        #print(f"{self.lineno()} TnTlabelingToolsBox-->event(event:{event})")
         if event.type()==QEvent.Show:
             self.setActiveCanvas()
             self.getCanvas().setSlave( self.getAdditionalCanvas() )
