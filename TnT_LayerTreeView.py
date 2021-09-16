@@ -23,148 +23,236 @@ TnT_LayerTreeView
 """
 import inspect
 
-from qgis.core import QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer
+from qgis.core import (QgsLayerTreeModel, QgsRasterLayer,
+                       QgsVectorLayer, QgsLayerTreeNode)
 from qgis.gui import QgsLayerTreeView
 
-
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import (QSizePolicy, QWidget,  QLabel, 
+from PyQt5.QtWidgets import (QSizePolicy, QWidget,  QLabel,
                              QSlider,QSpacerItem, QVBoxLayout, QHBoxLayout)
+
+def lineno():
+    """Returns the current line number in Python source code"""
+    return inspect.currentframe().f_back.f_lineno
+
+def flocals():
+    """Returns the local namespace seen by this frame"""
+    return inspect.currentframe().f_back.f_locals
 
 
 class TnTLayerTreeView(QWidget):
+    """
+    Table of contents management class.
+    """
+
     def __init__(self, parentWindow=None, widgetParent=None, layerTreeRoot=None):
         super(TnTLayerTreeView, self).__init__(widgetParent)
-        
-        self.parentWindow=parentWindow   
+
+        self.parentWindow=parentWindow
         self.layerTreeRoot=layerTreeRoot
         self.layerTreeView=QgsLayerTreeView(widgetParent)
 
         self.model=QgsLayerTreeModel(layerTreeRoot)
-    
+
         #self.model.Flag( QgsLayerTreeModel.UseEmbeddedWidgets )
         self.model.setFlag(QgsLayerTreeModel.AllowNodeChangeVisibility)
         self.layerTreeView.setModel(self.model)
         self.currentLayer=None
-        
+
         self.setupUi()
-        
+
         self.slider.valueChanged.connect(self.sliderGroup_label.setNum)
         self.slider.valueChanged.connect(self.changeOpacity)
         self.layerTreeView.currentLayerChanged.connect(self.currentLayerChanged)
-   
-        #TODO update treeView in additionnel view.
-        # When Add view is open and something change in treeView source.
-        #self.model.dataChanged.connect(self.updateModel)    
-        # connect to the signal
-        # self.layerTreeView.dataChanged.connect(self.onChange)
-       
-        
-    # def onChange(self, layer):
-    #     print(f"line:{self.lineno()},TnTLayerTreeView->onChange({str(layer)})")
-        
-    # def updateModel(self):
-    #     print(f"line:{self.lineno()},TnTLayerTreeView->updateModel()")
-    
-             
-    def lineno(self):
-         "Returns the current line number"
-         return inspect.currentframe().f_back.f_lineno 
+
+        #the LayerTreRoot in additionnal view must not emit a signal when layers are added or removed
+        if self.parentWindow.objectName() != "Additional View" :
+            self.layerTreeRoot.removedChildren[QgsLayerTreeNode, int, int].connect(self.nodeRemovedChildren)
+            self.layerTreeRoot.addedChildren[QgsLayerTreeNode, int, int].connect(self.nodeAddedChildren)
+
+
+    @QtCore.pyqtSlot( QgsLayerTreeNode, int, int)
+    def nodeRemovedChildren (self, node, indexFrom, indexTo):
+        """
+            :param node:
+            :param indexFrom:
+            :param indexTo:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->nodeRemovedChildren({node}, {indexFrom}, {indexTo}))")
+        try :
+            target_groupName=node.name()
+            target_LayerTreeGroup=self.parentWindow.getAdditionnalView().tntLayerTreeView.layerTreeRoot.findGroup(target_groupName)
+            tmp_LayerTreeNode=target_LayerTreeGroup.findLayers()[indexFrom]
+            target_LayerTreeGroup.removeChildNode(tmp_LayerTreeNode)
+        except AttributeError :
+            pass
+
+    @QtCore.pyqtSlot( QgsLayerTreeNode, int, int)
+    def nodeAddedChildren (self, node, indexFrom, indexTo):
+        """
+            :param node:
+            :param indexFrom:
+            :param indexTo:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->nodeAddedChildren({node},{indexFrom},{indexTo})")
+        try :
+            target_groupName=node.name()
+            clone_treeLayer=node.findLayers()[indexFrom].clone()
+            clone_treeLayer.setExpanded (False)
+            clone_treeLayer.setItemVisibilityChecked(False)
+            target_LayerTreeGroup=self.parentWindow.getAdditionnalView().tntLayerTreeView.layerTreeRoot.findGroup(target_groupName)
+            target_LayerTreeGroup.addChildNode(clone_treeLayer)
+        except AttributeError :
+            pass
+
 
     def setParentWindow(self, parentWindow):
-        self.parentWindow=parentWindow 
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->setParentWindow()")
+        self.parentWindow=parentWindow
 
     def getParentWindow(self):
-        return self.parentWindow       
+        """
+            :param parentWindow:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->getParentWindow()")
+        return self.parentWindow
 
     def setLayerTreeRoot(self, layerTreeRoot):
+        """
+            :param layerTreeRoot:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->setLayerTreeRoot()")
         self.layerTreeRoot=layerTreeRoot
 
     def getLayerTreeRoot(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->getLayerTreeRoot()")
         return self.layerTreeRoot
 
     def setLayerTreeView(self , layerTreeView:QgsLayerTreeView):
+        """
+            :param layerTreeView:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->setLayerTreeView()")
         self.layerTreeView=layerTreeView
 
     def getLayerTreeView(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->getLayerTreeView()")
         return self.layerTreeView
 
-    def setupUi(self): 
-        self.layout = QVBoxLayout(self) 
+    def setupUi(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->setupUi()")
+        self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(-1, 1, -1, 1)
-        
+
         self.sliderGroup=self.setSliderGroup(QWidget(self))
         self.layout.addWidget(self.sliderGroup)
-    
+
         self.layout.addWidget(self.layerTreeView)
-        
+
         spacerItem = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.layout.addItem(spacerItem)
 
-         
+
     def setSliderGroup(self, widget):
-        #print(f"line:{self.lineno()},TnTLayerTreeView->setSliderGroup()")            
+        """
+            :param widget:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->setSliderGroup()")
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         self.setSizePolicy(sizePolicy)
-            
+
         self.sliderGroup_Layout = QHBoxLayout(widget)
         self.sliderGroup_Layout.setContentsMargins(-1, 1, -1, 1)
-        
+
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.sliderGroup_Layout.addItem(spacerItem)
-        
+
         self.slider = QSlider(QtCore.Qt.Horizontal,widget)
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
         self.slider.setTickInterval(25)
-        self.slider.setTickPosition(QSlider.TicksAbove) 
+        self.slider.setTickPosition(QSlider.TicksAbove)
         self.slider.setPageStep(25)
-        self.slider.setSingleStep(5)    
+        self.slider.setSingleStep(5)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         self.slider.setSizePolicy(sizePolicy)
-        
+
         self.slider.setValue(100)
         self.sliderGroup_Layout.addWidget(self.slider)
-        
-        self.sliderGroup_label = QLabel(widget)               
+
+        self.sliderGroup_label = QLabel(widget)
         self.sliderGroup_label.setNum(self.slider.value())
         self.sliderGroup_label.setSizePolicy(sizePolicy)
         self.sliderGroup_Layout.addWidget(self.sliderGroup_label)
-              
+
         spacerItem1 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.sliderGroup_Layout.addItem(spacerItem1)
-       
+
         return widget
-    
+
     def hideNodes(self, layerTreeView , model, listNodes):
-        #print(f"line:{self.lineno()},TnTLayerTreeView->hideNodes(layerTreeView:{layerTreeView}, model:{model}, listNodes:{listNodes})") 
+        """
+            :param layerTreeView:
+            :param model:
+            :param listNodes:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->hideNodes(layerTreeView:{layerTreeView}, model:{model}, listNodes:{listNodes})")
         for node in listNodes :
             index = model.node2index( node )
             layerTreeView.setRowHidden( index.row(), index.parent(), True )
             node.setCustomProperty( 'nodeHidden', 'true')
             layerTreeView.setCurrentIndex(model.node2index(self.layerTreeRoot))
-            
-    #def printCurrentOpacity(self):
-        #print(f"line:{self.lineno()},TnTLayerTreeView->printCurrentOpacity()") 
-
 
     def changeOpacity(self):
-        #print(f"line:{self.lineno()},TnTLayerTreeView->changeOpacity()")      
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->changeOpacity()")
         op=self.slider.value()/100
-        if isinstance(self.currentLayer, QgsRasterLayer): self.currentLayer.renderer().setOpacity(op)
-        elif isinstance(self.currentLayer, QgsVectorLayer): self.currentLayer.setOpacity(op)
+        if isinstance(self.currentLayer, QgsRasterLayer):
+            self.currentLayer.renderer().setOpacity(op)
+        elif isinstance(self.currentLayer, QgsVectorLayer):
+            self.currentLayer.setOpacity(op)
         self.getParentWindow().getCanvas().refresh()
-        
+
     def currentLayerChanged (self, layer):
-        #print(f"line:{self.lineno()},TnTLayerTreeView->currentLayerChanged(layer:{layer}") 
+        """
+            :param layer:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TnTLayerTreeView->currentLayerChanged(layer:{layer}")
         self.currentLayer=layer
         op=0
-        if isinstance(self.currentLayer, QgsRasterLayer): op=self.currentLayer.renderer().opacity()         
-        elif isinstance(self.currentLayer, QgsVectorLayer): op=self.currentLayer.opacity()
+        if isinstance(self.currentLayer, QgsRasterLayer):
+            op=self.currentLayer.renderer().opacity()
+        elif isinstance(self.currentLayer, QgsVectorLayer):
+            op=self.currentLayer.opacity()
         self.slider.setValue(op*100)
-       
-    

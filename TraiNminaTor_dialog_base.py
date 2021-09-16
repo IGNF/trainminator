@@ -24,7 +24,7 @@ Labelisation de données segmentées.
 """
 
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class Ui_TraiNminatorDialogBase(object):
@@ -32,6 +32,17 @@ class Ui_TraiNminatorDialogBase(object):
     print("passe constructeur Ui_TraiNminatorDialogBase (file:Ui_TraiNminator_Dialog_Base.py)")
     
     def setupUi(self, TraiNminatorDialogBase):
+        """
+        Parameters
+        ----------
+        TraiNminatorDialogBase : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         TraiNminatorDialogBase.setObjectName("TraiNminatorDialogBase")
         TraiNminatorDialogBase.resize(400, 300)
         self.button_box = QtWidgets.QDialogButtonBox(TraiNminatorDialogBase)
@@ -46,5 +57,16 @@ class Ui_TraiNminatorDialogBase(object):
         QtCore.QMetaObject.connectSlotsByName(TraiNminatorDialogBase)
 
     def retranslateUi(self, TraiNminatorDialogBase):
+        """
+        Parameters
+        ----------
+        TraiNminatorDialogBase : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         _translate = QtCore.QCoreApplication.translate
         TraiNminatorDialogBase.setWindowTitle(_translate("TraiNminatorDialogBase", "TraiNminaTor"))

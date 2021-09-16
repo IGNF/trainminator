@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="655876cf-a41f-4e4d-9fbb-cb751f81f4d2" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/TnT_AdditionalView.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_AdditionalView.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_CaptureManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_CaptureManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_Communicate.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_Communicate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_LabelingToolsBox.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_LabelingToolsBox.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_LabelingToolsBox_save.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_LayerTreeView.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_LayerTreeView.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_MapCanvas.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_MapCanvas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_MergingLabeledData.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_MergingLabeledData.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_NomenclatureWidget.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_NomenclatureWidget.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_ProjectDataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_ProjectDataManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TnT_StatTools.py" beforeDir="false" afterPath="$PROJECT_DIR$/TnT_StatTools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TraiNminaTor.py" beforeDir="false" afterPath="$PROJECT_DIR$/TraiNminaTor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TraiNminaTor_dialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/TraiNminaTor_dialog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TraiNminaTor_dialog_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/TraiNminaTor_dialog_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TraiNminaTor-FAQ.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TraiNminaTor-FAQ.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TraiNminaTor-FAQ.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TraiNminaTor-FAQ.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TraiNminaTor-rapide.docx" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TraiNminaTor-rapide.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TraiNminaTor-rapide.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TraiNminaTor-rapide.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/presentation.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/presentation.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pylintrc" beforeDir="false" afterPath="$PROJECT_DIR$/pylintrc" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1yDykelhzTEaSZJcjhS89dY3lsE" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="655876cf-a41f-4e4d-9fbb-cb751f81f4d2" name="Changes" comment="" />
+      <created>1631800598198</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1631800598198</updated>
+    </task>
+    <servers />
+  </component>
+</project>

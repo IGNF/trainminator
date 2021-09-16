@@ -23,25 +23,38 @@ Labelisation de données segmentées.
 """
 import inspect
 
-from qgis.gui import (QgsMapCanvas, QgsVertexMarker, QgsMapTool) 
-from qgis.core import(QgsPoint, QgsPointXY)
+from qgis.gui import (QgsMapCanvas, QgsVertexMarker, QgsMapTool)
 
 from PyQt5.QtCore    import (Qt, QEvent)
-from PyQt5.QtGui     import ( QColor, QFocusEvent, QMouseEvent )
+from PyQt5.QtGui     import ( QColor, QMouseEvent )
 
+
+def lineno():
+    """Returns the current line number in Python source code"""
+    return inspect.currentframe().f_back.f_lineno
+
+def flocals():
+    """Returns the local namespace seen by this frame"""
+    return inspect.currentframe().f_back.f_locals
 
 class TnTmapCanvas( QgsMapCanvas ):
-    
+    """
+    Canvas handling class.
+    """
+
     def __init__(self, parent=None, name=None):
         super(TnTmapCanvas, self).__init__(parent)
         self.parent=parent
-        self.name=name    
+        self.name=name
         self.slave=None
         #Synchro mode , default=False at starting
         self.synchroMode=False
-        self.qgsmaptool=QgsMapTool(self)          
+
+        self.marker=None
+        self.qgsmaptool=QgsMapTool(self)
+
         self.setUpUi()
-        
+
         Focus_yellow='#FFC829'
         self.defaultStyle= """QgsMapCanvas {
                                         border: 1px solid grey;
@@ -54,151 +67,230 @@ class TnTmapCanvas( QgsMapCanvas ):
                                             border-radius: 4px;
                                             padding:2px
                                         }"""
-    
+
         self.setStyleSheet(self.defaultStyle+self.hoverStyle)
-        
+
     def setUpUi(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas: setupUi()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->setupUi()")
         self.setCanvasColor(Qt.white)
         self.setDefaultMarker()
-        
-    
+
+
     def setDefaultMarker(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas: setDefaultMarker()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->setDefaultMarker()")
         self.marker = QgsVertexMarker(self)
         self.marker.setColor(QColor(255,255,255))
         self.marker.setIconSize(30)
         self.marker.setIconType(QgsVertexMarker.ICON_CROSS )
         self.marker.setPenWidth(2)
-       
+
     def extChange(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas: extChange()")
-        try: self.getSlave().extChangeSlave( self.extent() )
-        except AttributeError: pass 
-           
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->extChange()")
+        try:
+            self.getSlave().extChangeSlave( self.extent() )
+        except AttributeError:
+            pass
+
     def extChangeSlave(self, extent):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas: extChangeSlave(extent:{extent})")
+        """
+            :param extent:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->extChangeSlave(extent:{extent})")
         self.extentsChanged.disconnect()
         self.setExtent(extent)
         self.refresh()
         self.extentsChanged.connect(self.extChange)
-    
+
     def showMousePointerMarker(self, p):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas: showMousePointerMarker(p:{p})")
-        """ This method display the mouse pointer (marker) at <p> position in canvas of slave view. 
-            @param p: .
-            @type p: QgsPointXY.
-        """  
+        """
+        This method display the mouse pointer (marker) at <p> position
+        in canvas of slave view.
+            :param p: mouse pointer position  QgsPointXY.
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->showMousePointerMarker(p:{p})")
+
         self.marker.setCenter(p)
         self.marker.show()
-                
-    def lineno(self):
-         """ Bug: Returns the current line number"""   
-         return inspect.currentframe().f_back.f_lineno
-     
+
     def setName(self, name="no name"):
+        """
+            :param name:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->setName({name})")
         self.name=name
-        
+
     def getName(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->getName()")
         return self.name
-     
+
     def setSlave(self, slave=None):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->setSlave({slave})")
         self.slave=slave
-            
-    def unsetSlave(self):      
+
+    def unsetSlave(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->unsetSlave()")
         self.setSlave()
-              
+
     def getSlave(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->getSlave()")
         return self.slave
-    
+
     def info(self):
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->info()")
         print("=================================================================")
         print(f"            self.name: {self.name}")
-        if self.slave: print(f"          self.slave: {self.slave}+{self.slave.name}")
-        else :         print("           self.slave: NO SALVE+NO NAME")       
+        if self.slave:
+            print(f"          self.slave: {self.slave}+{self.slave.name}")
+        else :         print("           self.slave: NO SALVE+NO NAME")
         print(f"     self.synchroMode: {self.synchroMode}")
         print("=================================================================")
         print("")
-    
+
     def setSynchroMode(self, synchroMode=False):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:getSynchroMode(synchroMode={synchroMode})")
-        """ This method instantiates the synchronization mode between the main and the additional view.
-            used : self.setSynchroMode()=synchronisation mode OFF.
-            @param synchroMode: set synchronisation mode ON (True) or OFF (False)
-            @type synchroMode: Boolean.
         """
+        This method instantiates the synchronization mode between the main and
+        the additional view.
+        used : self.setSynchroMode()=synchronisation mode OFF.
+
+            :param synchroMode:set synchronisation mode ON (True) or OFF (False)
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->getSynchroMode(synchroMode={synchroMode})")
         self.synchroMode=synchroMode
-        
+
     def getSynchroMode(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:getSynchroMode()")
-        """ This method return state of synchronization mode.
-            @param None:.
         """
-        return self.synchroMode 
-    
+        This method return state of synchronization mode.
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->getSynchroMode()")
+        return self.synchroMode
+
     def toggleStateSynchroMode(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:toggleStateSynchroMode()")
-        """ This method is called when the user presses the button <Synchro View>.
-            Toggle state of mode synchronisation mode.
-            @param None:.
-        """ 
-        if self.getSynchroMode(): self.synchroModeOFF() 
-        else : self.synchroModeON()
-           
+        """
+        This method is called when the user presses the button <Synchro View>.
+        toggle state of mode synchronisation mode.
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->toggleStateSynchroMode()")
+        if self.getSynchroMode():
+            self.synchroModeOFF()
+        else:
+            self.synchroModeON()
+
     def synchroModeON(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:synchroModeON()")
-        """ Activate the functionalities of the synchronization mode between the views.
-            Same visible area. 
-            Same position of the mouse pointer.
-            @param None:.
-        """     
+        """
+        Activate the functionalities of the synchronization mode between the views.
+        Same visible area and Same position of the mouse pointer.
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->synchroModeON()")
         self.setSynchroMode(True)
         self.extentsChanged.connect(self.extChange)
-        self.xyCoordinates.connect(self.getSlave().showMousePointerMarker)  
-     
+        self.xyCoordinates.connect(self.getSlave().showMousePointerMarker)
+
     def synchroModeOFF(self):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:synchroModeOFF()")
-        """ Deactivate the functionalities activated by the synchroModeON() method.
-            @param None:.
-        """  
+        """
+        Deactivate the functionalities activated by the synchroModeON() method.
+
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->synchroModeOFF()")
         self.setSynchroMode()
         self.extentsChanged.disconnect()
         self.xyCoordinates.disconnect()
         self.marker.hide()
-     
+
     def syncZoom (self):
-        print(f"line:{self.lineno()}, ->TnTmapCanvas:syncZoom()")
-        """ Synchronization of the zooms between the main and additional view.
-            @param None:.
-        """      
-        if self.getSynchroMode() : self.getSlave().setTransform(self.transform(),False)
-      
-         
+        """
+        Synchronization of the zooms between the main and additional view.
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->syncZoom()")
+        if self.getSynchroMode():
+            self.getSlave().setTransform(self.transform(),False)
+
+
     def mouseMoveEvent(self, event:QMouseEvent):
+        """
+            :param event:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->mouseMoveEvent(event:{event})")
         self.marker.hide()
-        try: self.slave
-        except AttributeError: pass 
+        try:
+            self.slave
+        except AttributeError:
+            pass
         else :
             if self.synchroMode:
-                  qgspointXY =self.qgsmaptool.toMapCoordinates(event.pos())	
-                  self.slave.showMousePointerMarker(qgspointXY)
-     
+                qgspointXY =self.qgsmaptool.toMapCoordinates(event.pos())
+                self.slave.showMousePointerMarker(qgspointXY)
+
         return QgsMapCanvas.mouseMoveEvent(self, event)
-        
+
     def event(self, event: QEvent):
-        #print(f"line:{self.lineno()}, ->TnTmapCanvas:event(event:{event})")
-        evt_Type=event.type()               
+        """
+            :param event:
+            :returns none:
+        """
+        #print(f"line:{lineno()}, TnTmapCanvas->event(event:{event})")
+        evt_Type=event.type()
         if evt_Type==QEvent.KeyPress and event.key()==Qt.Key_Space:
-            #Additional view canvas does not have a toolbox, ignore error 
-            try:  self.parent.getPushButton('Show Context').keyPressEvent(event) 
-            except AttributeError: pass       
+            #Additional view canvas does not have a toolbox, ignore error
+            try:
+                self.parent.getPushButton('Show Context').keyPressEvent(event)
+            except AttributeError:
+                pass
             return True
-        
+
         elif evt_Type==QEvent.KeyRelease and event.key()==Qt.Key_Space :
-            #Additional view canvas does not have a toolbox, ignore error 
-            try:  self.parent.getPushButton('Show Context').keyReleaseEvent(event)
-            except AttributeError: pass       
+            #Additional view canvas does not have a toolbox, ignore error
+            try:
+                self.parent.getPushButton('Show Context').keyReleaseEvent(event)
+            except AttributeError:
+                pass
             return True
-        
+
         else:
             return QgsMapCanvas.event(self, event)

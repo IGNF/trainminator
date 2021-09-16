@@ -22,31 +22,20 @@ Labelisation de données segmentées.
  ***************************************************************************/
 """
 
-
-
-# from qgis.PyQt import QtWidgets
-# from qgis.PyQt import QtCore
-# from qgis.PyQt.QtCore import QSize, pyqtSignal
-# from qgis.PyQt.QtGui import (QIcon, QPixmap)
-# from qgis.PyQt.QtWidgets import (QFrame, QWidget, QDialog, QFileDialog, QMainWindow, 
-#     QToolBar, QDockWidget, QAction, QPushButton, QLineEdit, QLabel, QSlider, 
-#     QVBoxLayout, QHBoxLayout, QMessageBox, QWidgetAction, QCheckBox)
-
 import inspect
 import os.path
-
 
 from qgis.core import QgsProject
 
 from PyQt5                 import QtCore
-from PyQt5.QtCore          import (Qt, QEvent, QUrl, 
+from PyQt5.QtCore          import (Qt, QEvent, QUrl,
                                    QStandardPaths)
 from PyQt5.QtGui           import (QKeyEvent)
 from PyQt5.QtWebKitWidgets import  QWebView
-from PyQt5.QtWidgets       import (QSizePolicy, QWidget, QFileDialog,  
+from PyQt5.QtWidgets       import (QSizePolicy, QWidget, QFileDialog,
                                    QPushButton, QVBoxLayout, QGridLayout,
-                                   QHBoxLayout, QSpacerItem, QGroupBox, 
-                                   QDockWidget, QMenu, QMenuBar, 
+                                   QHBoxLayout, QSpacerItem, QGroupBox,
+                                   QDockWidget, QMenu, QMenuBar,
                                    QStatusBar, QAction, QMainWindow)
 
 from .TnT_NomenclatureWidget import TnTnomenclatureWidget
@@ -56,138 +45,189 @@ from .TnT_AdditionalView     import TnTadditionalView
 from .TnT_LabelingToolsBox   import TnTlabelingToolsBox
 from .TnT_StatTools          import TnTstatTools
 
-    
+def lineno():
+    """Returns the current line number in Python source code"""
+    return inspect.currentframe().f_back.f_lineno
+
+def flocals():
+    """Returns the local namespace seen by this frame"""
+    return inspect.currentframe().f_back.f_locals
+
 class TraiNminaTorDialog(QMainWindow):
+    """
+    gui class.
+    """
     def __init__(self, parent=None):
         """Constructor."""
         super(TraiNminaTorDialog, self).__init__(parent)
-        
+
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-    
+
         self.tableName=["TILING","SEGMENTING","LABELING"]
         self.UserPreferences      = {"QTabWidget":["LABELING"]}
-        
+
         self.root = QgsProject.instance()
 
-        #Project 
+        #Project
         self.projectPath=None
         self.projectName=None
-      
-        # Active canvas is the canvas of current page table. 
+
+        # Active canvas is the canvas of current page table.
         self.activeCanvas=None
         self.tntLayerTreeView=None
-        
-        self.additionnalView=None      
-        # if exist , Additional canvas is the canvas of additional view. 
+
+        self.additionnalView=None
+        # if exist , Additional canvas is the canvas of additional view.
         self.AdditionalCanvas=None
-        
+
         self.labelingToolsBox=None
-        
+
         # nomenclatureWidget reference
         self.nomenclatureWidget=None
-     
+
         self.setupUi(self)
-              
+
         self.comm = TnTcommunicate()
-        
-        
+
         #self.root.projectSaved.connect(self.projectSaved)
-         
+
         #Fermeture projet qgis courant, ouverture d'un nouveau project qgis
         # Rechargement du nouveau projet, plugin en fonction
         # A reactiver plus tard, des reinitialisations sont incorrectes.
         self.root.cleared.connect(self.clear)
         self.root.readProject.connect(self.readProject)
-        
-                
-    def lineno(self):
-         "Returns the current line number"
-         return inspect.currentframe().f_back.f_lineno 
-     
-    def flocals(self):   
-        return inspect.currentframe().f_back.f_locals
-        
-    # def projectSaved(self):
-    #     #print(f"line:{self.lineno()},TraiNminaTorDialog ->projectSaved()")
-    #     pass
-          
+
     def clear(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->clear()")   
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->clear()")
         self.labelingToolsBox.projectDataManager.clear()
         self.nomenclatureWidget.clear()
         self.labelingToolsBox.clear()
-        
         self.disableMenu(self.menuNomenclature)
         self.disableMenu(self.menutools)
-        
+
     def readProject(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->readProject()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->readProject()")
         self.labelingToolsBox.projectDataManager.readProject()
-        
         self.enableMenu( self.menuNomenclature)
         self.enableMenu(self.menutools)
-          
+
     def getCanvas(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->getCanvas()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->getCanvas()")
         return self.getActiveCanvas()
-       
+
     def setActiveCanvas(self, activeCanvas=None):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setActiveCanvas()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setActiveCanvas()")
         self.activeCanvas=activeCanvas
-               
+
     def unsetActiveCanvas(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->unsetActiveCanvas()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->unsetActiveCanvas()")
         self.setActiveCanvas()
-          
+
     def getActiveCanvas(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->unsetActiveCanvas()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->unsetActiveCanvas()")
         return self.activeCanvas
-          
+
     def setAdditionnalView(self, additionnalView=None):
+        """
+            :param none:
+            :returns none:
+        """
         self.additionnalView=additionnalView
-              
+
     def unsetAdditionnalView(self):
+        """
+            :param none:
+            :returns none:
+        """
         self.setAdditionnalView()
-        
+
     def getAdditionnalView(self):
+        """
+            :param none:
+            :returns none:
+        """
         return self.additionnalView
-        
+
     def setAdditionalCanvas(self, additionalCanvas=None ):
+        """
+            :param none:
+            :returns none:
+        """
         self.AdditionalCanvas=additionalCanvas
-        
+
     def unsetAdditionalCanvas(self):
+        """
+            :param none:
+            :returns none:
+        """
         self.setAdditionalCanvas()
-        
-    def getAdditionalCanvas(self):  
+
+    def getAdditionalCanvas(self):
+        """
+            :param none:
+            :returns none:
+        """
         return self.AdditionalCanvas
-    
+
     def getRootGroup(self):
+        """
+            :param none:
+            :returns none:
+        """
         return self.tntLayerTreeView.model.rootGroup()
-          
+
     def setupUi(self, mainWindow):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setupUi()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setupUi()")
         mainWindow.setObjectName("TrainMinaTor-Master Window")
         mainWindow.resize(1600, 900)
-           
-        # Added dock widget on left side (ie west)  see:QtCore.Qt.DockWidgetArea(1)       
+
+        # Added dock widget on left side (ie west)  see:QtCore.Qt.DockWidgetArea(1)
         self.dockWidget_west=self.setDockWidget_west(QDockWidget(self))
         mainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockWidget_west)
-    
-        # Added dock widget on right side (ie east)  see:QtCore.Qt.DockWidgetArea(2) 
-        self.dockWidget_east=self.setDockWidget_east(QDockWidget(self))  
-        mainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.dockWidget_east)   
-        
-        # Init  Central widget   
+
+        # Added dock widget on right side (ie east)  see:QtCore.Qt.DockWidgetArea(2)
+        self.dockWidget_east=self.setDockWidget_east(QDockWidget(self))
+        mainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.dockWidget_east)
+
+        # Init  Central widget
         self.centralwidget = QWidget(mainWindow)
         self.centralwidget.setObjectName("centralwidget")
-               
+
         self.centralVerticalLayout = QVBoxLayout(self.centralwidget)
         self.centralVerticalLayout.setObjectName("centralVerticalLayout")
-    
+
         #And first widget at TOP
         self.topWidget = self.setTopWidget(QWidget(self.centralwidget), "topWidget")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
@@ -195,63 +235,71 @@ class TraiNminaTorDialog(QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.topWidget.sizePolicy().hasHeightForWidth())
         self.topWidget.setSizePolicy(sizePolicy)
-        self.centralVerticalLayout.addWidget(self.topWidget) 
-        
-        
-        #And second widget 
-        self.labelingToolsBox=TnTlabelingToolsBox(self, self.centralwidget)  
+        self.centralVerticalLayout.addWidget(self.topWidget)
+
+        #And second widget
+        self.labelingToolsBox=TnTlabelingToolsBox(self, self.centralwidget)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.labelingToolsBox.sizePolicy().hasHeightForWidth())
         self.labelingToolsBox.setSizePolicy(sizePolicy)
         self.centralVerticalLayout.addWidget(self.labelingToolsBox)
-        
+
         mainWindow.setCentralWidget(self.centralwidget)
-        
+
         self.centerAll_pushButton.clicked.connect( self.centerAll )
         #Calling <synchro_Viesw()> method, on clicking button <synchro_pushButton>
-        self.synchro_pushButton.clicked.connect( self.synchro_Views ) 
+        self.synchro_pushButton.clicked.connect( self.synchro_Views )
         #Calling <openClose_AdiditionalView()> method, on clicking button <additionalView_pushButton>
         self.additionalView_pushButton.clicked.connect( self.openClose_AdditionalView )
-        
+
         # Init menu bar
         self.menubar=self.setMenu(QMenuBar(mainWindow), "menubar" )
         mainWindow.setMenuBar(self.menubar)
         #self.centralVerticalLayout.setMenuBar(self.menubar)
-        
+
         # Init status bar
         self.statusbar = QStatusBar(mainWindow)
         self.statusbar.setObjectName("statusbar")
-        mainWindow.setStatusBar(self.statusbar)  
-        
-        self.retranslateUi(mainWindow) 
+        mainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(mainWindow)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
-     
-           
+
     def addLabelingGroup(self, windowParent, widgetParent, layoutParent, labGroup):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->addLabelingGroup()")
+        """
+            :param none:
+            :param none:
+            :param none:
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->addLabelingGroup()")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(labGroup.sizePolicy().hasHeightForWidth())
         labGroup.setSizePolicy(sizePolicy)
         layoutParent.addWidget(labGroup)
-              
-        
+
     def setDockWidget_west(self, dockWidget):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setDockWidget_west()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setDockWidget_west()")
         dockWidget.setFeatures(dockWidget.features() & ~QDockWidget.DockWidgetClosable)
-        
+
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(dockWidget.sizePolicy().hasHeightForWidth())
         dockWidget.setSizePolicy(sizePolicy)
-       
+
         dockWidgetContents = QWidget()
         gridLayout  = QGridLayout(dockWidgetContents)
-               
+
         #self.tntLayerTreeView=TnTLayerTreeView( self, dockWidgetContents, QgsProject.instance().layerTreeRoot().clone() )
         self.tntLayerTreeView=TnTLayerTreeView(self, dockWidgetContents, QgsProject.instance().layerTreeRoot())
         self.tntLayerTreeView.setParentWindow(self)
@@ -259,37 +307,44 @@ class TraiNminaTorDialog(QMainWindow):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.tntLayerTreeView.sizePolicy().hasHeightForWidth())     
+        sizePolicy.setHeightForWidth(self.tntLayerTreeView.sizePolicy().hasHeightForWidth())
         self.tntLayerTreeView.setSizePolicy(sizePolicy)
-        
+
         gridLayout.addWidget(self.tntLayerTreeView, 0, 0, 1, 1)
-        
+
         dockWidget.setWidget(dockWidgetContents)
-        
+
         return dockWidget
-                    
+
     def setDockWidget_east(self, dockWidget):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setDockWidget_east()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setDockWidget_east()")
         dockWidget.setFeatures(dockWidget.features() & ~QDockWidget.DockWidgetClosable)
-        self.nomenclatureWidget = TnTnomenclatureWidget(self, dockWidget)    
+        self.nomenclatureWidget = TnTnomenclatureWidget(self, dockWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        self.nomenclatureWidget.setSizePolicy(sizePolicy)          
+        self.nomenclatureWidget.setSizePolicy(sizePolicy)
         dockWidget.setWidget(self.nomenclatureWidget)
-      
         return dockWidget
-           
+
     def setTopWidget(self, widget, widgetName):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setTopWidget()")
-        
+        """
+            :param none:
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setTopWidget()")
         widget.setObjectName(widgetName)
-        
+
         # init layout of this widget_top
         self.verticalLayout_top = QVBoxLayout(widget)
         self.verticalLayout_top.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_top.setSpacing(0)
-           
+
         # Init Group box contains buttons which manage additional view
         self.groupBox_view = QGroupBox(widget)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
@@ -297,51 +352,47 @@ class TraiNminaTorDialog(QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox_view.sizePolicy().hasHeightForWidth())
         self.groupBox_view.setSizePolicy(sizePolicy)
-        
+
         self.horizontalLayout_view = QHBoxLayout(self.groupBox_view)
         self.horizontalLayout_view.setContentsMargins(4, 2, 4, 2)
         self.horizontalLayout_view.setSpacing(4)
-             
-        
+
         self.centerAll_pushButton = QPushButton(self.groupBox_view)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.centerAll_pushButton.sizePolicy().hasHeightForWidth())
         self.centerAll_pushButton.setSizePolicy(sizePolicy)
-        
+
         self.centerAll_pushButton.setText("Center ALL")
         self.centerAll_pushButton.setIconSize(QtCore.QSize(22, 22))
         self.horizontalLayout_view.addWidget(self.centerAll_pushButton)
-        
-    
+
         # Spacer : push all  buttons on right side
         spacerItem = QSpacerItem(558, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_view.addItem(spacerItem)
-                  
+
         self.synchro_pushButton = QPushButton(self.groupBox_view)
-        
+
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.synchro_pushButton.sizePolicy().hasHeightForWidth())
         self.synchro_pushButton.setSizePolicy(sizePolicy)
-        
 
         self.synchro_pushButton.setCheckable(True)
         self.synchro_pushButton.setChecked(False)
         self.synchro_pushButton.setText("Synchro View")
         self.synchro_pushButton=self.lockButton(self.synchro_pushButton)
-       
-               
+
         self.horizontalLayout_view.addWidget(self.synchro_pushButton)
-                 
+
         self.additionalView_pushButton = QPushButton(self.groupBox_view)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.additionalView_pushButton.sizePolicy().hasHeightForWidth())
-        
+
         # Open/Close additional view
         self.additionalView_pushButton.setSizePolicy(sizePolicy)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Minimum)
@@ -349,165 +400,187 @@ class TraiNminaTorDialog(QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.additionalView_pushButton.sizePolicy().hasHeightForWidth())
         self.additionalView_pushButton.setSizePolicy(sizePolicy)
-        
+
         self.additionalView_pushButton.setText("Open Add View")
         self.additionalView_pushButton.setCheckable(True)
         self.additionalView_pushButton.setChecked(False)
-    
+
         self.horizontalLayout_view.addWidget(self.additionalView_pushButton)
         self.verticalLayout_top.addWidget(self.groupBox_view)
-       
+
         return widget
-     
+
     def disableMenu(self, menu):
-        menu.setEnabled(False)
-        
-    def enableMenu(self, menu):
-        menu.setEnabled(True)
-    
-    def setMenu(self, widget:QMenuBar, widgetName):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setMenu()")
         """
-            Initializes the menus.  
-            
-            @param widget: The QMenuBar class provides a horizontal menu bar.
-            @type widget: QMenuBar
-                 
-            @param widgetName: This property holds the name of this QMenuBar.
-            @type widgetName: QString
-        """   
-        
+            :param none:
+            :returns none:
+        """
+        menu.setEnabled(False)
+
+    def enableMenu(self, menu):
+        """
+            :param none:
+            :returns none:
+        """
+        menu.setEnabled(True)
+
+    def setMenu(self, widget:QMenuBar, widgetName):
+        """
+         Initializes the menus.
+            :param widget: The QMenuBar class provides a horizontal menu bar.
+            :param widgetName: This property holds the name of this QMenuBar.
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setMenu()")
         widget.setObjectName(widgetName)
-        
+
         # Menu nomenclature
         self.menuNomenclature = QMenu(widget)
         self.menuNomenclature.setObjectName("menuNomenclature")
-        
+
         self.actionOpenNomenclature = QAction(self)
         self.actionOpenNomenclature.setShortcut('Ctrl+O')
         self.actionOpenNomenclature.setStatusTip('Open Nomenclatures')
         self.actionOpenNomenclature.setObjectName("actionOpenNomenclature")
-    
+
         self.menuNomenclature.addAction(self.actionOpenNomenclature)
         widget.addAction(self.menuNomenclature.menuAction())
-    
+
         self.actionOpenNomenclature.triggered.connect(self.openNomenclature)
-        
 
         # Menu tools
         self.menutools = QMenu(widget)
-        self.menutools.setObjectName("menuTools") 
-        
+        self.menutools.setObjectName("menuTools")
+
         self.actionStartChartTool = QAction(self)
         self.actionStartChartTool.setShortcut('Ctrl+C')
         self.actionStartChartTool.setStatusTip('Chart tool')
-        self.actionStartChartTool.setObjectName("actionStartChartTool")    
+        self.actionStartChartTool.setObjectName("actionStartChartTool")
         self.menutools.addAction(self.actionStartChartTool)
-        
-        
+
         self.actionStartControlTool = QAction(self)
         self.actionStartControlTool.setShortcut('Ctrl+V')
         self.actionStartControlTool.setStatusTip('Control tool')
         self.actionStartControlTool.setObjectName("actionStartControlTool")
         self.menutools.addAction(self.actionStartControlTool)
-        
+
         widget.addAction(self.menutools.menuAction())
-        
-        
-        self.actionStartChartTool.triggered.connect(self.startChartTool)  
+
+        self.actionStartChartTool.triggered.connect(self.startChartTool)
         self.actionStartControlTool.triggered.connect(self.startControlTool)
-        
-        
+
          # Menu help
         self.menuhelp = QMenu(widget)
-        self.menuhelp.setObjectName("menuHelp") 
-        
-        
+        self.menuhelp.setObjectName("menuHelp")
+
         self.actionOpenDocumentation = QAction(self)
         self.actionOpenDocumentation.setShortcut('Ctrl+H')
         self.actionOpenDocumentation.setStatusTip('Open Documentation')
         self.actionOpenDocumentation.setObjectName("actionOpenDocumentation")
-        
+
         self.menuhelp.addAction(self.actionOpenDocumentation)
-        
+
         widget.addAction(self.menuhelp.menuAction())
         self.actionOpenDocumentation.triggered.connect(self.openDocumentation)
-        
-        
-             
+
         return widget
-              
+
     def retranslateUi(self, mainWindow):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->retranslateUi()")
+        """
+            :param mainWindow:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->retranslateUi()")
         _translate = QtCore.QCoreApplication.translate
         mainWindow.setWindowTitle(_translate("TraiNminator", "TraiNminator"))
-    
-        self.menuNomenclature.setTitle(_translate("mainWindow", "Nomenclature")) 
+
+        self.menuNomenclature.setTitle(_translate("mainWindow", "Nomenclature"))
         self.actionOpenNomenclature.setText(_translate("mainWindow", "Open"))
         # self.actionSaveNomenclature.setText(_translate("mainWindow", "Save"))
         # self.actionSave_AsNomenclature.setText(_translate("mainWindow", "Save As"))
-        
+
         self.menuhelp.setTitle(_translate("mainWindow", "Help"))
         self.actionOpenDocumentation.setText(_translate("mainWindow", "Open Documentation"))
-        
+
         self.menutools.setTitle(_translate("mainWindow", "Tools"))
         self.actionStartChartTool.setText(_translate("mainWindow", "Chart tool"))
         self.actionStartControlTool.setText(_translate("mainWindow", "Control tool"))
-          
+
         self.additionalView_pushButton.setText(_translate("mainWindow", "Open Add View"))
-        
-        
+
     def startChartTool(self):
+        """
+            :param none:
+            :returns none:
+        """
         TnTstatTools(self)
-     
+
     def startControlTool(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->startControlTool()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->startControlTool()")
         self.labelingToolsBox.startControlTool()
-               
+
     def openNomenclature(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->openNomenclature()")
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->openNomenclature()")
         where=QgsProject.instance().absolutePath()
-        if os.path.exists(where+"/NOMENCLATURE"): where=where+"/NOMENCLATURE"   
-         
+        if os.path.exists(where+"/NOMENCLATURE"):
+            where=where+"/NOMENCLATURE"
+
         #print(f"where:{where}")
         filterName='Nomenclature File (*.csv)'
-        listNomenclatures= QFileDialog.getOpenFileNames(self, 
-                                              'Open Nomenclatures', 
+        listNomenclatures= QFileDialog.getOpenFileNames(self,
+                                              'Open Nomenclatures',
                                               where,
-                                              filterName) 
-        
+                                              filterName)
+
         if listNomenclatures[0] :
             #If default value key, remove it
             if self.nomenclatureWidget.defaultNomenclatureName in self.nomenclatureWidget.nomenclatureFilesDict:
                 self.nomenclatureWidget.nomenclatureFilesDict.pop(self.nomenclatureWidget.defaultNomenclatureName)
                 index=self.nomenclatureWidget.nomenclatureSelector.findText(self.nomenclatureWidget.defaultNomenclatureName)
                 self.nomenclatureWidget.nomenclatureSelector.removeItem(index)
-             
+
             for i in range(len(listNomenclatures[0])) :
                 head, tail=os.path.split(listNomenclatures[0][i])
                 key_NomenclatureName=tail.split('.')[0]
                 if key_NomenclatureName not in self.nomenclatureWidget.nomenclatureFilesDict :
                     self.nomenclatureWidget.nomenclatureFilesDict[key_NomenclatureName]=listNomenclatures[0][i]
                     self.nomenclatureWidget.nomenclatureSelector.addItem(key_NomenclatureName)
-        
+
             self.nomenclatureWidget.drawNomenclature(self.nomenclatureWidget.getIndexCurrentNomenclature())
         else :
             pass
-        #print(f"line:{self.lineno()},TraiNminaTorDialog <<-- openNomenclature()")
-              
+        #print(f"line:{lineno()},TraiNminaTorDialog <<-- openNomenclature()")
+
     def openDocumentation(self):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->openDocumentation()")
-        standardPaths_list=QStandardPaths.standardLocations(QStandardPaths.AppDataLocation) 
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->openDocumentation()")
+        standardPaths_list=QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)
         documentation_url=standardPaths_list[0]+"/profiles/default/python/plugins/trainminator_3/docs/"
-      
+
         self.web = QWebView()
-        self.web.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(documentation_url+"trainStyle.css"));
+        self.web.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(documentation_url+"trainStyle.css"))
 
         self.web.load(QUrl.fromLocalFile(documentation_url+"index.html"))
         self.web.show()
-               
+
     def setBottomWidget(self, widget, widgetName):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->setBottomWidget()")
+        """
+            :param widget:
+            :param widgetName:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->setBottomWidget()")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -525,38 +598,63 @@ class TraiNminaTorDialog(QMainWindow):
         spacerItem1 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.gridLayout_2.addItem(spacerItem1, 0, 2, 1, 1)
         return widget
-                 
-          
+
     def toggleTextButton(self, pushButton, textON, textOFF):
-        #print(f"line:{self.lineno()},TraiNminaTorDialog ->toggleTextButton()")
+        """
+            :param pushButton:
+            :param textON:
+            :param textOFF:
+            :returns none:
+        """
+        #print(f"line:{lineno()},TraiNminaTorDialog ->toggleTextButton()")
         t=(lambda:textON, lambda:textOFF)[pushButton.isChecked()]()
         pushButton.setText(t)
-             
+
     def lockButton(self, button):
+        """
+            :param button:
+            :returns none:
+        """
         button.setEnabled(False)
         return button
-        
+
     def unlockButton(self, button):
+        """
+            :param button:
+            :returns none:
+        """
         button.setEnabled(True)
         return button
-        
+
     def toggleLockStateButton(self):
+        """
+            :param none:
+            :returns none:
+        """
         pass
-             
+
     def openAdditionalView(self):
-        #print(f"{self.lineno()} TraiNminaTorDialog --> openAdditionalView()") 
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> openAdditionalView()")
         self.additionnalView=TnTadditionalView(self)
         #Init Additional canvas on self
-        self.setAdditionalCanvas(self.additionnalView.getCanvas())  
-        # ActivateCanvas is the slave of Additional canvas 
-        self.getAdditionalCanvas().setSlave( self.getActiveCanvas() )     
+        self.setAdditionalCanvas(self.additionnalView.getCanvas())
+        # ActivateCanvas is the slave of Additional canvas
+        self.getAdditionalCanvas().setSlave( self.getActiveCanvas() )
         # Additional canvas is the slave of activateCanvas
         self.getActiveCanvas().setSlave( self.additionnalView.getCanvas() )
-            
+
         self.unlockButton(self.synchro_pushButton)
-                      
+
     def closeAdditionalView(self):
-        #print(f"{self.lineno()} TraiNminaTorDialog --> closeAdditionalView()") 
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> closeAdditionalView()")
         self.getActiveCanvas().unsetSlave()
         #Force synchro mode to False state
         self.getActiveCanvas().setSynchroMode()
@@ -567,57 +665,85 @@ class TraiNminaTorDialog(QMainWindow):
         self.synchro_pushButton.setChecked(False)
         self.toggleTextButton(self.synchro_pushButton, "Synchro View", "UnSynchro View")
         self.lockButton(self.synchro_pushButton)
-                   
+
     def openClose_AdditionalView(self):
-        #print(f"{self.lineno()} TraiNminaTorDialog --> openClose_AdditionalView()") 
-        if self.additionalView_pushButton.isChecked() : self.openAdditionalView()
-        else: self.closeAdditionalView()
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> openClose_AdditionalView()")
+        if self.additionalView_pushButton.isChecked():
+            self.openAdditionalView()
+        else:
+            self.closeAdditionalView()
         # Change state of button Open/Close
         self.toggleTextButton(self.additionalView_pushButton, "Open Add View", "Close Add View")
         #Starting synchro
         self.synchro_pushButton.animateClick()
-               
+
     def synchro_Views(self):
-        #print(f"{self.lineno()} TraiNminaTorDialog --> synchro_Views()")       
+        """
+            :param none:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> synchro_Views()")
         # Change state of button Open/Close
         self.toggleTextButton(self.synchro_pushButton, "Synchro View", "UnSynchro View")
-        
+
         addV=self.getAdditionnalView()
         # Force checked for toggleTextButton() method
         addV.synchro_pushButton.setChecked( not addV.synchro_pushButton.isChecked() )
         addV.toggleTextButton(addV.synchro_pushButton, "Synchro View", "UnSynchro View")
-        
+
         self.getActiveCanvas().toggleStateSynchroMode()
         self.getAdditionalCanvas().toggleStateSynchroMode()
-                        
+
     def centerAll(self):
+        """
+            :param none:
+            :returns none:
+        """
         self.getActiveCanvas().zoomToFullExtent()
 
-    def closeEvent(self, event):
-        #print(f"{self.lineno()} TraiNminaTorDialog --> closeEvent({event})")
-        try : self.additionnalView.comm.closeAdditionalView.emit()     
-        except AttributeError: pass
+    def closeEvent(self, event:QEvent):
+        """
+            :param event:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> closeEvent({event})")
+        try:
+            self.additionnalView.comm.closeAdditionalView.emit()
+        except AttributeError:
+            pass
 
-    def event(self, event: QEvent):
-        #ôprint(f"{self.lineno()} TraiNminaTorDialog --> event()")
+    def event(self, event:QEvent):
+        """
+            :param event:
+            :returns none:
+        """
+        #print(f"{lineno()} TraiNminaTorDialog --> event()")
         if isinstance(event, QKeyEvent) and (Qt.Key_0 <= event.key() <= Qt.Key_9 or event.key() == Qt.Key_Return) :
-                self.nomenclatureWidget.keyPressEvent(event)
-                return True  
+            self.nomenclatureWidget.keyPressEvent(event)
+            return True
         else:
             return QMainWindow.event(self,event)
-        
-    
+
     def disableWindowCloseButton(self):
+        """
+            :param none:
+            :returns none:
+        """
         self.setWindowFlags(self.windowFlags() # reuse initial flags
                             & ~QtCore.Qt.WindowCloseButtonHint # and unset flag
                            )
         self.show()
-        
+
     def enableWindowCloseButton(self):
+        """
+            :param none:
+            :returns none:
+        """
         self.setWindowFlags(self.windowFlags() # reuse initial flags
                             | QtCore.Qt.WindowCloseButtonHint # and set flag
                            )
         self.show()
-        
-        
-        

@@ -21,20 +21,19 @@
  *                                                                         *
  ***************************************************************************/
 """
+import os.path
+
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt.QtWidgets import QApplication
 
-
-from qgis.core import QgsProject
-from qgis.gui import *
+#from qgis.gui import *
 
 # Initialize Qt resources from file resources.py
 
 # Import the code for the dialog
 from .TraiNminaTor_dialog import TraiNminaTorDialog
-import os.path
+
 
 
 
@@ -193,7 +192,7 @@ class TraiNminaTor:
         #self.app = QApplication(li)
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True: 
+        if self.first_start == True:
             self.first_start = False
             self.dlg = TraiNminaTorDialog()
 
@@ -207,5 +206,3 @@ class TraiNminaTor:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             #pass
-            
-        

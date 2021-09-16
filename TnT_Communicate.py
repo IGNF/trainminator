@@ -25,21 +25,24 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
 class TnTcommunicate(QtCore.QObject):
-    
+    """
+    Signals class
+    """
+
     closeAdditionalView=pyqtSignal()
-    
+
     lockAssociatedButton=pyqtSignal()
     unLockAssociatedButton=pyqtSignal()
-    
+
     infoTextSignal=pyqtSignal()
-    
+
     #Slider re init
     sliderInitValue=pyqtSignal()
     sliderResetValue=pyqtSignal()
-    
+
     #Signal emit when userMode changed state
     userModeSignal=pyqtSignal()
-    
+
     enableCustomizeWindowHint=pyqtSignal()
     disableWindowCloseButtonHint=pyqtSignal()
     
