@@ -9,7 +9,9 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -22,9 +24,11 @@ Labelisation de données segmentées.
  ***************************************************************************/
 """
 import inspect
+import os.path
 
 from qgis.gui import (QgsMapCanvas, QgsVertexMarker, QgsMapTool)
 
+from PyQt5 import QtCore
 from PyQt5.QtCore    import (Qt, QEvent)
 from PyQt5.QtGui     import ( QColor, QMouseEvent )
 
@@ -33,57 +37,42 @@ def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
 
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
-
-class TnTmapCanvas( QgsMapCanvas ):
+class TnTmapCanvas(QgsMapCanvas):
     """
     Canvas handling class.
     """
 
-    def __init__(self, parent=None, name=None):
-        super(TnTmapCanvas, self).__init__(parent)
-        self.parent=parent
-        self.name=name
+    def __init__(self, parent=None, name="NoName_TnTmapCanvas"):
+        QgsMapCanvas.__init__(self, parent)
+
+        self.setObjectName(name)
+        self.setMapTool(QgsMapTool(self),True)
+
         self.slave=None
         #Synchro mode , default=False at starting
         self.synchroMode=False
-
         self.marker=None
-        self.qgsmaptool=QgsMapTool(self)
+
+        css_File=u"css/Default.css"
+        css_Path=os.path.join(os.path.dirname(__file__), css_File)
+        rc = QtCore.QFile(css_Path)
+        rc.open(QtCore.QFile.ReadOnly)
+        content = rc.readAll().data()
+        self.setStyleSheet(str(content, "utf-8"))
 
         self.setUpUi()
 
-        Focus_yellow='#FFC829'
-        self.defaultStyle= """QgsMapCanvas {
-                                        border: 1px solid grey;
-                                        border-radius: 4px;
-                                        padding:2px
-                                        }"""
-
-        self.hoverStyle= """QgsMapCanvas:focus {
-                                            border: 3px solid"""+Focus_yellow+""";
-                                            border-radius: 4px;
-                                            padding:2px
-                                        }"""
-
-        self.setStyleSheet(self.defaultStyle+self.hoverStyle)
-
     def setUpUi(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->setupUi()")
         self.setCanvasColor(Qt.white)
         self.setDefaultMarker()
 
-
     def setDefaultMarker(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->setDefaultMarker()")
         self.marker = QgsVertexMarker(self)
@@ -92,112 +81,78 @@ class TnTmapCanvas( QgsMapCanvas ):
         self.marker.setIconType(QgsVertexMarker.ICON_CROSS )
         self.marker.setPenWidth(2)
 
-    def extChange(self):
+    def extentChange(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmapCanvas->extChange()")
+        #print(f"line:{lineno()}, TnTmapCanvas->extentChange()")
         try:
-            self.getSlave().extChangeSlave( self.extent() )
+            self.slave.extentChange_Slave( self.extent() )
         except AttributeError:
             pass
 
-    def extChangeSlave(self, extent):
+    def extentChange_Slave(self, extent):
         """
-            :param extent:
-            :returns none:
+            param extent:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmapCanvas->extChangeSlave(extent:{extent})")
+        #print(f"line:{lineno()}, TnTmapCanvas->extentChange_Slave(extent:{extent})")
         self.extentsChanged.disconnect()
         self.setExtent(extent)
         self.refresh()
-        self.extentsChanged.connect(self.extChange)
+        self.extentsChanged.connect(self.extentChange)
 
     def showMousePointerMarker(self, p):
         """
         This method display the mouse pointer (marker) at <p> position
         in canvas of slave view.
-            :param p: mouse pointer position  QgsPointXY.
-            :returns none:
+            param p: mouse pointer position  QgsPointXY.
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->showMousePointerMarker(p:{p})")
 
         self.marker.setCenter(p)
         self.marker.show()
 
-    def setName(self, name="no name"):
+    def setSlave(self, mapCanvas=None):
         """
-            :param name:
-            :returns none:
+            param slave:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmapCanvas->setName({name})")
-        self.name=name
-
-    def getName(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTmapCanvas->getName()")
-        return self.name
-
-    def setSlave(self, slave=None):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTmapCanvas->setSlave({slave})")
-        self.slave=slave
+        #print(f"line:{lineno()}, TnTmapCanvas->setSlave({mapCanvas})")
+        self.slave=mapCanvas
 
     def unsetSlave(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->unsetSlave()")
         self.setSlave()
 
     def getSlave(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->getSlave()")
         return self.slave
 
-    def info(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTmapCanvas->info()")
-        print("=================================================================")
-        print(f"            self.name: {self.name}")
-        if self.slave:
-            print(f"          self.slave: {self.slave}+{self.slave.name}")
-        else :         print("           self.slave: NO SALVE+NO NAME")
-        print(f"     self.synchroMode: {self.synchroMode}")
-        print("=================================================================")
-        print("")
-
-    def setSynchroMode(self, synchroMode=False):
+    def setSynchroMode(self, synchromode=False):
         """
         This method instantiates the synchronization mode between the main and
         the additional view.
-        used : self.setSynchroMode()=synchronisation mode OFF.
+        Default synchromode OFF.
+        used : self.setSynchroMode() (synchronisation mode OFF).
 
-            :param synchroMode:set synchronisation mode ON (True) or OFF (False)
-            :returns none:
+            param synchromode:set synchronisation mode ON (True) or OFF (False)
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmapCanvas->getSynchroMode(synchroMode={synchroMode})")
-        self.synchroMode=synchroMode
+        #print(f"line:{lineno()}, TnTmapCanvas->getSynchroMode(synchromode={synchromode})")
+        self.synchroMode=synchromode
 
     def getSynchroMode(self):
         """
         This method return state of synchronization mode.
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->getSynchroMode()")
         return self.synchroMode
@@ -205,9 +160,8 @@ class TnTmapCanvas( QgsMapCanvas ):
     def toggleStateSynchroMode(self):
         """
         This method is called when the user presses the button <Synchro View>.
-        toggle state of mode synchronisation mode.
-            :param none:
-            :returns none:
+        Toggle state of mode synchronisation mode.
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->toggleStateSynchroMode()")
         if self.getSynchroMode():
@@ -219,20 +173,17 @@ class TnTmapCanvas( QgsMapCanvas ):
         """
         Activate the functionalities of the synchronization mode between the views.
         Same visible area and Same position of the mouse pointer.
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->synchroModeON()")
         self.setSynchroMode(True)
-        self.extentsChanged.connect(self.extChange)
+        self.extentsChanged.connect(self.extentChange)
         self.xyCoordinates.connect(self.getSlave().showMousePointerMarker)
 
     def synchroModeOFF(self):
         """
         Deactivate the functionalities activated by the synchroModeON() method.
-
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->synchroModeOFF()")
         self.setSynchroMode()
@@ -243,18 +194,16 @@ class TnTmapCanvas( QgsMapCanvas ):
     def syncZoom (self):
         """
         Synchronization of the zooms between the main and additional view.
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->syncZoom()")
         if self.getSynchroMode():
             self.getSlave().setTransform(self.transform(),False)
 
-
     def mouseMoveEvent(self, event:QMouseEvent):
         """
-            :param event:
-            :returns none:
+            param event:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->mouseMoveEvent(event:{event})")
         self.marker.hide()
@@ -264,33 +213,32 @@ class TnTmapCanvas( QgsMapCanvas ):
             pass
         else :
             if self.synchroMode:
-                qgspointXY =self.qgsmaptool.toMapCoordinates(event.pos())
-                self.slave.showMousePointerMarker(qgspointXY)
+                qgspointXY =self.mapTool().toMapCoordinates(event.pos())
+                self.getSlave().showMousePointerMarker(qgspointXY)
 
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
     def event(self, event: QEvent):
         """
-            :param event:
-            :returns none:
+            param event:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTmapCanvas->event(event:{event})")
         evt_Type=event.type()
         if evt_Type==QEvent.KeyPress and event.key()==Qt.Key_Space:
             #Additional view canvas does not have a toolbox, ignore error
             try:
-                self.parent.getPushButton('Show Context').keyPressEvent(event)
+                self.parent().getPushButton('Show Context').keyPressEvent(event)
             except AttributeError:
                 pass
             return True
 
-        elif evt_Type==QEvent.KeyRelease and event.key()==Qt.Key_Space :
+        if evt_Type==QEvent.KeyRelease and event.key()==Qt.Key_Space :
             #Additional view canvas does not have a toolbox, ignore error
             try:
-                self.parent.getPushButton('Show Context').keyReleaseEvent(event)
+                self.parent().getPushButton('Show Context').keyReleaseEvent(event)
             except AttributeError:
                 pass
             return True
 
-        else:
-            return QgsMapCanvas.event(self, event)
+        return QgsMapCanvas.event(self, event)

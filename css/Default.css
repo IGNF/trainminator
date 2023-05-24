@@ -1,0 +1,104 @@
+/* About QSlider graphics rendering */
+QPushButton {
+    background-color: lightgrey;
+    font-size: 10px;
+    font-style: italic;
+    font-weight: normal
+}
+
+QPushButton:pressed,
+QPushButton:checked  {
+    background-color: lightblue;
+    color: black;
+    font-style: normal;
+    font-weight: bold
+}
+
+QPushButton:disabled {
+    background-color: #E2E2E2;
+    color: #737373;
+    border-width: 1px;
+    border-color: #C7C7C7   
+}
+
+QPushButton[text="Delete all"]:checked,
+QPushButton[text="Delete current"]:checked {
+    background-color: #FFA500
+}
+
+QPushButton[text="Start"] {
+   font-style: normal;
+   font-weight: bold;
+   border-style: solid;
+   border-width: 3px;
+   border-color: #4EFB03;
+   border-radius: 2px;
+   min-height: 16px
+}
+
+QPushButton[text="Start"]:checked {
+    content: 'Stop';
+    color: black;
+    border-color: red   
+}
+
+/* About QSlider graphics rendering */
+QSlider::groove:horizontal {
+    border: 1px solid #999999;
+    height: 2px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B1B1B1, stop:1 white);
+    margin: 2px 0
+}
+
+QSlider::handle:horizontal {
+    background: #3399ff;
+    border: 1px solid #5c5c5c;
+    border-radius: 4px;
+    margin: -8px 0;
+    width: 20px
+}
+
+QSlider::sub-page:horizontal {
+    border: 1px solid #5c5c5c;
+    height: 3px;
+    background: #76BAFF;
+    margin: 2px 0
+}
+
+/* About QLabel graphics rendering */     
+QLabel {
+    background-color: lightgrey;
+    color: black;
+    font-style: normal;
+    font-weight: normal;
+    border: 1px solid grey;
+    border-radius: 4px;
+    padding: 2px
+}
+
+QLabel[objectName="slider_Label"] {
+    font-weight: bold
+}
+
+QLabel[objectName="currentNomenclature_Label"],
+QLabel[objectName="currentClass_Label"] {
+    background-color: none;
+    border: none
+}
+
+/* About QMessageBox graphics rendering */
+QMessageBox QLabel {
+    font-weight: bold
+}
+
+QgsMapCanvas {
+    border: 1px solid grey;
+    border-radius: 4px;
+    padding:2px
+}
+
+QgsMapCanvas:focus {
+    border: 3px solid #FFC829;
+    border-radius: 4px;
+    padding:2px
+}

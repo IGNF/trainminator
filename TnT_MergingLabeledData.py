@@ -9,7 +9,14 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
+
+30/03/2022 Changement dans la classe TnTnomenclatureWidget des methodes d'acces
+           aux champs attributaires.
+
+15/03/2022: Ajout de "traces" d' entree dans les méthodes.
  ***************************************************************************/
 
 /***************************************************************************
@@ -27,7 +34,7 @@ import os
 import processing
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import ( QProgressDialog, QMessageBox )
+from PyQt5.QtWidgets import (QProgressDialog, QMessageBox)
 from PyQt5.QtCore import QTimer
 
 from qgis.core import (QgsProject, QgsVectorLayer,
@@ -40,15 +47,10 @@ def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
 
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
-
 class TnTmergingLabeledData():
     """
     Class responsible for merging the different segmented layers.
     """
-
     def __init__(self, parent=None):
         self.parent=parent
         self.listTreeLayers2Keep=[]
@@ -61,12 +63,9 @@ class TnTmergingLabeledData():
 
         self.progress=None
 
-
-
     def getRootGroup(self):
         """
-            :param none:
-            :returns none:
+            returns RootGroup:
         """
         #print(f"line:{lineno()}, TnTlabelingToolsBox->getRootGroup()")
         return self.parent.getRootGroup()
@@ -74,8 +73,7 @@ class TnTmergingLabeledData():
     def getWorkGroup(self):
         """
         Return the current workgroup.
-            :param none:
-            :returns self.workGroup: the value of the attribute self.workGroup.
+            returns self.workGroup: the value of the attribute self.workGroup.
         """
         #print(f"line:{lineno()}, TnTlabelingToolsBox->getWorkGroup()")
         return self.workGroup
@@ -83,18 +81,18 @@ class TnTmergingLabeledData():
     def mergeAll(self, listTlayers):
         """
         Merge all the segmented layers present in the sorted list "listTlayers".
-            :param listTlayers: The sorted list of segmented layers.
-            :returns none:
+            param listTlayers: The sorted list of segmented layers.
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->mergeAll()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
 
         # Contourment du bug de la 3.14
         # Test de l'existence de données dans le groupe final.
         # Si oui, executer pour l'utilisateur un stop/start qui permet de liberer
-        # l'acces au shapefile finaux si ils existent. de les supprimer et de regenerer
-        # un jeu de données final
+        # l'acces au shapefile finaux si ils existent, de les supprimer et de regenerer
+        # un jeu de données final.
 
-        self.parent.getPushButton("Fill pyramid").setEnabled(False)
+        self.parent.getPushButton("Fill_Pyramid").setEnabled(False)
         returnMsgValue = 0
 
         if  QgsProject.instance().layerTreeRoot().findGroup(self.workGroupName).findLayers():
@@ -107,14 +105,14 @@ class TnTmergingLabeledData():
         else:
             self.merge(listTlayers)
 
-        self.parent.getPushButton("Fill pyramid").setEnabled(True)
+        self.parent.getPushButton("Fill_Pyramid").setEnabled(True)
 
     def merge(self, listTlayers ):
         """
-            :param none:
-            :returns none:
+            param listTlayers:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->merge()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.progress=self.showProgressDialog(self.parent)
         self.progress.setModal(True)
         self.progress.setMinimum(0)
@@ -135,10 +133,10 @@ class TnTmergingLabeledData():
 
     def reMerge(self, parent):
         """
-            :param none:
-            :returns none:
+            param parent:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->reMerge()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         parent.enterStopMode()
         parent.enterStartMode()
 
@@ -148,7 +146,8 @@ class TnTmergingLabeledData():
 
          # Suppression bestiale des fichiers presents dans le rep FINAL_DATA/<nomenclature_name>
         projectAbsolutePath=QgsProject.instance().absolutePath()
-        currentNomenclatureName=self.parent.mainWindow.nomenclatureWidget.nomenclatureSelector.currentText()
+        #currentNomenclatureName=self.parent.mainWindow.nomenclatureWidget.nomenclatureSelector.currentText()
+        currentNomenclatureName=self.getNomenclature().currentText_NomenclatureQComboBox()
         AbsolutePath_FinalData=projectAbsolutePath+"/"+self.workGroupName+"/"+currentNomenclatureName.upper()+"/*"
 
         files = glob.glob(AbsolutePath_FinalData)
@@ -161,10 +160,9 @@ class TnTmergingLabeledData():
 
     def doNothing(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->doNothing()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.progress=self.showProgressDialog(self.parent)
         self.progress.setLabelText("Nothing to do!!!.")
         self.progress.setValue(self.progress.maximum())
@@ -174,26 +172,25 @@ class TnTmergingLabeledData():
 
     def getNomenclature(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->getNomenclature()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}")
         return self.parent.mainWindow.nomenclatureWidget
 
     def simpleStop(self, timer):
         """
-            :param none:
-            :returns none:
+            param timer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->simpleStop()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         timer.stop()
 
     def stop(self, timer):
         """
-            :param none:
-            :returns none:
+            param timer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->stop()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         timer.stop()
         self.progress.close()
 
@@ -230,11 +227,16 @@ class TnTmergingLabeledData():
 
     def keepOnlyLayersLabeled(self, listTlayers):
         """
-            :param listTlayers:
-            :returns none:
+            Keep only the layers containing at least one labeled surface.
+            the layers to keep added to list "self.listTreeLayers2Keep".
+
+            param listTlayers: layers list.
+            returns none.
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->keepOnlyLayersLabeled(listTlayers:{listTlayers})")
-        fiedName=self.getNomenclature().fieldNameHeader[1]
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listTlayers:{listTlayers})")
+
+        fiedName = (self.getNomenclature().getTableAttributsName())[1]
+
         self.listTreeLayers2Keep.clear()
         self.progress.setValue(0)
         for tlayer in listTlayers:
@@ -246,16 +248,16 @@ class TnTmergingLabeledData():
 
     def duplicateData4Merge(self, vlayer):
         """
-            :param vlayer:
-            :returns none:
+            param vlayer:
+            returns none:
         """
-        #print(f"line:{lineno()}, ->TnTmergingLabeledData->duplicateData4Merge()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         transformContext = QgsProject.instance().transformContext()
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.driverName = vlayer.dataProvider().storageType()
 
         projectAbsolutePath=QgsProject.instance().absolutePath()
-        currentNomenclatureName=self.parent.mainWindow.nomenclatureWidget.nomenclatureSelector.currentText()
+        currentNomenclatureName=self.getNomenclature().currentText_NomenclatureQComboBox()
 
         finalFileName=vlayer.name()+"_Final"
         AbsolutePath_FinalData=projectAbsolutePath+"/"+self.workGroupName+"/"+currentNomenclatureName.upper()
@@ -288,12 +290,12 @@ class TnTmergingLabeledData():
 
     def showProgressDialog(self, parent):
         """
-            :param parent:
-            :returns none:
+            param parent:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->showProgressDialog()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         progress = QProgressDialog(parent)
-        progress.setWindowTitle("Fill pyramid")
+        progress.setWindowTitle("Fill Pyramid Process")
         progress.setLabelText("Processing in progress....")
         progress.setCancelButtonText(None)
         progress.setMinimumDuration(5)
@@ -304,10 +306,10 @@ class TnTmergingLabeledData():
 
     def showMsgBox(self):
         """
-            :param none:
-            :returns none:
+            param none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData->showMsgBox()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         messageBox = QMessageBox()
         messageBox.setIcon(QMessageBox.Warning)
         messageBox.setWindowTitle("TrainMinaTor message")
@@ -318,10 +320,10 @@ class TnTmergingLabeledData():
 
     def mergingLevels(self):
         """
-            :param none:
-            :returns none:
+            param none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData6->mergingLevels()"
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()"
         tLayerBase=self.listTreeLayers2Keep.pop(0)
         layerBase=tLayerBase.layer()
 
@@ -331,13 +333,13 @@ class TnTmergingLabeledData():
         caps_vlayer_FinalData=prov_vlayer_FinalData.capabilities()
         prov_vlayer_FinalData.createSpatialIndex()
 
-        nomenclature=self.getNomenclature()
+        fieldCode=(self.getNomenclature().getTableAttributsName())[0]
+        fieldLabel=(self.getNomenclature().getTableAttributsName())[1]
+        fieldColor=(self.getNomenclature().getTableAttributsName())[2]
 
-        fieldCodeName=nomenclature.fieldNameHeader[0]
-
-        idx_code       = prov_vlayer_FinalData.fieldNameIndex(fieldCodeName)
-        idx_label      = prov_vlayer_FinalData.fieldNameIndex(nomenclature.fieldNameHeader[1])
-        idx_labelColor = prov_vlayer_FinalData.fieldNameIndex(nomenclature.fieldNameHeader[2])
+        idx_code       = prov_vlayer_FinalData.fieldNameIndex(fieldCode)
+        idx_label      = prov_vlayer_FinalData.fieldNameIndex(fieldLabel)
+        idx_labelColor = prov_vlayer_FinalData.fieldNameIndex(fieldColor)
 
         vlayer_FinalData.startEditing()
 
@@ -345,13 +347,12 @@ class TnTmergingLabeledData():
         for tLayer2Merge in self.listTreeLayers2Keep :
 
             layer2Merge=tLayer2Merge.layer()
-
             layer2Merge.dataProvider().createSpatialIndex()
             self.getListOfAttValues(layer2Merge)
 
             for codeValue in self.listOfAttValues:
                 param_sel = { 'INPUT':layer2Merge,
-                              'FIELD':fieldCodeName,
+                              'FIELD':fieldCode,
                               'OPERATOR':0,  #0  =
                               'VALUE':codeValue,
                               'METHOD':0
@@ -360,7 +361,7 @@ class TnTmergingLabeledData():
                 self.progress.setValue(self.progress.value()+1)
 
                 param_sel1 = {'INPUT':vlayer_FinalData,
-                              'FIELD':fieldCodeName,
+                              'FIELD':fieldCode,
                               'OPERATOR':8,    #8= 'is null'
                               'METHOD':0
                              }
@@ -393,32 +394,39 @@ class TnTmergingLabeledData():
 
     def getListOfAttValues(self, vlayer):
         """
-            :param vlayer:
-            :returns none:
+            param vlayer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData6->getListOfAttValues()"
-        nomenclature=self.getNomenclature()
+        print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+
+        fieldCode=(self.getNomenclature().getTableAttributsName())[0]
+        fieldLabel=(self.getNomenclature().getTableAttributsName())[1]
+        fieldColor=(self.getNomenclature().getTableAttributsName())[2]
 
         request = QgsFeatureRequest()
-        reqtext='"{}" IS NOT NULL'.format(nomenclature.fieldNameHeader[1])
+
+        reqtext='"{}" IS NOT NULL'.format(fieldLabel)
         request = request.setFilterExpression('{}'.format(reqtext))
 
         selected_features = vlayer.getFeatures(request)
-        idx_code  = vlayer.dataProvider().fieldNameIndex(nomenclature.fieldNameHeader[0])
-        idx_label = vlayer.dataProvider().fieldNameIndex(nomenclature.fieldNameHeader[1])
-        idx_labelColor = vlayer.dataProvider().fieldNameIndex(nomenclature.fieldNameHeader[2])
+
+        idx_code = vlayer.dataProvider().fieldNameIndex(fieldCode)
+        idx_label = vlayer.dataProvider().fieldNameIndex(fieldLabel)
+        idx_labelColor = vlayer.dataProvider().fieldNameIndex(fieldColor)
 
         for feature in selected_features:
-            self.listOfAttValues[ feature.attributes()[idx_code] ] = [ feature.attributes()[idx_label], feature.attributes()[idx_labelColor] ]
+            self.listOfAttValues[ feature.attributes()[idx_code] ] = [
+                feature.attributes()[idx_label],
+                feature.attributes()[idx_labelColor] ]
 
         vlayer.removeSelection()
 
     def selectedByAtt(self, vlayer, fieldName, operatorId):
         """
-            :param vlayer:
-            :returns none:
+            param vlayer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTmergingLabeledData: ->selectedByAtt()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         #INPUT
         #FIELD
         #OPERATOR
@@ -438,6 +446,7 @@ class TnTmergingLabeledData():
         # 9 — is not null
         # 10 — does not contain
         #*************************
+
         operator={'=':0,
                   '≠':1,
                   '>':2,

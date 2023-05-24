@@ -10,7 +10,9 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -28,9 +30,7 @@ from PyQt5 import QtCore, QtWidgets
 
 
 class Ui_TraiNminatorDialogBase(object):
-    
-    print("passe constructeur Ui_TraiNminatorDialogBase (file:Ui_TraiNminator_Dialog_Base.py)")
-    
+
     def setupUi(self, TraiNminatorDialogBase):
         """
         Parameters

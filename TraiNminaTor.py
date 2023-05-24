@@ -9,7 +9,9 @@
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -23,19 +25,17 @@
 """
 import os.path
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from PyQt5 import QtCore
+
+from PyQt5.QtCore import QSettings, QTranslator, QCoreApplication
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction
 
 #from qgis.gui import *
 
 # Initialize Qt resources from file resources.py
-
 # Import the code for the dialog
 from .TraiNminaTor_dialog import TraiNminaTorDialog
-
-
-
 
 class TraiNminaTor:
     """QGIS Plugin Implementation."""
@@ -52,6 +52,7 @@ class TraiNminaTor:
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
+
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -78,10 +79,10 @@ class TraiNminaTor:
 
         We implement this ourselves since we do not inherit QObject.
 
-        :param message: String for translation.
+        param message: String for translation.
         :type message: str, QString
 
-        :returns: Translated version of message.
+        returns: Translated version of message.
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
@@ -101,39 +102,39 @@ class TraiNminaTor:
         parent=None):
         """Add a toolbar icon to the toolbar.
 
-        :param icon_path: Path to the icon for this action. Can be a resource
+        param icon_path: Path to the icon for this action. Can be a resource
             path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
         :type icon_path: str
 
-        :param text: Text that should be shown in menu items for this action.
+        param  text: Text that should be shown in menu items for this action.
         :type text: str
 
-        :param callback: Function to be called when the action is triggered.
+        param callback: Function to be called when the action is triggered.
         :type callback: function
 
-        :param enabled_flag: A flag indicating if the action should be enabled
+        param enabled_flag: A flag indicating if the action should be enabled
             by default. Defaults to True.
         :type enabled_flag: bool
 
-        :param add_to_menu: Flag indicating whether the action should also
+        param add_to_menu: Flag indicating whether the action should also
             be added to the menu. Defaults to True.
-        :type add_to_menu: bool
+        type add_to_menu: bool
 
-        :param add_to_toolbar: Flag indicating whether the action should also
+        param add_to_toolbar: Flag indicating whether the action should also
             be added to the toolbar. Defaults to True.
         :type add_to_toolbar: bool
 
-        :param status_tip: Optional text to show in a popup when mouse pointer
+        param status_tip: Optional text to show in a popup when mouse pointer
             hovers over the action.
         :type status_tip: str
 
-        :param parent: Parent widget for the new action. Defaults None.
+        param parent: Parent widget for the new action. Defaults None.
         :type parent: QWidget
 
-        :param whats_this: Optional text to show in the status bar when the
+        param whats_this: Optional text to show in the status bar when the
             mouse pointer hovers over the action.
 
-        :returns: The action that was created. Note that the action is also
+        returns: The action that was created. Note that the action is also
             added to self.actions list.
         :rtype: QAction
         """
@@ -164,8 +165,7 @@ class TraiNminaTor:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/TraiNminaTor/icon.png'
+        icon_path = ':/plugins/trainminator_3/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'TraiNminaTor_3'),
@@ -174,7 +174,6 @@ class TraiNminaTor:
 
         # will be set False in run()
         self.first_start = True
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -187,20 +186,28 @@ class TraiNminaTor:
 
     def run(self):
         """Run method that performs all the real work"""
-        #self.app = QApplication(sys.argv)
-        #li=["start"]
-        #self.app = QApplication(li)
+        # self.app = QApplication(sys.argv)
+        # li=["start"]
+        # self.app = QApplication(li)
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
+        if self.first_start :
             self.first_start = False
             self.dlg = TraiNminaTorDialog()
+
+            # print(f"self.plugin_dir ={self.plugin_dir }")
+            # cssFile="C:/Users/YLe-Borgne/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/trainminator_3/css/default.css"
+            # rc = QtCore.QFile(cssFile)
+            # rc.open(QtCore.QFile.ReadOnly)
+            # content = rc.readAll().data()
+            # self.dlg.setStyleSheet(str(content, "utf-8"))
+
 
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
-        #result = self.dlg.exec_()
-        #result = self.app.exec_()
+        # result = self.dlg.exec_()
+        # result = self.app.exec_()
         # See if OK was pressed
         #if result:
             # Do something useful here - delete the line containing pass and

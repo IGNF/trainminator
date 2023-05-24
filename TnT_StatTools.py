@@ -9,7 +9,9 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,11 +27,10 @@ import inspect
 
 from datetime import datetime
 
-from PyQt5.QtCore    import Qt
 from PyQt5.QtWidgets import ( QMainWindow, QVBoxLayout, QHBoxLayout,
                               QSizePolicy ,QGroupBox, QSpacerItem,
                               QPushButton, QWidget, QComboBox,
-                              QLabel, QFileDialog )
+                              QLabel, QFileDialog)
 
 from qgis.core import (QgsProject,QgsFeatureRequest,QgsExpression)
 
@@ -43,9 +44,6 @@ def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
 
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
 
 class TnTMplCanvas(FigureCanvasQTAgg):
     """
@@ -54,12 +52,12 @@ class TnTMplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-        super(TnTMplCanvas, self).__init__(fig)
+        FigureCanvasQTAgg.__init__(self, fig)
 
     def generateChartTimeStamp(self, typeChart):
         """
-            :param typeChart:
-            :returns none:
+            param typeChart:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTMplCanvas->generateChartTimeStamp(typeChart:{typeChart})")
         result = datetime.now().strftime('This '+typeChart+' was generated on %Y-%m-%d at %H:%M')
@@ -67,8 +65,8 @@ class TnTMplCanvas(FigureCanvasQTAgg):
 
     def setTitle(self, title):
         """
-            :param title:
-            :returns none:
+            param title:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTMplCanvas->setTitle(titleLable:{title})")
         self.axes.set_title(label=title,
@@ -78,8 +76,8 @@ class TnTMplCanvas(FigureCanvasQTAgg):
 
     def setFooter(self,typeChart):
         """
-            :param typeChart:
-            :returns none:
+            param typeChart:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTMplCanvas->setFooter(typeChart:{typeChart})")
         xlabel=self.generateChartTimeStamp(typeChart)
@@ -89,10 +87,10 @@ class TnTMplCanvas(FigureCanvasQTAgg):
 
     def drawBarChart(self, labels , sizes, colors):
         """
-            :param  labels:
-            :param sizes:
-            :param  colors:
-            :returns none:
+            param  labels:
+            param sizes:
+            param  colors:
+            returns none:
         """
        # print(f"line:{self.lineno()}, TnTMplCanvas->drawBarChart()")
 
@@ -111,16 +109,15 @@ class TnTMplCanvas(FigureCanvasQTAgg):
 
     def drawPieChart(self,  labels , sizes, colors, explode, nomenclatureName):
         """
-            :param none:
-            :param labels:
-            :param sizes:
-            :param colors:
-            :param explode:
-            :param nomenclatureName:
-            :returns none:
+            param labels:
+            param sizes:
+            param colors:
+            param explode:
+            param nomenclatureName:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTMplCanvas->drawPieChart()")
-        wedges,texts=self.axes.pie(sizes,
+        wedges_texts=self.axes.pie(sizes,
                                    explode=explode,
                                    labels=labels,
                                    colors=colors,
@@ -128,7 +125,7 @@ class TnTMplCanvas(FigureCanvasQTAgg):
                                    startangle=157.5,
                                    textprops={'fontsize':8})
 
-        self.axes.legend(wedges,
+        self.axes.legend(wedges_texts[0],
                          sizes,
                          title="Nomenclature: "+nomenclatureName+"\nOccupancy rate (%)",
                          title_fontsize=8,
@@ -155,26 +152,26 @@ class TnTstatTools(QMainWindow):
         self.workGroup=self.getRootGroup().findGroup(self.workGroupName)
 
         self.dictFinalLayers={}
-        self.dictClasses={}
+        self.dict4Chart={}
 
         self.setUpUi()
         self.init()
 
     def getRootGroup(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->getRootGroup()")
         return self.windowParent.getRootGroup()
 
     def init(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->init()")
-        self.dumpIntoDict(self.windowParent.nomenclatureWidget.nomenclatureTree, self.dictClasses)
+
+        self.dict4Chart=self.windowParent.nomenclatureWidget.getDict4Chart().copy()
+
         self.getLayers()
 
         list_ComboBox=self.centralwidget.findChildren(QComboBox)
@@ -184,8 +181,7 @@ class TnTstatTools(QMainWindow):
 
     def setUpUi(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->setUpUi()")
         self.resize(500, 750)
@@ -253,8 +249,7 @@ class TnTstatTools(QMainWindow):
 
     def getLayers(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->getLayers()")
         group=QgsProject.instance().layerTreeRoot().findGroup(self.workGroupName)
@@ -275,24 +270,9 @@ class TnTstatTools(QMainWindow):
                 self.dictFinalLayers[tLayerName]=tLayer
                 list_ComboBox[1].addItem(tLayerName)
 
-    def dumpIntoDict(self, treeWidget, dictClasses):
-        """
-            :param treeWidget:
-            :param dictClasses:
-            :returns none:
-        """
-        #print(f"line:{self.lineno()}, TnTstatTools->dumpIntoDict(treeWidget:{treeWidget},dictClasses:{dictClasses} )")
-        nbColumns=treeWidget.headerItem().columnCount()
-        items = treeWidget.findItems( "*", Qt.MatchWrap | Qt.MatchWildcard )
-        for item in items :
-            dictClasses[item.text(0)]=[]
-            for i in range(nbColumns-1):
-                dictClasses[item.text(0)].append(item.text(i+1))
-
     def generateDemoDataSet(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->generateDemoDataSet()")
         labels=['class1', 'class2', 'Class3', 'EXPLODE']
@@ -303,10 +283,10 @@ class TnTstatTools(QMainWindow):
 
     def generateDataSet(self, vlayer, fieldName, dictItems):
         """
-            :param vlayer:
-            :param fieldName:
-            :param dictItems:
-            :returns none:
+            param vlayer:
+            param fieldName:
+            param dictItems:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->generateDataSet(vlayer:{vlayer},fieldName:{fieldName},dictItems:{dictItems})")
         Safety_orange='#FF5A00'
@@ -354,8 +334,8 @@ class TnTstatTools(QMainWindow):
 
     def generateChart(self, chartType):
         """
-            :param chartType:
-            :returns none:
+            param chartType:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->generateChart(chartType:{chartType})")
 
@@ -367,20 +347,17 @@ class TnTstatTools(QMainWindow):
         except KeyError:
             pass
 
-        titleLable="Project: "+QgsProject.instance().baseName()
-        nomenclatureName=self.windowParent.nomenclatureWidget.getCurrentNomenclatureName()
+        titleLabel="Project: "+QgsProject.instance().baseName()
+        nomenclatureName=self.windowParent.nomenclatureWidget.currentText_NomenclatureQComboBox()
 
         self.chart.figure.clear()
         self.chart.axes = self.chart.figure.add_subplot(111)
 
         if vlayer :
-            self.chart.setTitle(titleLable)
+            self.chart.setTitle(titleLabel)
             self.labels, self.sizes, self.colors, self.explode=self.generateDataSet(vlayer.layer(),
                                                                                     "code",
-                                                                                    self.dictClasses)
-            titleLable="Project: "+QgsProject.instance().baseName()
-            nomenclatureName=self.windowParent.nomenclatureWidget.getCurrentNomenclatureName()
-
+                                                                                    self.dict4Chart)
         else :
             self.chart.setTitle('demo')
             self.labels, self.sizes, self.colors, self.explode= self.generateDemoDataSet()
@@ -396,8 +373,7 @@ class TnTstatTools(QMainWindow):
     def exportAsImage(self):
         """
         Executed when the user presses the "Export As" button.
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{self.lineno()}, TnTstatTools->exportAsImage()")
         where=QgsProject.instance().absolutePath()

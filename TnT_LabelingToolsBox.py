@@ -9,7 +9,12 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
+
+  15/03/2022: Ajout de "traces" d' entree dans les méthodes.
+
  ***************************************************************************/
 
 /***************************************************************************
@@ -24,7 +29,7 @@ Labelisation de données segmentées.
 
 import inspect
 
-from qgis.gui  import  QgsLayerTreeMapCanvasBridge
+from qgis.gui  import (QgsLayerTreeMapCanvasBridge, QgsMapTool)
 from qgis.core import (QgsProject, QgsLayerTreeGroup)
 from qgis.utils import iface
 
@@ -34,94 +39,39 @@ from PyQt5.QtGui     import (QKeySequence)
 from PyQt5.QtWidgets import (QSizePolicy, QWidget, QPushButton,
                              QLabel, QSlider, QSpacerItem,
                              QVBoxLayout, QHBoxLayout, QGroupBox,
-                             QShortcut, QMainWindow)
+                             QShortcut, QMainWindow, QMessageBox)
 
 from .TnT_ProjectDataManager import TnTprojectDataManager
 from .TnT_MergingLabeledData import TnTmergingLabeledData
 from .TnT_CaptureManager     import TnTmapToolEmitPoint_V2, TnTmapToolEmitPline_V2, TnTmapToolEmitPolygon_V2
-from .TnT_Communicate        import TnTcommunicate
 from .TnT_MapCanvas          import TnTmapCanvas
 
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
 
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
-
 class TnTlabelingToolsBox(QGroupBox):
     """class dedicated to data labeling."""
-    def __init__(self,  mainWindow:QMainWindow, widgetParent:QWidget ):
-        super(TnTlabelingToolsBox, self).__init__(widgetParent)
+    def __init__(self,  mainWindow:QMainWindow, parent:QWidget ):
+        QGroupBox.__init__(self, parent)
 
         #self.widgetParent=widgetParent
         self.mainWindow=mainWindow
         self.canvas=mainWindow.getCanvas()
         self.mapTool=None
-        #self.layout = None
-        self.comm=TnTcommunicate()
+        # self.layout = None
+        self.comm=self.mainWindow.comm
 
-        self.labelNomenclatureValue=None
         self.codeSelectedValue=None
         self.labelSelectedValue=None
-
         self.labelColorSelected=None
 
         self.layerTreeMapCanvasBridge=None
 
-        #Initial state of flags set in setEnabledGroupBox
-        self.labelingMode=False
-        self.deleteAllMode=False
+        self.save_start_button_state=False
 
         self.flagShow=False
 
-        self.defautStyle_Button= """QPushButton{
-                                               font-size:10px;
-                                               font-style:italic;
-                                               font-weight:normal;
-                                               background-color:lightgrey;
-                                               }"""
-
-        self.pressedStyle_Button="""QPushButton:pressed {
-                                                        font-style:normal;
-                                                        font-weight:bold;
-                                                        color:black;
-                                                        background-color:lightblue;
-                                                        }"""
-
-        self.checkedStyle_Button="""QPushButton:checked {
-                                                        font-style:normal;
-                                                        font-weight:bold;
-                                                        color:black;
-                                                        background-color:lightblue;
-                                                        }"""
-
-        self.checkedWarningStyle_Button="""QPushButton:checked {
-                                                        font-style:normal;
-                                                        font-weight:bold;
-                                                        color:black;
-                                                        background-color:#FFA500;
-                                                        }"""
-
-        self.defautStyle_ButtonRed= """QPushButton{
-                                               font-size:10px;
-                                               font-style:normal;
-                                               font-weight:bold;
-                                               border-style:solid;
-                                               border-width:3px;
-                                               border-color:#4EFB03;
-                                               border-radius:4px;
-                                               background-color:lightgrey ;
-                                               min-height: 16px;
-                                               }"""
-
-        self.checkedStyle_ButtonRed="""QPushButton:checked {
-                                                        content:'Stop';
-                                                        color:black;
-                                                        border-width:3px;
-                                                        border-color:red;
-                                                        }"""
         self.initialDisplayState={}
 
         #Graphics elements
@@ -137,203 +87,171 @@ class TnTlabelingToolsBox(QGroupBox):
         #List of ShortCut object
         self.listShortCuts=[]
 
-        self.setupUi2("LABELING")
+        self.setupUi("LABELING")
 
         self.projectDataManager=TnTprojectDataManager(self)
         self.projectDataManager.init()
 
     def clear(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->clear()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.getGroupBox("Project").setEnabled(False)
 
     def startControlTool(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->startControlTool()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         target_groupName=self.projectDataManager.mandatoryGroups[3]
-        tLayer=self.getRootGroup().findGroup(target_groupName).findLayers()[0]
-        self.projectDataManager.addTreeLayerTreeControl(target_groupName,tLayer )
+        try :
+            tLayer=self.getRootGroup().findGroup(target_groupName).findLayers()[0]
+            self.projectDataManager.addTreeLayerTreeControl(target_groupName, tLayer)
+        except IndexError :
+            msg="You must \"Start\" labeling mode and generate finals data set (press \"Fill Pyramid\" button) before using this \"Control tool\".\n"
+            self.showMsgBox(msg, QMessageBox.Warning)
 
     def getListLabeledLayers(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getListLabeledLayers()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         tmp=self.projectDataManager.getListLabeledLayers().copy()
         tmp.reverse()
         return tmp
 
     def getListLabeledLayers4Merging(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getListLabeledLayers4Merging()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.projectDataManager.getListLabeledLayers().copy()
 
     def setMainWindow(self, mainWindow):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setMainWindow()")
+        # print(f"line:{lineno()},TnTlabelingToolsBox->setMainWindow()")
         self.mainWindow=mainWindow
 
     def getMainWindow(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getMainWindow()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.mainWindow
 
     def setActiveCanvas(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setActiveCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.getMainWindow().setActiveCanvas(self.getCanvas())
 
     def getActiveCanvas(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getActiveCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.getMainWindow().getActiveCanvas()
 
     def unsetActiveCanvas(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->unsetActiveCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.getMainWindow().unsetActiveCanvas()
 
     def getAdditionalCanvas(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getAdditionalCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.mainWindow.getAdditionalCanvas()
-
-    def setMapTool(self, mapTool=None):
-        """
-            :param mapTool:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setMapTool()")
-        self.mapTool=mapTool
-
-    def getMapTool(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getMapTool()")
-        return self.mapTool
 
     def getRootGroup(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getRootGroup()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.mainWindow.getRootGroup()
 
     def toggleTextButton(self, pushButton, textON, textOFF):
         """
-            :param pushButton:
-            :param textON:
-            :param textOFF:
-            :returns none:
+            param pushButton:
+            param textON:
+            param textOFF:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->toggleTextButton()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         t=(lambda:textON, lambda:textOFF)[pushButton.isChecked()]()
         pushButton.setText(t)
 
-    def setLabelingMode(self, modeValue):
-        """
-            :param modeValue:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setLabelingMode()")
-        self.labelingMode=modeValue
-
-    def getLabelingMode(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getLabelingMode()")
-        return self.labelingMode
-
-    def setDeleteAllMode(self, modeValue):
-        """
-            :param modeValue:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setDeleteAllMode()")
-        self.deleteAllMode=modeValue
-
-    def getDeleteAllMode(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getDeleteAllMode()")
-        return self.deleteAllMode
-
     def setCanvas(self, canvas):
         """
-            :param canvas:
-            :returns none:
+            param canvas:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.canvas=canvas
 
     def getCanvas(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.canvas
 
     #About slider
     def setSlider(self, slider):
         """
-            :param slider:
-            :returns none:
+            param slider:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->setSlider()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         self.slider=slider
 
     def getSlider(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()},TnTlabelingToolsBox ->getSlider()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return self.slider
 
-    def setupUi2(self, title, contentsMargins=QMargins(5,5,5,5), spacing=10 ):
+    def showMsgBox(self, text, icon=QMessageBox.Information):
         """
-            :param title:
-            :param contentsMargins:
-            :param spacing:
-            :returns none:
+        Contruct and show a new message box
+            param text: message text.
+            param icon: This argument holds the message box icon, defaut value QMessageBox.Information.
+                         QMessageBox.NoIcon, the message box does not have any icon.
+                         QMessageBox.Question, an icon indicating that the message is asking a question.
+                         QMessageBox.Information, an icon indicating that the message is nothing out of the ordinary.
+                         QMessageBox.Warning, an icon indicating that the message is a warning, but can be dealt with.
+                         QMessageBox.Critical, an icon indicating that the message represents a critical problem.
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setupUi2()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        messageBox = QMessageBox()
+        messageBox.setIcon(icon)
+        messageBox.setWindowTitle("TrainMinaTor message")
+        messageBox.setText(text)
+        messageBox.setStandardButtons(QMessageBox.Ok)
+        #messageBox.setStyleSheet(self.QMessageBoxCSS)
+        messageBox.exec()
+
+    def setupUi(self, title, contentsMargins=QMargins(5,5,5,5), spacing=10 ):
+        """
+            param title:
+            param contentsMargins:
+            param spacing:
+            returns none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.setTitle(title)
         self.setAccessibleName(title)
         self.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -351,7 +269,7 @@ class TnTlabelingToolsBox(QGroupBox):
         sizePolicy.setVerticalStretch(0)
 
         #Add slider and co
-        sliderBlock=self.initSliderBlock(self.setupHWidget())
+        sliderBlock=self.initSliderGroup(self.setupHWidget())
         sliderBlock.setSizePolicy(sizePolicy)
         leftSideWidget_layout.addWidget(sliderBlock)
 
@@ -359,14 +277,14 @@ class TnTlabelingToolsBox(QGroupBox):
         self.comm.unLockAssociatedButton.connect(lambda:(self.slider.setEnabled(True)))
 
         #Add capture info (current nomenclature, current class etc...)
-        captureInfoBlock=self.initCaptureInfoBlock(self.setupHWidget())
-        captureInfoBlock.setSizePolicy(sizePolicy)
-        leftSideWidget_layout.addWidget(captureInfoBlock)
+        captureInfoGroup=self.initCaptureInfoGroup(self.setupHWidget())
+        captureInfoGroup.setSizePolicy(sizePolicy)
+        leftSideWidget_layout.addWidget(captureInfoGroup)
 
         #Create Canvas and add it
         canvasName="Canvas_"+self.title()
         self.canvas = TnTmapCanvas(self, canvasName)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        # sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         leftSideWidget_layout.addWidget(self.canvas)
 
         layout.addWidget(leftSideWidget)
@@ -374,17 +292,19 @@ class TnTlabelingToolsBox(QGroupBox):
         rightSideWidget=self.setupVWidget()
         rightSideWidget_layout=rightSideWidget.layout()
 
-        self.initToolsCaptureBlock(rightSideWidget_layout)
+        self.initToolsCaptureGroup(rightSideWidget_layout)
 
         layout.addWidget(rightSideWidget)
 
     def setupVWidget(self, contentsMargins=QMargins(0,0,0,0) , spacing=10):
         """
-            :param contentsMargins:
-            :param spacing:
-            :returns none:
+            param contentsMargins:
+            param spacing:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->initSliderBlock()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         wd = QWidget(self)
         layout = QVBoxLayout(wd)
         layout.setContentsMargins(contentsMargins)
@@ -393,23 +313,27 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def setupHWidget(self, contentsMargins=QMargins(0,0,0,0) , spacing=10):
         """
-            :param contentsMargins:
-            :param spacing:
-            :returns none:
+            param contentsMargins:
+            param spacing:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->initSliderBlock()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         wd = QWidget(self)
         layout = QHBoxLayout(wd)
         layout.setContentsMargins(contentsMargins)
         layout.setSpacing(spacing)
         return wd
 
-    def initSliderBlock(self, hWidget):
+    def initSliderGroup(self, hWidget):
         """
-            :param hWidget:
-            :returns none:
+            param hWidget:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->initSliderBlock()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.setSlider( QSlider( Qt.Horizontal, hWidget) )
 
         slider=self.getSlider()
@@ -420,18 +344,8 @@ class TnTlabelingToolsBox(QGroupBox):
         slider.setPageStep(1)
         slider.setSingleStep(1)
 
-        styleSheet_labelOfSlider="""QLabel { border: 1px solid grey;
-                                             background-color:lightgrey ;
-                                             border-radius: 4px;
-                                             padding: 2px;
-                                             font-style:normal;
-                                             font-weight:bold;
-                                             color:black;
-                                            }"""
-
         labelOfSlider = QLabel(hWidget)
-        labelOfSlider.setStyleSheet(styleSheet_labelOfSlider)
-
+        labelOfSlider.setObjectName("slider_Label")
         text="NO LEVEL"
         labelOfSlider.setText(text)
 
@@ -439,7 +353,6 @@ class TnTlabelingToolsBox(QGroupBox):
         hWidget.layout().addWidget(self.getSlider())
 
         self.initSliderShortcut()
-        #self.getSlider().valueChanged.connect(lambda:(labelOfSlider.setText("LEVEL "+ str(self.getSlider().value()))))
         self.getSlider().valueChanged.connect(lambda:(labelOfSlider.setText(self.listLabeledLayers[self.getSlider().value()-1].layer().name())))
         self.getSlider().valueChanged.connect(lambda:(self.activateSegmentLevel(int(self.getSlider().value()))))
 
@@ -450,103 +363,109 @@ class TnTlabelingToolsBox(QGroupBox):
 
         return hWidget
 
-    def initCaptureInfoBlock(self, hWidget):
+    def initCaptureInfoGroup(self, hWidget):
         """
-            :param hWidget:
-            :returns none:
+            param hWidget:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->initCaptureInfoBlock()")
-
-        defautStyle_QLabel= """QLabel{font-style:normal; font-weight:bold;}"""
-        defautStyle1_QLabel="""QLabel{font-style:normal;
-                                      border-radius:2px;
-                                      border-style:solid;
-                                      border-width:1px;
-                                      border-color:#BBB9B9;}"""
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         layout=hWidget.layout()
 
-        labelNomenclature = QLabel(hWidget)
-        labelNomenclature.setText("CURRENT NOMENCLATURE: ")
-        labelNomenclature.setStyleSheet(defautStyle_QLabel)
-        layout.addWidget(labelNomenclature)
+        label = QLabel(hWidget)
+        label.setText("CURRENT NOMENCLATURE:")
+        label.setObjectName("currentNomenclature_Label")
+        #label.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(label)
 
-        self.labelNomenclatureValue = QLabel(hWidget)
-        self.labelNomenclatureValue.setText("No nomenclature")
-        self.labelNomenclatureValue.setStyleSheet(defautStyle1_QLabel)
-        layout.addWidget(self.labelNomenclatureValue)
+        labelNomenclatureValue = QLabel(hWidget)
+        labelNomenclatureValue.setText("NO NOMENCLATURE")
+        #labelNomenclatureValue.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(labelNomenclatureValue)
 
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum )
         layout.addItem(spacerItem)
 
-        labelSelected = QLabel(hWidget)
+        label = QLabel(hWidget)
+        label.setText("CURRENT CLASS:")
+        label.setObjectName("currentClass_Label")
+        #label.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(label)
 
-        labelSelected.setText("CURRENT CLASS: ")
-        labelSelected.setStyleSheet(defautStyle_QLabel)
-        layout.addWidget(labelSelected)
+        codeSelectedValue = QLabel(hWidget)
+        codeSelectedValue.setText("No code")
+        #codeSelectedValue.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(codeSelectedValue)
 
-        #label.setSizePolicy(sizePolicy)
-        self.codeSelectedValue = QLabel(hWidget)
-        self.codeSelectedValue.setText("No code")
-        self.codeSelectedValue.setStyleSheet(defautStyle1_QLabel)
-        layout.addWidget(self.codeSelectedValue)
+        labelSelectedValue = QLabel(hWidget)
+        labelSelectedValue.setText("No class")
+        #labelSelectedValue.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(labelSelectedValue)
 
-        self.labelSelectedValue = QLabel(hWidget)
-        self.labelSelectedValue.setText("No class")
-        self.labelSelectedValue.setStyleSheet(defautStyle1_QLabel)
-        layout.addWidget(self.labelSelectedValue)
+        labelColorSelected = QLabel(hWidget)
+        labelColorSelected.setText("#000000")
+        #labelColorSelected.setStyleSheet(self.QLabelCSS)
+        layout.addWidget(labelColorSelected)
 
-        self.labelColorSelected = QLabel(hWidget)
-        self.labelColorSelected.setText("#000000")
-        self.labelColorSelected.setStyleSheet(defautStyle1_QLabel)
-        layout.addWidget(self.labelColorSelected)
+        self.comm.updateCurrentNomenclatureInfo.connect(lambda name:
+                                                        self.currentNomenclatureInfoChanged(name,
+                                                                                            labelNomenclatureValue)
+                                                        )
+        self.comm.updateCurrentClassInfo.connect(lambda rowClassSelected:
+                                                 self.currentClassInfoChanged(rowClassSelected,
+                                                                              [codeSelectedValue,labelSelectedValue,labelColorSelected])
+                                                 )
 
         return hWidget
 
-    def initToolsCaptureBlock(self, layoutParent):
+    def initToolsCaptureGroup(self, layoutParent):
         """
-            :param layoutParent:
-            :returns none:
+            param layoutParent:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->initToolsCaptureBlock()")
-        styleSheet1=self.defautStyle_Button+self.pressedStyle_Button
-        styleSheet2=self.defautStyle_Button+self.checkedStyle_Button
-        styleSheet3=self.defautStyle_Button+self.checkedWarningStyle_Button
-        styleSheetRed=self.defautStyle_ButtonRed+self.checkedStyle_ButtonRed
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         #====================================================
         #Begin Project GROUP
         groupBoxProj=self.setupGroup("Project")
         pushButton= self.setupButton(groupBoxProj,
-    		                          "Start",
-    		                          "Start/stop labeling",
-    		                          "Start/stop labeling ",
-    		                          styleSheetRed,
+                                      "Start",
+                                      "Start/stop labeling",
+                                      "Start/stop labeling ",
                                       None,
                                       True)
+        pushButton.setFocusPolicy(Qt.NoFocus)
         self.setInitialState(pushButton, True, False)
 
         pushButton.clicked.connect(self.labelingData)
+        self.comm.lockAssociatedButton.connect(lambda: (pushButton.setEnabled(False)))
+        self.comm.unLockAssociatedButton.connect(lambda: (pushButton.setEnabled(True)))
+
         groupBoxProj.layout().addWidget(pushButton)
 
         pushButton_pyramid=self.setupButton(groupBoxProj,
-    		                          "Fill pyramid",
-    		                          "Finish labeling and merge pyramid layers ",
-    		                          "Finish labeling and merge pyramid layers ",
-    		                          styleSheet1,
+                                      "Fill Pyramid",
+                                      "Finish labeling and merge pyramid layers ",
+                                      "Finish labeling and merge pyramid layers ",
                                       None,
                                       False)
 
         self.setInitialState(pushButton_pyramid, False, False)
+
         pushButton_pyramid.clicked.connect(self.enterFinishMode)
+        self.comm.lockAssociatedButton.connect(lambda: (pushButton_pyramid.setEnabled(False)))
+        self.comm.unLockAssociatedButton.connect(lambda: (pushButton_pyramid.setEnabled(True)))
 
         groupBoxProj.layout().addWidget(pushButton_pyramid)
         layoutParent.addWidget(groupBoxProj)
         groupBoxProj.setEnabled(False)
 
-        self.mainWindow.nomenclatureWidget.nomenclatureSelector.currentIndexChanged.connect(lambda:(
-        self.setEnabledGroupBoxTarget(self.mainWindow.nomenclatureWidget.nomenclatureSelector,groupBoxProj))
-                                                                                           )
+        self.comm.enableLabelingGroupBoxes.connect(lambda: (groupBoxProj.setEnabled(True)))
+        self.comm.disableLabelingGroupBoxes.connect(lambda: (groupBoxProj.setEnabled(False)))
+
+
         #End Project GROUP
         #====================================================
 
@@ -556,46 +475,37 @@ class TnTlabelingToolsBox(QGroupBox):
         groupBoxCap=self.setupGroup("Capture", QMargins(5,1,1,1), 0)
         groupBox=self.setupGroup("Task")
         pushButton_label=self.setupButton(groupBox,
-    		                         "Labeling",
-    		                         "Labeling segment ("+shortCutText+")",
-    		                         "Labeling segment",
-    		                         styleSheet2,
+                                     "Labeling",
+                                     "Labeling segment ("+shortCutText+")",
+                                     "Labeling segment",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_label, True, False)
         pushButton_label.clicked.connect(self.setMutuallyExclusiveState)
-        pushButton_label.clicked.connect(lambda:self.setLabelingMode(True))
-        pushButton_label.clicked.connect(lambda:self.setDeleteAllMode(False))
         groupBox.layout().addWidget(pushButton_label)
 
         shortCutText="F2"
         pushButton_deleteAll=self.setupButton(groupBox,
-    		                         "Delete all",
-    		                         "Remove all classes  ("+shortCutText+")",
-    		                         "Remove all classes from the selection",
-    		                         styleSheet3,
+                                     "Delete All",
+                                     "Remove all classes  ("+shortCutText+")",
+                                     "Remove all classes from the selection",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_deleteAll, True, False)
         pushButton_deleteAll.clicked.connect(self.setMutuallyExclusiveState)
-        pushButton_deleteAll.clicked.connect(lambda:self.setLabelingMode(False))
-        pushButton_deleteAll.clicked.connect(lambda:self.setDeleteAllMode(True))
         groupBox.layout().addWidget(pushButton_deleteAll)
         groupBoxCap.layout().addWidget(groupBox)
 
 
         shortCutText="F3"
         pushButton_deleteCurrent=self.setupButton(groupBox,
-                                     "Delete current",
-    		                         "Remove the current class ("+shortCutText+")",
-    		                         "Remove the current class from the selection",
-    		                         styleSheet3,
+                                     "Delete Current",
+                                     "Remove the current class ("+shortCutText+")",
+                                     "Remove the current class from the selection",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_deleteCurrent, True, False)
         pushButton_deleteCurrent.clicked.connect(self.setMutuallyExclusiveState)
-        pushButton_deleteCurrent.clicked.connect(lambda:self.setLabelingMode(False))
-        pushButton_deleteCurrent.clicked.connect(lambda:self.setDeleteAllMode(False))
         groupBox.layout().addWidget(pushButton_deleteCurrent)
         groupBoxCap.layout().addWidget(groupBox)
 
@@ -603,10 +513,9 @@ class TnTlabelingToolsBox(QGroupBox):
 
         shortCutText="F4"
         pushButton_point=self.setupButton(groupBox,
-    		                         "Point",
-    		                         "Activate selecting by point ("+shortCutText+")",
-    		                         "Activate selecting by point",
-    		                         styleSheet2,
+                                     "Point",
+                                     "Activate selecting by point ("+shortCutText+")",
+                                     "Activate selecting by point",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_point, True, False)
@@ -618,10 +527,9 @@ class TnTlabelingToolsBox(QGroupBox):
 
         shortCutText="F5"
         pushButton_line=self.setupButton(groupBox,
-    		                         "Line",
-    		                         "Activate selecting by PolyLine ("+shortCutText+")",
-    		                         "Activate selecting by PolyLine",
-    		                         styleSheet2,
+                                     "Line",
+                                     "Activate selecting by PolyLine ("+shortCutText+")",
+                                     "Activate selecting by PolyLine",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_line, True, False)
@@ -633,10 +541,9 @@ class TnTlabelingToolsBox(QGroupBox):
 
         shortCutText="F6"
         pushButton_polygon1=self.setupButton(groupBox,
-    		                         "Large-Polygon",
-    		                         "Select the entities which intersect or contained in the Polygon ("+shortCutText+")",
-    		                         "Select the entities which intersect or contained in the Polygon",
-    		                         styleSheet2,
+                                     "Large-Polygon",
+                                     "Select the entities which intersect or contained in the Polygon ("+shortCutText+")",
+                                     "Select the entities which intersect or contained in the Polygon",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_polygon1, True, False)
@@ -648,10 +555,9 @@ class TnTlabelingToolsBox(QGroupBox):
 
         shortCutText="F7"
         pushButton_polygon2=self.setupButton(groupBox,
-    		                         "Strict-Polygon",
-    		                         "Select the entities contained in the Polygon ("+shortCutText+")",
-    		                         "Select the entities contained in the Polygon",
-    		                         styleSheet2,
+                                     "Strict-Polygon",
+                                     "Select the entities contained in the Polygon ("+shortCutText+")",
+                                     "Select the entities contained in the Polygon",
                                      shortCutText,
                                      True)
         self.setInitialState(pushButton_polygon2, True, False)
@@ -674,37 +580,34 @@ class TnTlabelingToolsBox(QGroupBox):
 
         shortCutText="Alt+C"
         pushButton_showCurrentClass= self.setupButton(groupBoxDisplay,
-    		                          "Show Current",
-    		                          "Show only the data of current Class. ("+shortCutText+")",
-    		                          "Show only the data of current Class.",
-    		                          styleSheet2,
+                                      "Show Current",
+                                      "Show only the data of current Class. ("+shortCutText+")",
+                                      "Show only the data of current Class.",
                                       shortCutText,
                                       True)
 
         self.setInitialState(pushButton_showCurrentClass, True, False)
 
-        pushButton_showCurrentClass.clicked.connect(lambda:(self.showOnlyCurrentClass1(pushButton_showCurrentClass)))
+        pushButton_showCurrentClass.clicked.connect(self.showOnlyCurrentClass1)
         groupBoxDisplay.layout().addWidget(pushButton_showCurrentClass)
 
         shortCutText="Alt+L"
-        pushButton_label= self.setupButton(groupBoxDisplay,
-    		                          "Show Codes",
-    		                          "show or hide code value of the data of LABELED_DATA group. ("+shortCutText+")",
-    		                          "show or hide code value of the data of LABELED_DATA group.",
-    		                          styleSheet2,
+        pushButton_Codes= self.setupButton(groupBoxDisplay,
+                                      "Show Codes",
+                                      "Show or hide code value of the data of LABELED_DATA group. ("+shortCutText+")",
+                                      "Show or hide code value of the data of LABELED_DATA group.",
                                       shortCutText,
                                       True)
-        self.setInitialState(pushButton_label, True, False)
+        self.setInitialState(pushButton_Codes, True, False)
 
-        pushButton_label.clicked.connect(lambda:(self.showHideLabels1(pushButton_label)))
-        groupBoxDisplay.layout().addWidget(pushButton_label)
+        pushButton_Codes.clicked.connect(self.showHideLabels)
+        groupBoxDisplay.layout().addWidget(pushButton_Codes)
 
         shortCutText="Space"
         pushButton_ortho= self.setupButton(groupBoxDisplay,
-    		                          "Show Context",
-    		                          "Show only the data of CONTEXT group. ("+shortCutText+")",
-    		                          "Show only the data of CONTEXT group.",
-    		                          styleSheet1,
+                                      "Show Context",
+                                      "Show only the data of CONTEXT group. ("+shortCutText+")",
+                                      "Show only the data of CONTEXT group.",
                                       None,
                                       False)
 
@@ -723,39 +626,42 @@ class TnTlabelingToolsBox(QGroupBox):
         spacerItem = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layoutParent.addItem(spacerItem)
 
-        self.mainWindow.nomenclatureWidget.nomenclatureSelector.currentTextChanged[str].connect(self.setLabelNomenclatureValueOfTopWidget)
-        self.mainWindow.nomenclatureWidget.nomenclatureTree.itemSelectionChanged.connect(self.setLabelSelectedOfTopWidget)
-        self.mainWindow.nomenclatureWidget.nomenclatureTree.itemSelectionChanged.connect(lambda:(self.changeCurrentClassShowing1(pushButton_showCurrentClass)))
 
     #===================================================================
     # About Slider actions
 
-    def showOnlyCurrentClass1(self, sender):
+    def showOnlyCurrentClass1(self):
         """
-            :param sender:
-            :returns none:
+            param sender:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->showOnlyCurrentClass1({sender})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        sender = self.sender()
         if sender.isChecked():
             self.projectDataManager.setStateOfOneRule( self.listLabeledLayers,
                                                        self.projectDataManager.dictCodeRuleKey,
-                                                       self.mainWindow.nomenclatureWidget.classSelected[1],
+                                                       self.mainWindow.nomenclatureWidget.rowClassSelected[1],
                                                        True)
         else:
             self.projectDataManager.setStatesOfAllRules( self.listLabeledLayers,True)
 
-    def changeCurrentClassShowing1(self, sender):
+    def changeCurrentClassShowing1(self):
         """
-            :param sender:
-            :returns none:
+            param sender:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->changeCurrentClassShowing1()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        sender = self.sender()
         if sender.isChecked():
             self.projectDataManager.setStateOfOneRule(self.listLabeledLayers,
                                                       self.projectDataManager.dictCodeRuleKey,
-                                                      self.mainWindow.nomenclatureWidget.classSelected[1],
+                                                      self.mainWindow.nomenclatureWidget.rowClassSelected[1],
                                                       True)
-        else: #Nothing todo pass
+        else: #Nothing
             pass
 
     def initSliderShortcut(self):
@@ -763,10 +669,11 @@ class TnTlabelingToolsBox(QGroupBox):
         Instantiation of the shortcuts assigned to the slider.
         TAB, "p" key pressed = next level of segmentation
         CTRL+TAB, "o" key pressed = prev level of segmentation.
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->initSliderShortcut()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         Shortcut_NextLevel=QShortcut(QKeySequence("Tab"),self)
         Shortcut_NextLevel.activated.connect(self.nextLevel)
 
@@ -783,10 +690,11 @@ class TnTlabelingToolsBox(QGroupBox):
         """
         This method is executed each time the TAB key is pressed.
         Increments the current value of the slider with the value of the next segment level.
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->nextLevel()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         if self.getSlider().isEnabled() :
             if self.getSlider().value()==self.slider.maximum():
                 self.getSlider().setValue(self.getSlider().minimum())
@@ -797,10 +705,11 @@ class TnTlabelingToolsBox(QGroupBox):
         """
         This method is executed each time the CTRL+TAB keys is pressed.
         Decrement the value of the slider with the value of the previous segment level.
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->previousLevel()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         if self.getSlider().isEnabled():
             if self.getSlider().value()==self.slider.minimum():
                 self.getSlider().setValue(self.getSlider().maximum())
@@ -810,11 +719,11 @@ class TnTlabelingToolsBox(QGroupBox):
     def activateSegmentLevel(self, newIndex):
         """
         This method is executed each time the value of the slider changes.
-            :param newIndex: index of the new segmented layer to be activated and displayed.
+            param newIndex: index of the new segmented layer to be activated and displayed.
                             set attribut self.indexActiveLabeledLayer.
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->activateSegmentLevel()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(newIndex={newIndex})")
         self.setIndexActiveLabeledLayer(newIndex-1)
         for layer2setVibility in self.listLabeledLayers:
             layer2setVibility.setItemVisibilityChecked(False)
@@ -823,79 +732,91 @@ class TnTlabelingToolsBox(QGroupBox):
             if not layer2setVibility.isVisible():
                 layer2setVibility.setItemVisibilityChecked(True)
 
-     #===================================================================
+    #===================================================================
 
-    @QtCore.pyqtSlot(str)
-    def setLabelNomenclatureValueOfTopWidget(self, text):
+    #===================================================================
+    def currentNomenclatureInfoChanged(self, nomenclatureName, target:QLabel):
         """
-            :param text:
-            :returns none:
+            nomenclatureName: new nomenclature name selected by user in nomenclatureQComboBox.
+            target :  Qlabels target whose text is initialized with nomenclature name.
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setLabelNomenclatureValueOfTopWidget()")
-        self.labelNomenclatureValue.setText(text.upper())
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(\
+        #                                               nomenclatureName={nomenclatureName},\
+        #                                               target={target})")
 
-    def setLabelSelectedOfTopWidget(self):
+        target.setText(nomenclatureName)
+
+
+    def currentClassInfoChanged(self, rowClassSelected, listTarget):
         """
-            :param none:
-            :returns none:
+            rowClassSelected: new row selected by user in nomenclatureQTreeWidget.
+            listTarget : list of Qlabels target whose text is initialized with newtext contains in rowClassSelected.
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setLabelSelectedOfTopWidget()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(\
+        #                                               {rowClassSelected})")
 
-        code=self.mainWindow.nomenclatureWidget.classSelected[0]
-        self.codeSelectedValue.setText(code)
-
-        label=self.mainWindow.nomenclatureWidget.classSelected[1]
-        self.labelSelectedValue.setText(label.upper())
-
-        labelColor=self.mainWindow.nomenclatureWidget.classSelected[2]
-        self.labelColorSelected.setText(labelColor)
-        self.labelColorSelected.setStyleSheet("QLabel {font-style :normal; "
-                                                       "border-radius :2px;"
-                                                       "border-style :solid;"
-                                                       "border-width :1px;"
-                                                       "border-color :black;"
-                                                       "background-color :"+labelColor+";"
-                                                       "color :"+labelColor+";}")
+        listTarget[0].setText(rowClassSelected[0])
+        listTarget[1].setText(rowClassSelected[1].upper())
+        listTarget[2].setText(rowClassSelected[2])
+        listTarget[2].setStyleSheet("QLabel {font-style :normal; "
+                                            "border-radius :2px;"
+                                            "border-style :solid;"
+                                            "border-width :1px;"
+                                            "border-color :black;"
+                                            "background-color :"+rowClassSelected[2]+";"
+                                            "color :"+rowClassSelected[2]+";}")
 
     def setupGroup(self, title, contentsMargins=QMargins(1,1,1,1) , spacing=10):
         """
-            :param title:
-            :param nonecontentsMargins:
-            :param spacing:
-            :returns none:
+            param title: title of QGroupBox
+            param contentsMargins: apply this QMargins
+            param spacing: spacing between graphics elements , default 10px.
+            returns QGroupBox: a new QGroupBox.
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setupGroup()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         gb = QGroupBox(self)
+        gb.setObjectName(title.replace(' ','_'))
         gb.setTitle(title)
-        gb.setAccessibleName(title)
         gb.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         layout = QVBoxLayout(gb)
         layout.setContentsMargins(contentsMargins)
         layout.setSpacing(spacing)
         return gb
 
-    def setupButton(self, parent, Text="NoName", toolTip=None, whatsThis=None, styleSheet=None, keySequence=None , checkable=False):
+    def setupButton(self, parent, text="NoName", toolTip=None, whatsThis=None, keySequence=None , checkable=False):
         """
-            :param parent:
-            :param Text:
-            :param toolTip:
-            :param whatsThis:
-            :param styleSheet:
-            :param keySequence:
-            :param checkable:
-            :returns none:
+            param parent: Makes this QPushButton as a child of parent.
+            param Text: This argument holds the text shown on the button.
+            param toolTip: This argument holds the widget's tooltip.
+            param whatsThis: This argument holds the widget's What's This help text.
+            param styleSheet: This argument holds the widget's style sheet
+            param keySequence: QKeySequence object for the given keySequence argument.
+            param checkable: This argument holds whether the button is checkable, By default, the button is not checkable.
+            returns pb: New instance of QPushButton.
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setupButton()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         pb = QPushButton(parent)
-        pb.setText(Text)
-        pb.setAccessibleName(Text)
+        pb.setObjectName(text.replace(' ','_'))
+        pb.setText(text)
+        pb.default = False
+        pb.autoDefault = False
+
         if toolTip:
             pb.setToolTip(toolTip)
+
         if whatsThis:
             pb.setWhatsThis(whatsThis)
-        if styleSheet:
-            pb.setStyleSheet(styleSheet)
+
         pb.setCheckable(checkable)
+
         if keySequence:
             sc_pb= QShortcut(QKeySequence(keySequence),self)
             sc_pb.activated.connect(pb.animateClick)
@@ -903,34 +824,45 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def setEnabledGroupBoxTarget(self, nomenclatureSelector, groupboxTarget):
         """
-            :param nomenclatureSelector:
-            :param groupboxTarget:
-            :returns none:
+            param nomenclatureSelector:
+            param groupboxTarget:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->setEnabledGroupBoxTarget({nomenclatureSelector},{groupboxTarget.title()})")
-        index=nomenclatureSelector.currentIndex
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #     {inspect.currentframe().f_code.co_name}(\
+        #                                             {nomenclatureSelector},\
+        #                                             {groupboxTarget.title()})")
+
+        index=nomenclatureSelector.currentIndex()
         text=nomenclatureSelector.currentText()
-        if index!=-1 and text!=nomenclatureSelector.parent().defaultNomenclatureName :
+
+        if index!=-1 and text!=nomenclatureSelector.parent().nomenclatureNameMsg :
             groupboxTarget.setEnabled(True)
 
-    def showHideLabels1(self, sender):
+    def showHideLabels(self):
         """
-            :param sender:
-            :returns none:
+            param sender:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->showHideLabels1({sender})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        sender=self.sender()
         if sender.isChecked():
             self.showLabels()
         else:
             self.showLabels(False)
+
         self.toggleTextButton(sender, "Show Codes", "Hide Codes")
 
     def showLabels(self, state=True):
         """
-            :param state:
-            :returns none:
+            param state:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox ->showLabels()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         root = self.getRootGroup()
         group=root.findGroup('LABELED_DATA')
         for LayerTreeLayer in group.findLayers():
@@ -939,11 +871,13 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def showOneGroup(self, groupName2Show):
         """
-            :param groupName2Show:
-            :returns none:
+            param groupName2Show:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->showOneGroup()")
-        #Disable evt pressed before processing
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        # Disable evt pressed before processing
         buttonSource=self.sender()
         buttonSource.pressed.disconnect()
 
@@ -958,57 +892,64 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def restoreInitialDisplayState(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->restoreInitialDisplayState()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         treeRoot=self.getRootGroup()
         for groupName in self.initialDisplayState:
             group=treeRoot.findGroup(groupName)
             group.setItemVisibilityChecked(self.initialDisplayState[groupName])
 
-        #enable evt pressed after release  (re connect exist???)
+        #Enable evt pressed after release  (re connect exist???)
         buttonSource=self.sender()
         buttonSource.pressed.connect(lambda:(self.showOneGroup("CONTEXT")))
 
     def setIndexActiveLabeledLayer(self, indexActiveLabeledLayer):
         """
-            :param indexActiveLabeledLayer:
-            :returns none:
+            param indexActiveLabeledLayer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setIndexActiveLabeledLayer()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.indexActiveLabeledLayer=indexActiveLabeledLayer
 
     def getIndexActiveLabeledLayer(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getIndexActiveLabeledLayer()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         return self.indexActiveLabeledLayer
 
     def getActiveLabeledLayer(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getActiveLabeledLayer()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         return self.listLabeledLayers[self.getIndexActiveLabeledLayer()]
 
     def getNameOfActiveLabeledLayer(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getNameOfActiveLabeledLayer()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         return self.listLabeledLayers[self.getIndexActiveLabeledLayer()].name()
 
     def setMutuallyExclusiveState(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setMutuallyExclusiveState()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         buttonSource=self.sender()
         children=buttonSource.parentWidget().children()
         for child in children :
@@ -1018,10 +959,11 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def removeAllChildren(self, groupName):
         """
-            :param groupName:
-            :returns none:
+            param groupName:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->removeAllChildren()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #    {inspect.currentframe().f_code.co_name}()")
         treeRoot=self.getRootGroup()
         group=treeRoot.findGroup(groupName)
         for tLayer in group.findLayers():
@@ -1030,35 +972,44 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def setInitialState(self, buttonTarget, enabledState, checkedState):
         """
-            :param buttonTarget:
-            :param enabledState:
-            :param checkedState:
-            :returns none:
+            param buttonTarget:
+            param enabledState:
+            param checkedState:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->->setInitialState(buttonTarget={buttonTarget},
-        #                                                                 enabledState={enabledState},
-        #                                                                 checkedState={checkedState})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(buttonTarget={buttonTarget},\
+        #       enabledState={enabledState},\
+        #       checkedState={checkedState})")
+
         buttonTarget.setEnabled(enabledState)
         buttonTarget.setChecked(checkedState)
 
-    def getPushButton(self,buttonText):
+    def getPushButton(self, button_objectName):
         """
-            :param buttonText:
-            :returns QPushButton:
+            param buttonText:
+            returns QPushButton:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getPushButton({buttonText})")
-        l=self.findChildren(QPushButton)
-        for b in l:
-            if b.text()==buttonText:
-                return b
-        return None
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}({buttonText})")
+
+        result=self.findChild(QPushButton, button_objectName)
+        return result
+
+        # l=self.findChildren(QPushButton)
+        # for b in l:
+        #     if b.text()==buttonText:
+        #         return b
+        # return None
 
     def getGroupBox(self ,groupText):
         """
-            :param groupText:
-            :returns QGroupBox:
+            param groupText:
+            returns QGroupBox:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getGroupBox({groupText})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}({groupText})")
+
         l=self.findChildren(QGroupBox)
         for b in l:
             if b.title()==groupText:
@@ -1067,24 +1018,32 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def labelingData(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->labelingData({)")
-        buttonSource=self.sender()
-        if buttonSource.text() == "Start":
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        sender=self.sender()
+        # if buttonSource.text() == "Start":
+        if sender.isChecked() :
+            self.save_start_button_state = True
             self.enterStartMode()
-        elif buttonSource.text() == "Stop":
+        # elif buttonSource.text() == "Stop":
+        elif not sender.isChecked() :
             self.enterStopMode()
+            self.save_start_button_state = False
         else:
             print(f"line 1093 , labelingData(): bad state:{self.sender().text()}")
-        self.toggleTextButton(buttonSource, "Start", "Stop")
+        self.toggleTextButton(sender, "Start", "Stop")
 
     def getListButtonWithOutSender(self, sender):
         """
-            :param sender:
-            :returns none:
+            param sender:
+            returns none:
         """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         GroupBoxSelecting=self.getGroupBox("Selecting By")
         childrenButtons=GroupBoxSelecting.findChildren(QPushButton)
         childrenButtons.remove(sender)
@@ -1092,10 +1051,10 @@ class TnTlabelingToolsBox(QGroupBox):
 
     def enterStartMode(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterStartMode()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         #Prohibits any modifications to projects during user input operations
         #lock project menu acces
@@ -1107,12 +1066,18 @@ class TnTlabelingToolsBox(QGroupBox):
         self.getGroupBox("Display").setEnabled(True)
 
         #Now it's possible too fill pyramid
-        self.getPushButton("Fill pyramid").setEnabled(True)
+        #self.getPushButton("Fill_pyramid").setEnabled(True)
+        self.getPushButton("Fill_Pyramid").setEnabled(True)
 
-        self.labelingMode=False
+        # self.labelingMode=False
 
         #For started Select mode Labeling
-        self.getPushButton("Labeling").animateClick()
+        # In this case, Do not used animateClick delay on realease
+        # is too long.
+        # self.getPushButton("Labeling").animateClick()
+        pb = self.getPushButton("Labeling")
+        pb.setChecked(True)
+        pb.clicked.emit()
         #Now self.labelingMode is True
 
         #set Selecting By point,
@@ -1121,32 +1086,37 @@ class TnTlabelingToolsBox(QGroupBox):
         self.startLabelingData()
 
         #Lock nomenclatureSelector (ie coud'nt change nomenclature until press "stop")
-        self.mainWindow.nomenclatureWidget.nomenclatureSelector.setEnabled(False)
+        self.mainWindow.nomenclatureWidget.nomenclatureQComboBox.setEnabled(False)
 
         #self.startMode=True
         self.mainWindow.disableWindowCloseButton()
 
     def enterStopMode(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterStopMode()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         #Check if additionnel view is open: close it if user click on Stop button
-        b_t=self.mainWindow.additionalView_pushButton
-        if b_t.isChecked():
-            b_t.animateClick()
+        try :
+            b_t=self.getPushButton("additionalView_pushButton")
+            if b_t.isChecked():
+                b_t.animateClick()
+        except AttributeError :
+            pass
 
         try :
-            b_t=self.getPushButton("Hide Codes")
+            #b_t=self.getPushButton("Hide Codes")
+            b_t=self.getPushButton("Hide_Codes")
             b_t.setChecked(False)
             b_t.clicked.emit()
         except AttributeError :
             pass
 
         try :
-            b_t=self.getPushButton("Show Current")
+            #b_t=self.getPushButton("Show Current")
+            b_t=self.getPushButton("Show_Current")
             b_t.setChecked(False)
             b_t.clicked.emit()
         except AttributeError :
@@ -1163,27 +1133,29 @@ class TnTlabelingToolsBox(QGroupBox):
         gb.setEnabled(False)
 
         #Now it's not possible too fill pyramid
-        self.getPushButton("Fill pyramid").setEnabled(False)
+        #self.getPushButton("Fill pyramid").setEnabled(False)
+        self.getPushButton("Fill_Pyramid").setEnabled(False)
 
         self.stopLabelingData()
 
         #unLock nomenclatureSelector (ie coud'nt change nomenclature until press "start")
-        self.mainWindow.nomenclatureWidget.nomenclatureSelector.setEnabled(True)
+        self.mainWindow.nomenclatureWidget.nomenclatureQComboBox.setEnabled(True)
 
         #self.startMode=False
         self.mainWindow.enableWindowCloseButton()
 
-        #Unlock memnu project on Qgis main window
+        #Unlock menu project on Qgis main window
         iface.projectMenu().setEnabled(True)
         #and Unlock file toolBar access
         iface.fileToolBar().setEnabled(True)
 
     def startLabelingData(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->startLabelingData()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.projectDataManager.loadDataLabeled(self.mainWindow.nomenclatureWidget)
         self.listLabeledLayers=self.getListLabeledLayers()
         self.listLabeledLayers4Merging=self.getListLabeledLayers4Merging()
@@ -1206,14 +1178,14 @@ class TnTlabelingToolsBox(QGroupBox):
             #Already to 1, force emit signal for changing text of Qlabel with new name active level
             self.comm.sliderInitValue.emit()
 
-        self.mainWindow.nomenclatureWidget.nomenclatureTree.itemSelectionChanged.emit()
+        self.mainWindow.nomenclatureWidget.nomenclatureQTreeWidget.itemSelectionChanged.emit()
 
     def  stopLabelingData(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->stopLabelingData()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         self.comm.sliderResetValue.emit()
         self.getSlider().setValue(1)
@@ -1227,77 +1199,90 @@ class TnTlabelingToolsBox(QGroupBox):
         self.projectDataManager.removeAllChildren("LABELED_DATA")
         self.projectDataManager.removeAllChildren("FINAL_DATA")
 
-        self.getCanvas().unsetMapTool(self.getMapTool())
-        #unsetMapTool
-        self.setMapTool()
+        # self.getCanvas().unsetMapTool(self.getMapTool())
+        # # unsetMapTool
+        # self.setMapTool()
+
+        canvas=self.getCanvas()
+        self.mapTool=QgsMapTool(canvas)
+        canvas.setMapTool(self.mapTool)
 
     def enterFinishMode(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterFinishMode()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         testM=TnTmergingLabeledData(self)
         testM.mergeAll(self.listLabeledLayers4Merging)
 
     def enterModePoint(self, canvas=None):
         """
-            :param canvas:
-            :returns none:
+            param canvas:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterModePoint()")
-        sender=self.sender()
-        self.mapTool = TnTmapToolEmitPoint_V2(self, canvas, sender)
-        self.getCanvas().setMapTool(self.mapTool)
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        self.mapTool = TnTmapToolEmitPoint_V2(self, canvas)
+        canvas.setMapTool(self.mapTool)
+
 
     def enterModePline(self, canvas=None):
         """
-            :param canvas:
-            :returns none:
+            param canvas:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterModePline()")
-        #sender=self.sender()
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.mapTool = TnTmapToolEmitPline_V2(self, canvas)
-        self.getCanvas().setMapTool(self.mapTool)
+        canvas.setMapTool(self.mapTool)
 
     def enterModeIPolygon(self, canvas=None):
         """
-            :param canvas:
-            :returns none:
+            param canvas:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterModeIPolygon()")
-        #sender=self.sender()
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.mapTool = TnTmapToolEmitPolygon_V2(self, canvas, strictMode=False)
-        self.getCanvas().setMapTool(self.mapTool)
+        canvas.setMapTool(self.mapTool)
 
     def enterModeEPolygon(self, canvas=None):
         """
-            :param canvas:
-            :returns none:
+            param canvas:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->enterModeEPolygon()")
-        #sender=self.sender()
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.mapTool = TnTmapToolEmitPolygon_V2(self, canvas, strictMode=True)
-        self.getCanvas().setMapTool(self.mapTool)
+        canvas.setMapTool(self.mapTool)
 
     def event(self, event: QEvent):
         """
-            :param event:
-            :returns none:
+            param event:
+            returns none:
         """
-        #print(f"{lineno()} TnTlabelingToolsBox-->event(event:{event})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(event={event})")
+
         if event.type()==QEvent.Show:
             self.setActiveCanvas()
             self.getCanvas().setSlave( self.getAdditionalCanvas() )
-            self.layerTreeMapCanvasBridge=QgsLayerTreeMapCanvasBridge(self.mainWindow.tntLayerTreeView.getLayerTreeRoot(), self.getCanvas())
+            self.layerTreeMapCanvasBridge=QgsLayerTreeMapCanvasBridge(
+                self.mainWindow.tntLayerTreeView.getLayerTreeRoot(),
+                self.getCanvas()
+                )
             return True
 
-        elif event.type()==QEvent.Hide:
-            #print(f"{lineno()} TnTlabelingToolsBox --> Passe event: {self.getName()} est masqué")
+        if event.type()==QEvent.Hide:
             del self.layerTreeMapCanvasBridge
-            self.unsetActiveCanvas()
             self.getCanvas().unsetSlave()
+            self.unsetActiveCanvas()
             return True
 
-        else:
-            return QWidget.event(self, event)
+        return QWidget.event(self, event)

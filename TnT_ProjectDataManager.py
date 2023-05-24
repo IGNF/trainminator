@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-/
+# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  TnT_projectDataManager
@@ -9,7 +9,9 @@
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,25 +27,20 @@ import os
 import inspect
 
 from qgis.utils import iface
-from qgis.core  import (QgsProject, QgsVectorLayer,
-                        QgsLayerTreeLayer, QgsWkbTypes, QgsRuleBasedRenderer,
-                        QgsVectorFileWriter, QgsFillSymbol,
-                        QgsField, QgsPalLayerSettings, QgsTextFormat,
-                        QgsTextBufferSettings,
-                        QgsVectorLayerSimpleLabeling,
+from qgis.core  import (QgsProject, QgsVectorLayer, QgsLayerTreeLayer,
+                        QgsWkbTypes, QgsRuleBasedRenderer, QgsVectorFileWriter,
+                        QgsFillSymbol,QgsField, QgsPalLayerSettings,
+                        QgsTextFormat, QgsTextBufferSettings, QgsVectorLayerSimpleLabeling,
                         QgsLinePatternFillSymbolLayer )
 
+
 from PyQt5           import QtCore
-from PyQt5.QtWidgets import QProgressDialog
+from PyQt5.QtWidgets import QProgressDialog, QMessageBox
 from PyQt5.QtGui     import (QColor, QFont)
 
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
-
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
 
 class TnTprojectDataManager():
     """
@@ -66,6 +63,8 @@ class TnTprojectDataManager():
 
         self.nomenclatureName=''
         self.projectStructure= {}
+
+        self.messages=[]
 
         # mandatory group
         self.mandatoryGroups=['CONTEXT',
@@ -106,8 +105,7 @@ class TnTprojectDataManager():
 
     def info(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->info()")
         print(f"---> self.projectSaved        : {self.projectSaved}")
@@ -119,65 +117,58 @@ class TnTprojectDataManager():
 
     def getListLabeledLayers(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->getListLabeledLayers()")
         return self.projectStructure[self.mandatoryGroups[2]]['TREELAYERS']
 
     def setProjectValid(self, projectValid=False):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->setProjectValid()")
         self.projectValid=projectValid
 
     def getProjectValid(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->setProjectValid()")
         return self.projectValid
 
     def setRootGroup(self, layerTreeRoot):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->setRootGroup()")
         self.layerTreeRoot=layerTreeRoot
 
     def getRootGroup(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->getRootGroup()")
         return self.layerTreeRoot
 
     def setProjectAttr(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->setProjectAttr()")
+        # print(f"line:{lineno()}, TnTprojectDataManager->setProjectAttr()")
         self.root=QgsProject.instance()
-        self.projectName=QgsProject.instance().baseName()
-        self.absoluteFilePath=QgsProject.instance().absoluteFilePath()
-        self.projectAbsolutePath=QgsProject.instance().absolutePath()
-        self.layerTreeRoot=QgsProject.instance().layerTreeRoot()
+        self.projectName=self.root.baseName()
+        self.absoluteFilePath=self.root.absoluteFilePath()
+        self.projectAbsolutePath=self.root.absolutePath()
+        self.layerTreeRoot=self.root.layerTreeRoot()
 
     def init(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->init()")
+        # print(f"line:{lineno()}, TnTprojectDataManager->init()")
         self.setProjectAttr()
 
-        if QgsProject.instance().absoluteFilePath():
+        if self.absoluteFilePath:
             #group LABELED_DATA and FINAL_DATA must be contain no layers
             self.cleanGroup(self.mandatoryGroups[2])
             self.cleanGroup(self.mandatoryGroups[3])
@@ -190,67 +181,78 @@ class TnTprojectDataManager():
                 sorted_segs=self.sortingSegmentedData(self.mandatoryGroups[1])
                 self.sortingSegmentedLayer(self.mandatoryGroups[1], sorted_segs)
             else:
-                pass
-        else :
-            pass
+                self.clear()
+                self.showMessage(self.messages, QMessageBox.Critical)
 
     def clear(self):
         """
         This method is executed when the project is cleared (and additionally when an open project
         is cleared just before a new project is read).
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->clear()")
-        self.dataAbsolutePath=None
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #     {inspect.currentframe().f_code.co_name}()")
+
         self.projectSaved=False
         self.projectValid=False
         self.nomenclatureName=''
         self.projectStructure.clear()
 
+        self.layerTreeRoot=None
+        self.projectAbsolutePath=None
+        self.projectName=None
+        self.dataAbsolutePath=None
+
+
     def readProject(self):
         """
         This method is executed when a project is being read.
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->readProject()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
         self.init()
 
     def checkMandatoryGroups(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->checkMandatoryGroups()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.setProjectValid(True)
+        self.messages.clear()
         for mandatoryGroupsName in self.mandatoryGroups:
             if not self.getRootGroup().findGroup(mandatoryGroupsName):
-                #print(f"line:{lineno()}, Mandatory group:{mandatoryGroupsName} doesn't exist, Project not valid.")
+                msg=r'Mandatory group:%s doesn\'t exist, Project not valid' % mandatoryGroupsName
+                self.messages.append(msg)
                 self.setProjectValid(False)
             else:
-                #print(f"line:{lineno()}, Mandatory group:{mandatoryGroupsName} exist")
                 self.setGroupInfo(mandatoryGroupsName)
 
     def cleanGroup(self, groupName):
         """
          Remove all maps from the target group "groupName"
-            :param groupName:The name of the group to clean
-            :returns none:
+            param groupName:The name of the group to clean
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->setGroupInfo(cleanGroup:{groupName})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
         group=self.getRootGroup().findGroup(groupName)
         tLayers=group.findLayers()
+
         for tLayer in tLayers:
             id_layer=tLayer.layer().id()
             QgsProject.instance().removeMapLayer(id_layer)
 
+
     def setGroupInfo(self, groupName):
         """
-            :param groupName:The name of the target group.
-            :returns none:
+            param groupName:The name of the target group.
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->setGroupInfo(groupName:{groupName})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
         self.projectStructure[groupName]={}
         self.projectStructure[groupName]['DATASOURCE']=""
         self.projectStructure[groupName]['TREELAYERS']=[]
@@ -274,20 +276,23 @@ class TnTprojectDataManager():
             head_tail = os.path.split(result)
             self.projectStructure[groupName]['DATASOURCE']=head_tail[0]
 
+
     def createFillSymbol(self, nomenclatureWidget, vlayer):
         """
-            :param nomenclatureWidget:
-            :param vlayer:
-            :returns none:
+            param nomenclatureWidget:
+            param vlayer:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->createFillSymbol()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
         rootrule = QgsRuleBasedRenderer.Rule(None)
         sym0 = QgsFillSymbol.createSimple({'color'        : self.styleSheet_unlabeled['color'],
-                                            'outline_color': self.styleSheet_unlabeled['outline_color'],
-                                            'width_border' : self.styleSheet_unlabeled['width_border'],
-                                            'style'        : self.styleSheet_unlabeled['style']})
+                                           'outline_color': self.styleSheet_unlabeled['outline_color'],
+                                           'width_border' : self.styleSheet_unlabeled['width_border'],
+                                           'style'        : self.styleSheet_unlabeled['style']})
         sym0.setOpacity(1)
         rx0=QgsRuleBasedRenderer.Rule(sym0, 0, 0, 'ELSE')
+
         rootrule.appendChild(rx0)
         self.dictCodeRuleKey[vlayer.name()]={}
 
@@ -306,13 +311,17 @@ class TnTprojectDataManager():
 
     def setStateOfOneRule(self, tlayers, dictCodeRuleKey, currentLabel, state):
         """
-            :param tlayers:
-            :param dictCodeRuleKey:
-            :param currentLabel:
-            :param state:
-            :returns none:
+            param tlayers:
+            param dictCodeRuleKey:
+            param currentLabel:
+            param state:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->setStateOfOneRule()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(tlayers={tlayers},\
+        #                                               dictCodeRuleKey={dictCodeRuleKey},\
+        #                                               currentLabel={dictCodeRuleKey},\
+        #                                               state={state})")
         self.setStatesOfAllRules(tlayers, not state)
         for tlayer in tlayers :
             rule_target=(tlayer.layer().renderer().rootRule().children())[0].findRuleByKey(dictCodeRuleKey[tlayer.layer().name()][currentLabel])
@@ -320,11 +329,11 @@ class TnTprojectDataManager():
 
     def setStatesOfAllRules(self, tlayers, state):
         """
-            :param none:
-            :param none:
-            :returns none:
+            param tlayers:
+            param state:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->setStateAllRules({state})")
+        #print(f"line:{lineno()}, TnTprojectDataManager->setStateAllRules({state={state})")
         for tlayer in tlayers :
             rules=(tlayer.layer().renderer().rootRule().children())[0].children()
             for rule in rules:
@@ -333,9 +342,9 @@ class TnTprojectDataManager():
 
     def createFillSymbolControl(self, vlayer, elseRule):
         """
-            :param tlayers:
-            :param elseRule:
-            :returns none:
+            param tlayers:
+            param elseRule:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->createFillSymbolControl()")
         rootrule = QgsRuleBasedRenderer.Rule(None)
@@ -355,21 +364,12 @@ class TnTprojectDataManager():
         symbol_lyr_line.setLineWidth(0.9)
         symbol_lyr_line.setColor(QColor(255,121,0))
 
-        #symbol_line = QgsFillSymbol()
         symbol_line = QgsFillSymbol.createSimple({ 'color'        : self.styleSheet_NoLabel['color'],
                                                    'outline_color': self.styleSheet_NoLabel['outline_color'],
                                                    'width_border' : self.styleSheet_NoLabel['width_border']})
 
         symbol_line.setOpacity(1)
-        #symbol_line.deleteSymbolLayer(0)
         symbol_line.appendSymbolLayer(symbol_lyr_line)
-
-        # sym = QgsFillSymbol.createSimple({'color'        : str(self.styleSheet_NoLabel['color']),
-        #                                   'outline_color': self.styleSheet_NoLabel['outline_color'],
-        #                                   'width_border' : self.styleSheet_NoLabel['width_border']
-        #                                   })
-
-        # sym.setOpacity(0.60)
 
         rx=QgsRuleBasedRenderer.Rule(symbol_line, 0, 0, elseRule )
         rootrule.appendChild(rx)
@@ -378,9 +378,9 @@ class TnTprojectDataManager():
 
     def addTreeLayerTreeControl(self, groupName, tLayer):
         """
-            :param groupName:
-            :param tLayer:
-            :returns none:
+            param groupName:
+            param tLayer:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->addTreeLayerTreeControl(groupName:{groupName}, tLayer:{tLayer})")
 
@@ -394,8 +394,7 @@ class TnTprojectDataManager():
 
     def printProjectStructure(self):
         """
-            :param none:
-            :returns none:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->printProjectStructure()")
         print(f"self.projectStructure:{self.projectStructure}")
@@ -406,10 +405,10 @@ class TnTprojectDataManager():
 
     def sortingSegmentedData(self, segmentedDataGroupName):
         """
-            :param segmentedDataGroupName:
-            :returns none:
+            param segmentedDataGroupName:
+            returns none:
         """
-        #print(f"line:{lineno()}, TnTprojectDataManager->sortingSegmentedData(segmentedDataGroupName:{segmentedDataGroupName})")
+        # print(f"line:{lineno()}, TnTprojectDataManager->sortingSegmentedData(segmentedDataGroupName:{segmentedDataGroupName})")
         segmentedDataGroup=self.getRootGroup().findGroup(segmentedDataGroupName)
         sorted_segments=[]
         segments={}
@@ -429,11 +428,11 @@ class TnTprojectDataManager():
             sorted_segments.append(tLayer)
         return sorted_segments
 
-    def sortingSegmentedLayer(self, segmentedDataGroupName, segments={}):
+    def sortingSegmentedLayer(self, segmentedDataGroupName, segments):
         """
-            :param segmentedDataGroupName:
-            :param segments:
-            :returns none:
+            param segmentedDataGroupName:
+            param segments:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->sortingSegmentedLayer(segmentedDataGroupName:{segmentedDataGroupName},segments:{segments})")
         root = QgsProject.instance().layerTreeRoot()
@@ -452,38 +451,25 @@ class TnTprojectDataManager():
             self.projectStructure[segmentedDataGroupName]['TREELAYERS'].append(vLayer_treeLayer_clone)
             index+=1
 
-    # def setShortCutsOnLayers(self, listShortCuts ,layers):
-    #     """
-    #         :param listShortCuts:
-    #         :param layers:
-    #         :returns none:
-    #     """
-    #     #print(f"line:{lineno()}, TnTprojectDataManager->setShortCutsOnLayers(listShortCuts:{listShortCuts},layers:{layers})")
-    #     index=1
-    #     for layer in layers:
-    #         sequence="Alt"+index
-    #         shortCut=QShortcut(QKeySequence(sequence),self)
-    #         shortCut.activated.connect(self.setVisibility)
-    #         listShortCuts.append(shortCut)
 
     def setVisibilityGroup(self, groupName , visibility):
         """
-            :param groupName:
-            :param visibility:
-            :returns none:
+            param groupName:
+            param visibility:
+            returns none:
         """
         groupTarget=self.getRootGroup().findGroup(groupName)
         groupTarget.setItemVisibilityChecked(visibility)
 
     def loadDataLabeled(self, nomenclatureWidget):
         """
-            :param nomenclatureWidget:
-            :returns none:
+            param nomenclatureWidget:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->loadDataLabeled(nomenclatureWidget:{nomenclatureWidget})")
         labeledGroup=QgsProject.instance().layerTreeRoot().findGroup(self.mandatoryGroups[2])
 
-        currentNomenclatureName=nomenclatureWidget.nomenclatureSelector.currentText()
+        currentNomenclatureName=nomenclatureWidget.nomenclatureQComboBox.currentText()
         AbsolutePath_DataLabeled=self.projectAbsolutePath+"/LABELED_DATA"+"/"+currentNomenclatureName.upper()
 
         listDataSegmented=self.projectStructure[self.mandatoryGroups[1]]['TREELAYERS']
@@ -503,6 +489,8 @@ class TnTprojectDataManager():
                 vlayer_DataLabeled = QgsVectorLayer(FullPathName_DataLabeled,
                                                     data_name,
                                                    "ogr")
+                self.checkAttributs(nomenclatureWidget, vlayer_DataLabeled)
+
                 if vlayer_DataLabeled.isValid():
                     print(f"Reload/Load data {FullPathName_DataLabeled}")
                 else :
@@ -526,7 +514,6 @@ class TnTprojectDataManager():
                                                     data_name,
                                                     "ogr")
                 self.createAttributs(nomenclatureWidget, vlayer_DataLabeled)
-                print(f"Create data {FullPathName_DataLabeled}")
 
             if vlayer_DataLabeled :
                 self.createFillSymbol(nomenclatureWidget, vlayer_DataLabeled)
@@ -553,8 +540,8 @@ class TnTprojectDataManager():
 
     def removeAllChildren(self, groupName):
         """
-            :param groupName:
-            :returns none:
+            param groupName:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->removeAllChildren(groupName:{groupName})")
         treeRoot=self.getRootGroup()
@@ -565,11 +552,37 @@ class TnTprojectDataManager():
         self.parent.mainWindow.activeCanvas.refresh()
         self.projectStructure[groupName]['TREELAYERS'].clear()
 
+    def checkAttributs(self, nomenclatureWidget, vlayer):
+        """
+            Checks whether all the attributes declared in the nomenclature file exist in the data already labeled.
+            param nomenclatureWidget: a nomenclature widget.
+            param vlayer: vector layer to check.
+            returns none:
+        """
+        result=False
+
+        dictTemp=nomenclatureWidget.tableAttributs.copy()
+        dictRes={}
+
+        pr = vlayer.dataProvider()
+        field_names = [field.name() for field in pr.fields()]
+        for field in field_names:
+            if field in dictTemp:
+                del dictTemp[field]
+
+        if not dictTemp or (dictTemp==nomenclatureWidget.tableAttributs):
+            result=True
+        else:
+            dictRes=set(nomenclatureWidget.tableAttributs.items())^set(dictTemp.items())
+
+        return result
+
+
     def createAttributs(self, nomenclatureWidget, vlayer):
         """
-            :param nomenclatureWidget:
-            :param vlayer:
-            :returns none:
+            param nomenclatureWidget:
+            param vlayer:
+            returns none:
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->createAttributs(nomenclatureWidget:{nomenclatureWidget}, vlayer:{vlayer})")
         pr = vlayer.dataProvider()
@@ -587,8 +600,8 @@ class TnTprojectDataManager():
         Constructs simple labeling configuration with given initial settings.
         The text will contain the fieldName field value.
         Using when user want to show labels
-            :param fieldName:
-            :returns label: return a new simple labeling configuration with given initial settings.
+            param fieldName:
+            returns label: return a new simple labeling configuration with given initial settings.
         """
         #print(f"line:{lineno()}, TnTprojectDataManager->createLayerLabeling(fieldName:{fieldName})")
         settings=QgsPalLayerSettings()
@@ -606,13 +619,48 @@ class TnTprojectDataManager():
         label = QgsVectorLayerSimpleLabeling(settings)
         return label
 
+    # def checkGroupOnReload(self, grTarget_Name):
+    #     """
+    #     Checks if the group data can be reloaded with the selected nomenclature.
+    #     param groupTarget: a targetGroup.
+    #     return none:
+    #     """
+    #     grTarget = QgsProject.instance().layerTreeRoot().findGroup(grTarget_Name)
+    #     for tLayer in grTarget.findLayers():
+    #         print(f"**** tLayer:{tLayer}")
+    #         print(f"**** tLayer.layer().id():{tLayer.layer().id()}")
+    #         print(f"**** tLayer.layer().name():{tLayer.layer().name()}")
+
+    def showMessage(self, messages, icon=QMessageBox.Information):
+        """
+
+
+        Parameters
+        ----------
+        messages : TYPE
+            DESCRIPTION.
+        icon : TYPE, optional
+            DESCRIPTION. The default is QMessageBox.Information.
+
+        Returns
+        -------
+        None.
+
+        """
+        messageBox = QMessageBox()
+        messageBox.setIcon(icon)
+        messageBox.setWindowTitle("TrainMinaTor message")
+        messageBox.setText('\n'.join(messages))
+        messages.clear()
+        messageBox.setStandardButtons(QMessageBox.Ok)
+        messageBox.exec()
 
     def showDialog(self, parent, windowTitle, labelText):
         """
-            :param parent:
-            :param windowTitle:
-            :param labelText:
-            :returns none:
+            param parent:
+            param windowTitle:
+            param labelText:
+            returns none:
         """
         #print(f"line:{lineno()}, ->TnTprojectDataManager:showDialog(windowTitle:{},labelText:{labelText} )")
         progress = QProgressDialog(parent)

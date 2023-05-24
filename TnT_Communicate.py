@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-/
+# -*- coding: utf-8 -*-
 """
 /***************************************************************************
 TnT_communicate
@@ -10,6 +10,7 @@ TnT_communicate
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
  ***************************************************************************/
 
 /***************************************************************************
@@ -28,11 +29,20 @@ class TnTcommunicate(QtCore.QObject):
     """
     Signals class
     """
+    #Emit by TnTnomenclatureWidget
+    enableLabelingGroupBoxes=pyqtSignal()
+    disableLabelingGroupBoxes=pyqtSignal()
+    updateCurrentClassInfo=pyqtSignal(list)
+    updateCurrentNomenclatureInfo=pyqtSignal(str)
 
     closeAdditionalView=pyqtSignal()
 
     lockAssociatedButton=pyqtSignal()
     unLockAssociatedButton=pyqtSignal()
+
+    #testSignal=pyqtSignal([int,str,int],name='testSignal')
+
+    testSignal=pyqtSignal(list)
 
     infoTextSignal=pyqtSignal()
 
@@ -45,4 +55,3 @@ class TnTcommunicate(QtCore.QObject):
 
     enableCustomizeWindowHint=pyqtSignal()
     disableWindowCloseButtonHint=pyqtSignal()
-    

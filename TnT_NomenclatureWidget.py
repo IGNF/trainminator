@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-/
+# -*- coding: utf-8 -*-
 """
 /***************************************************************************
 TnT_NomenclatureWidget
@@ -9,7 +9,17 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
+
+30/03/2022 Refactoring du code.
+           Ajout de la gestion des fichiers de nomenclature non conforme
+           (lignes, champs dupliqués)
+           Récriture de la gestion des signaux (pyqtSignal)
+
+ 15/03/2022: Ajout de "traces" d' entree dans les méthodes.
+
  ***************************************************************************/
 
 /***************************************************************************
@@ -21,24 +31,22 @@ Labelisation de données segmentées.
  *                                                                         *
  ***************************************************************************/
 """
-
+import os.path
 import inspect
 import csv
+import pandas as pd
+
 
 from PyQt5.QtCore    import (Qt, QVariant,QItemSelectionModel)
-from PyQt5.QtGui     import (QBrush, QColor)
+from PyQt5.QtGui     import (QColor, QPalette)
 from PyQt5.QtWidgets import (QTreeWidgetItem, QComboBox, QTreeWidget,
                              QSizePolicy, QWidget, QVBoxLayout,
-                             QSpacerItem)
-
+                             QSpacerItem, QLineEdit,QMessageBox,
+                             QMainWindow)
 
 def lineno():
-    """Returns the current line number in Python source code"""
+    """return the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
-
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
 
 
 class TnTnomenclatureWidget (QWidget):
@@ -46,315 +54,786 @@ class TnTnomenclatureWidget (QWidget):
     Class managing nomenclature file.
     """
 
-    def __init__(self, mainWindow=None, parent=None):
-        super(TnTnomenclatureWidget, self).__init__(parent)
+    def __init__(self, mainWindow:QMainWindow, widgetParent:QWidget):
+        QWidget.__init__(self, widgetParent)
 
         self.mainWindow=mainWindow
-        self.delimiter=';'
-        self.quoteChar=''
+        #self.delimiter=';'
         self.searchCode=''
 
-        self.rootElements = []
+        # get Signals class object from mainWindow
+        self.comm=self.mainWindow.comm
+
+        # <key_FileName>=search key, the name of the nomenclature file without extension
+        #                              {<CVS FILE NAME>:[<CSV FILE PATH>,<DIALECT>,[HEADER ITEMS]]}
+        self.dictNomenclature = {}
+        self.dictNomenclatureDefault = {"NO_NOMENCLATURE":['NO_PATH', None, ['code','class','color']]}
+        self.nomenclatureNameMsg = "Please select NOMENCLATURE from the menu."
 
         #Nomenclature file header
-        self.fieldNameHeader = ['code','class','color']
-        self.tableAttributs={self.fieldNameHeader[0]:QVariant.Int,
-                             self.fieldNameHeader[1]:QVariant.String,
-                             self.fieldNameHeader[2]:QVariant.Int}
+        #self.fieldNameHeader = ['code','class','color']
+        self.tableAttributs={}
+        self.setTableAttributs(self.dictNomenclatureDefault["NO_NOMENCLATURE"][2],
+                               [QVariant.Int, QVariant.String, QVariant.Int]
+                               )
 
         #Used for contruct screening rules
         self.colorClassAssociation={}
 
-        self.classSelected=['NO_CODE', 'NO_LABEL', '#FFFFFF']
+        # Used for contruct bar char and pie char
+        self.dict4Chart={}
 
-        #self.defaultNomenclatureName="no_nomenclature"
-        self.defaultNomenclatureName="Please open nomenclature from menu."
-        self.defaultNomenclatureFile=""
+        #Displayed at startup when no nomenclature is selected by the user.
+        self.rowClassSelected=['NO_CODE', 'NO_LABEL', '#FFFFFF']
 
-        #Dictionnary of nomenclatures <key>=nomenclatureName  <value> fullPath to nomenclatureFile
-        self.nomenclatureFilesDict={self.defaultNomenclatureName:self.defaultNomenclatureFile}
+        self.nomenclatureQComboBox = None
 
-        self.indexCurrentNomenclature=0
-        self.currentNomenclatureName=''
-        self.nomenclatureSelector=None
-        self.nomenclatureTree = None
+        self.nomenclatureQTreeWidget = None
 
-        self.limit_width=150
+        self.limit_width=175
 
-        self.setupUi()
+        self.QTreeWidgetCSS= """QTreeWidget {
+                                             color: rgb(0, 0, 0);
+                                             background-color: rgb(255, 255, 255);
+                                             selection-background-color: transparent;
+                                             show-decoration-selected: 1
+                                            }
+                                QTreeView {
+                                           show-decoration-selected: 1
+                                          }
+                                QTreeWidget::item:hover, QTreeWidget::item:hover:selected:active {
+                                           border: none;
+                                           border-radius: 5px;
+                                           color: rgb(255, 255, 255);
+                                           background-color: rgb(12, 128, 220)
+                                          }
+                                QTreeWidget::item:selected, QTreeWidget::item:selected:active, QTreeWidget::item:selected:!active {
+                                           color: rgb(255, 255, 255);
+                                           background-color: rgb(12, 128, 220)
+                                          }"""
 
-        self.nomenclatureSelector.activated.connect(self.drawNomenclature)
-        self.nomenclatureTree.itemSelectionChanged.connect(self.classSelectionChanged)
+        self.QMessageBoxCSS="""QMessageBox QLabel {
+                                                   font-weight :bold
+                                                   }"""
+        self.layout= QVBoxLayout(self)
+        self.setupUi(self.layout)
 
-    def getFieldNameHeader(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getFieldNameHeader()")
-        return self.fieldNameHeader
 
-    def getDelimiter(self):
+    # About self.dictNomenclature ###############################################
+    def set_DictNomenclature(self, key_FileName, values):
         """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getDelimiter()")
-        return self.delimiter
 
-    def setDelimiter(self, delimiter=';'):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setDelimiter()")
-        self.delimiter=delimiter
 
-    def getQuoteChar(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getQuoteChar()")
-        return self.quoteChar
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+        values : TYPE
+            DESCRIPTION.
 
-    def setQuoteChar(self, quoteChar=';'):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setQuoteChar()")
-        self.quoteChar=quoteChar
+        Returns
+        -------
+        None.
 
-    def getIndexCurrentNomenclature(self):
         """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getIndexCurrentNomenclature()")
-        return self.indexCurrentNomenclature
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName}, values={values})")
+        self.dictNomenclature[key_FileName]=values
 
-    def setIndexCurrentNomenclature(self, index=0):
+    def setCsvFilePath_DictNomenclature(self, key_FileName, csvfilepath):
         """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setIndexCurrentNomenclature()")
-        self.indexCurrentNomenclature=index
 
-    def unsetIndexCurrentNomenclature(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->unsetIndexCurrentNomenclature()")
-        self.setIndexCurrentNomenclature()
 
-    def setCurrentNomenclatureName(self, name):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setCurrentNomenclatureName()")
-        self.currentNomenclatureName=name
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+        csvfilepath : TYPE
+            DESCRIPTION.
 
-    def getCurrentNomenclatureName(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getCurrentNomenclatureName()")
-        return self.currentNomenclatureName
+        Returns
+        -------
+        None.
 
-    def setupUi(self):
         """
-            :param none:
-            :returns none:
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName}, csvfilepath={csvfilepath})")
+        self.dictNomenclature[key_FileName][0]=csvfilepath
+
+    def getCsvFilePath_DictNomenclature(self, key_FileName):
         """
-        #print(f"line:{self.lineno()}, TnTnomenclatureWidget->setupUi()")
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(-1, 1, -1, 1)
 
-        self.nomenclatureSelector= QComboBox(self)
-        self.nomenclatureSelector.addItems( self.nomenclatureFilesDict.keys() )
-        self.layout.addWidget(self.nomenclatureSelector)
 
-        self.nomenclatureTree= QTreeWidget(self)
-        self.nomenclatureTree.headerItem().setText(0, self.fieldNameHeader[0])
-        self.nomenclatureTree.headerItem().setText(1, self.fieldNameHeader[1])
-        self.nomenclatureTree.headerItem().setText(2, self.fieldNameHeader[2])
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
 
-        self.layout.addWidget(self.nomenclatureTree)
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName})")
+        return self.dictNomenclature[key_FileName][0]
+
+    def setDialect_DictNomenclature(self, key_FileName, dialect):
+        """
+
+
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+        dialect : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName}, dialect={dialect})")
+        self.dictNomenclature[key_FileName][1]=dialect
+
+    def getDialect_DictNomenclature(self, key_FileName):
+        """
+
+
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName})")
+        return self.dictNomenclature[key_FileName][1]
+
+    def getHeaderItems_DictNomenclature(self, key_FileName):
+        """
+
+
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName})")
+        return self.dictNomenclature[key_FileName][2]
+
+    def setHeaderItems_DictNomenclature(self, key_FileName, headerItems):
+        """
+
+
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+        headerItems : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName}, headerItems={headerItems})")
+        self.dictNomenclature[key_FileName][2]=headerItems
+
+    def getCurrentHeaderItems_DictNomenclature(self):
+        """
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return self.getHeaderItems_DictNomenclature(self.currentIndex_NomenclatureQComboBox())
+
+    # About self.tableAttributs ###############################################
+    def setTableAttributs(self, attr_name, attr_type):
+        """
+
+
+        Parameters
+        ----------
+        attr_name : TYPE
+            DESCRIPTION.
+        attr_type : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(attr_name={attr_name}, attr_type{attr_type})")
+        self.tableAttributs = {attr_name[0]: attr_type[0],
+                               attr_name[1]: attr_type[1],
+                               attr_name[2]: attr_type[2]}
+
+    def getTableAttributs(self):
+        """
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        return self.tableAttributs
+
+    def updateTableAttributs(self, key_FileName):
+        """ clear self.tableAttribut.
+            set self.tableAttribut with HeaderItems values and default type [QVariant.Int, QVariant.String, QVariant.Int]
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName:{key_FileName})")
+        self.tableAttributs.clear()
+        self.setTableAttributs(self.getHeaderItems_DictNomenclature(key_FileName),
+                               [QVariant.Int, QVariant.String, QVariant.Int]
+                               )
+
+    def getTableAttributsName(self):
+        """
+
+
+        Returns
+        -------
+        list
+            DESCRIPTION.
+
+        """
+        return [*self.tableAttributs.keys()]
+
+    def getTableAttributsType(self):
+        """
+
+
+        Returns
+        -------
+        list
+            DESCRIPTION.
+
+        """
+        return [*self.tableAttributs.values()]
+
+    # About  bar char and pie char
+    def getDict4Chart(self):
+        """
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return self.dict4Chart
+
+    # About nomenclatureQComboBox
+    def currentIndex_NomenclatureQComboBox(self):
+        """
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return self.nomenclatureQComboBox.currentIndex()
+
+
+    def currentText_NomenclatureQComboBox(self):
+        """
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return self.nomenclatureQComboBox.currentText()
+
+
+    # About nomenclatureQTreeWidget
+    def setHeaderItems_nomenclatureQTreeWidget(self,listValuesHeaderItems):
+        """
+        set header items of self.nomenclatureQTreeWidget with listValuesHeaderItems
+            listValuesHeaderItems:
+            return none:
+
+
+        Parameters
+        ----------
+        listValuesHeaderItems : list of QTreeWidget header values.
+            DESCRIPTION.
+
+        Returns
+        -------
+        None
+
+        """
+
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listValuesHeaderItems:{listValuesHeaderItems})")
+        index=0
+        for valueHeaderItem in listValuesHeaderItems :
+            self.nomenclatureQTreeWidget.headerItem().setText(index, valueHeaderItem)
+            index+=1
+
+
+    def setupUi(self, layout):
+        """
+            return none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(layout:{layout})")
+        layout.setContentsMargins(-1, 1, -1, 1)
+
+
+        self.nomenclatureQComboBox= QComboBox(self)
+        self.nomenclatureQComboBox.addItem( self.nomenclatureNameMsg, QVariant.String )
+        self.nomenclatureQComboBox.setEnabled(False)
+        layout.addWidget(self.nomenclatureQComboBox)
+
+        self.nomenclatureQTreeWidget= QTreeWidget(self)
+        self.nomenclatureQTreeWidget.setStyleSheet(self.QTreeWidgetCSS)
+
+        self.setDefault_nomenclatureTreeWidgetHeaderItem()
+
+        layout.addWidget(self.nomenclatureQTreeWidget)
         spacerItem = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.layout.addItem(spacerItem)
+        layout.addItem(spacerItem)
+
+
+    def processNomenclatureList(self, nomenclaturelist_opened_by_user):
+        """
+         This method is calling when user selected Nomenclature>Open from menu bar.
+            param nomenclaturelist_opened_by_user: list of one or more existing files selected by the user.
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #                         {inspect.currentframe().f_code.co_name}\
+        #                         (nomenclaturelist_opened_by_user:\
+        #                         {nomenclaturelist_opened_by_user})")
+
+        for i in range(len(nomenclaturelist_opened_by_user)):
+            # nomenclaturelist_opened_by_user: list of one or more existing files selected by the user.
+            # Check if nomenclature file is correct
+            head_tail = os.path.split(nomenclaturelist_opened_by_user[i])
+            key_FileName = head_tail[1].split('.')[0]
+
+            with open(nomenclaturelist_opened_by_user[i],
+                           mode = 'r',
+                           encoding='utf-8') as csvFile:
+
+                dialect = csv.Sniffer().sniff(csvFile.read(1024))
+                csvFile.seek(0)
+                csvReader = csv.DictReader(csvFile, dialect=dialect)
+
+                if self.checkFieldsUnicity(nomenclaturelist_opened_by_user[i],
+                                           key_FileName,
+                                           dialect.delimiter):
+
+                    self.set_DictNomenclature(key_FileName,
+                                              [nomenclaturelist_opened_by_user[i],
+                                               dialect,
+                                               csvReader.fieldnames])
+
+            csvFile.close()
+
+        try:
+            self.nomenclatureQComboBox.currentTextChanged.disconnect(self.nomenclatureChanged)
+        except TypeError:  #Not connected
+            pass
+
+        self.nomenclatureQComboBox.setEnabled(False)
+
+        #Clear and Add or reAdd all nomenclatures present in dictionary
+        if self.dictNomenclature:
+            self.nomenclatureQComboBox.clear()
+            for key in self.dictNomenclature :
+                self.nomenclatureQComboBox.addItem(key)
+
+        self.nomenclatureQComboBox.setEnabled(True)
+
+        #Force nomenclatureChanged with nomenclatureQComboBox.currentText (ie first here)
+        self.nomenclatureChanged(self.nomenclatureQComboBox.currentText())
+
+        #Force read selected item (ie first item)
+        self.rowClassSelectedChanged()
+
+        #unlock widget group contains tools for labeling
+        self.comm.enableLabelingGroupBoxes.emit()
+
+        #Enable signal QComboBox currentTextChanged
+        self.nomenclatureQComboBox.currentTextChanged.connect(self.nomenclatureChanged)
+
+        #Enable signal QTreeWidget itemSelectionChanged
+        self.nomenclatureQTreeWidget.itemSelectionChanged.connect(self.rowClassSelectedChanged)
+
+
+    def disconnect_Signals(self):
+        """
+
+
+        Returns
+        -------
+        None.
+
+        """
+        try :
+            self.nomenclatureQComboBox.currentTextChanged.disconnect()
+        except TypeError:
+            pass
+
+        try :
+            self.nomenclatureQTreeWidget.itemSelectionChanged.disconnect()
+        except TypeError:
+            pass
+
+
+    def setDefault_nomenclatureTreeWidgetHeaderItem(self):
+        """
+        Clear QTreeWidget contents, initialize contents with default values
+        stored in self.dictNomenclatureDefault attribute
+            return none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+
+        key_FileName = list(self.dictNomenclatureDefault.keys())[0]
+        fieldNames = self.dictNomenclatureDefault[key_FileName][2]
+        i = 0
+        for fieldName in fieldNames:
+            self.nomenclatureQTreeWidget.headerItem().setText(i, fieldName)
+            self.nomenclatureQTreeWidget.headerItem().setTextAlignment(i, Qt.AlignHCenter)
+            i += 1
+
 
     def clear(self):
         """
         Execute when the project is cleared (and additionally when an open project is
         cleared just before a new project is read).
 
-            :param none:
-            :returns none:
+            return none:
         """
-        #print(f"line:{lineno()}, TnTnomenclatureWidget->cleared()")
-        self.nomenclatureFilesDict.clear()
-        self.nomenclatureFilesDict={self.defaultNomenclatureName:self.defaultNomenclatureFile}
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
 
-        self.setIndexCurrentNomenclature()
+        self.disconnect_Signals()
+
+        self.dictNomenclature.clear()
         self.colorClassAssociation.clear()
 
-        self.nomenclatureSelector.clear()
-        self.nomenclatureSelector.addItems( self.nomenclatureFilesDict.keys() )
+        self.nomenclatureQComboBox.clear()
+        self.nomenclatureQComboBox.addItem(self.nomenclatureNameMsg, QVariant.String)
+        self.nomenclatureQComboBox.setEnabled(False)
 
-        self.nomenclatureTree.clear()
-        self.nomenclatureTree.headerItem().setText(0, self.fieldNameHeader[0])
-        self.nomenclatureTree.headerItem().setText(1, self.fieldNameHeader[1])
-        self.nomenclatureTree.headerItem().setText(2, self.fieldNameHeader[2])
+        self.nomenclatureQTreeWidget.clear()
+        self.setDefault_nomenclatureTreeWidgetHeaderItem()
 
-    def rgb2hex(self, rvb=[0,0,0]):
+
+    def rgb2hex(self, rgb=None):
         """
-            :param none:
-            :returns none:
+        Converting rgb color value into hexa color value.
+            param rgb: rgb value to convert.
+            return hex: hex value.
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->rgb2hex()")
-        return '#%02x%02x%02x' % (rvb[0], rvb[1], rvb[2])
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        if rgb is None:
+            rgb = [0, 0, 0]
+        return '#%02x%02x%02x' % (rgb[0], rgb[1], rgb[2])
 
     def hex2rgb(self, hx):
         """
-            :param none:
-            :returns none:
+        Converting hexa color value into rgb color value.
+            param hx: hexa value to convert.
+            return rgb: rgb value
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->hex2rgb()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         return [ int(hx[0:2],16), int(hx[2:4],16) , int(hx[4:6],16)]
 
-    def convertColor2hex(self, stringColor):
+    def convertColor2hex(self, stringcolor):
         """
-            :param none:
-            :returns none:
+            param stringcolor:
+            return StringColor: StringColor as hexa notation.
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->convertColor2hex()")
-        if stringColor.startswith('#'):
-            return  stringColor
-        elif stringColor.startswith('(') and stringColor.endswith(')'):
-            res=(((stringColor.split('(')[1]).split(')'))[0]).split(',')
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        if stringcolor.startswith('(') and stringcolor.endswith(')'):
+            res=(((stringcolor.split('(')[1]).split(')'))[0]).split(',')
             color_RGB=[int(res[0]),int(res[1]),int(res[2])]
-            stringColor=self.rgb2hex(color_RGB)
-            return stringColor
-        else :
-            return stringColor
+            stringcolor=self.rgb2hex(color_RGB)
 
-    def setColorClassAssociation(self, classKey, colorValue):
-        """
-            :param classKey:
-            :param colorValue:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setColorClassAssociation()")
-        self.colorClassAssociation[classKey]=colorValue
+        return stringcolor
 
-    def initFieldNameHeader(self, fileNamePath):
+    def setColorClassAssociation(self, classkey, colorvalue):
         """
-            :param fileNamePath:
-            :returns none:
+            param classkey: classKey as dictionary key.
+            param colorvalue: colorValue as dictionary value.
+            return none:
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->initFieldNameHeader()")
-        with open(fileNamePath) as f:
-            reader = csv.reader(f)
-            row = next(reader)
-            return row
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(classkey={classkey}, colorvalue={colorvalue})")
+        self.colorClassAssociation[classkey]=colorvalue
 
-    def dumpCSVFile(self, fileNamePath):
+
+    def dumpCSVFile(self, key_fileName):
         """
-            :param fileNamePath:
-            :returns none:
+            param key_fileName: search key representing the nomenclature selected by the user.
+            return none:
         """
-        #print(f"line:{lineno()}, TnTnomenclatureWidget->dumpCSVFile(fileNamePath:{fileNamePath})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_fileName={key_fileName})")
+
         try :
-            csvFile=open(fileNamePath)
-            csvReader = csv.DictReader(csvFile, fieldnames=self.getFieldNameHeader(), delimiter=self.getDelimiter())
-            next(csvReader)
-            # clear colorClassAssociation
-            self.colorClassAssociation.clear()
-            index=0
-            for row in csvReader:
-                color_HEX="#000000"
-                color_RGB=[0,0,0]
-                if self.fieldNameHeader[2] in row :
-                    col=row[self.fieldNameHeader[2]]
-                    if col.startswith('#'):
-                        color_HEX=col
-                        res=(col.split('#')[1])
-                        color_RGB=self.hex2rgb(res)
 
-                    elif col.startswith('(') and col.endswith(')'):
-                        res=(((col.split('(')[1]).split(')'))[0]).split(',')
-                        color_RGB=[int(res[0]),int(res[1]),int(res[2])]
-                        color_HEX=self.rgb2hex(color_RGB)
+            filepathname=self.dictNomenclature[key_fileName][0]
+            dialect=self.dictNomenclature[key_fileName][1]
+            fieldnames=self.dictNomenclature[key_fileName][2]
 
-                    color=QColor()
-                    color.setRgb( color_RGB[0], color_RGB[1], color_RGB[2] )
-                    qbrush=QBrush(color)
+            with open(filepathname, mode = 'r', encoding='utf-8') as csvFile :
+                csvReader = csv.DictReader(csvFile, dialect=dialect)
 
-                    if index==0:
-                        self.classSelected=[row[self.fieldNameHeader[0]],row[self.fieldNameHeader[1]], color_HEX]
+                self.setHeaderItems_nomenclatureQTreeWidget(fieldnames)
+                self.colorClassAssociation.clear()
+                index=0
+                first_item=None
+                for row in csvReader:
+                    color_HEX="#000000"
+                    color_RGB=[0,0,0]
+                    if fieldnames[2] in row :
+                        col = row[fieldnames[2]]
+                        if col.startswith('#'):
+                            color_HEX = col
+                            res = col.split('#')[1]
+                            color_RGB=self.hex2rgb(res)
 
-                    twi=QTreeWidgetItem(self.nomenclatureTree, [row[self.fieldNameHeader[0]],row[self.fieldNameHeader[1]],color_HEX])
-                    twi.setBackground(2, qbrush)
-                    twi.setForeground(2, qbrush)
+                        elif col.startswith('(') and col.endswith(')'):
+                            res=(((col.split('(')[1]).split(')'))[0]).split(',')
+                            color_RGB=[int(res[0]),int(res[1]),int(res[2])]
+                            color_HEX=self.rgb2hex(color_RGB)
 
-                    self.setColorClassAssociation(row[self.fieldNameHeader[1]], color_HEX)
-                    index+=1
+                        color=QColor()
+                        color.setRgb( color_RGB[0], color_RGB[1], color_RGB[2] )
+
+                        self.dict4Chart[ row[fieldnames[0]] ] = []
+                        self.dict4Chart[ row[fieldnames[0]] ].append( row[fieldnames[1]] )
+                        self.dict4Chart[ row[fieldnames[0]] ].append( color_HEX )
+
+                        item = QTreeWidgetItem()
+                        item.setText(0, row[fieldnames[0]])
+                        item.setText(1, row[fieldnames[1]])
+                        self.nomenclatureQTreeWidget.addTopLevelItem(item)
+
+                        qlineEdit = QLineEdit(color_HEX)
+                        palette = QPalette()
+                        palette.setColor(QPalette.Base, color)
+                        palette.setColor(QPalette.Text, color)
+                        qlineEdit.setPalette(palette)
+                        qlineEdit.setFixedSize(40,20)
+                        self.nomenclatureQTreeWidget.setItemWidget(item, 2, qlineEdit)
+
+                        if index==0:
+                            first_item=item
+
+                        self.nomenclatureQTreeWidget.header().resizeSection(2,40)
+                        self.nomenclatureQTreeWidget.header().setStretchLastSection(False)
+
+                        self.setColorClassAssociation(row[fieldnames[1]], color_HEX)
+                        index+=1
 
             csvFile.close()
+            #And now select first item in treeWidget
+            self.nomenclatureQTreeWidget.setCurrentItem(first_item,
+                                                 0,
+                                                 QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+
         except FileNotFoundError :
-            twi=QTreeWidgetItem(self.nomenclatureTree, ["0","No LABEL","#000000"])
-        #print(f"line:{lineno()}, TnTnomenclatureWidget <<-- dumpCSVFile(fileNamePath:{fileNamePath})")
+            QTreeWidgetItem(self.nomenclatureQTreeWidget, ["0","No LABEL","#000000"])
+
+
+    def showMsgBox(self, text, icon=QMessageBox.Information):
+        """
+        Contruct and show a new message box
+            param text: message text.
+            param icon: This argument holds the message box icon, defaut value QMessageBox.Information.
+                         QMessageBox.NoIcon, the message box does not have any icon.
+                         QMessageBox.Question, an icon indicating that the message is asking a question.
+                         QMessageBox.Information, an icon indicating that the message is nothing out of the ordinary.
+                         QMessageBox.Warning, an icon indicating that the message is a warning, but can be dealt with.
+                         QMessageBox.Critical, an icon indicating that the message represents a critical problem.
+            return none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        messageBox = QMessageBox()
+        messageBox.setIcon(icon)
+        messageBox.setWindowTitle("TrainMinaTor message")
+        messageBox.setText(text)
+        messageBox.setStandardButtons(QMessageBox.Ok)
+        messageBox.setStyleSheet(self.QMessageBoxCSS)
+        messageBox.exec()
+
+
+    def checkAttrNameLengh(self, shortFileName, listAttr, shapeFileSpec=True):
+        """
+        Checking if name of columns in CSV file is not too long. (10 chars max for a attribute
+        name in Shapefile format)
+            param shortFileName: file name without extension.
+            param listAttr: list of columms name (ie attr name in ShapeFile).
+            return Boolean: True if no errors in file, Otherwise False.
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #   {inspect.currentframe().f_code.co_name}(shortFileName:\
+        #   {shortFileName},listAttr:{listAttr},shapeFileSpec={shapeFileSpec})")
+
+        result=True
+        if shapeFileSpec:
+            msg=''
+            for name in listAttr :
+                if  len(name)>10:
+                    msg=msg+f"Attribut name \"{name}\" is too long ({len(name)}c).\n"
+                    result=False
+
+            if not result:
+                msg=f"ERROR. Nomenclature file {shortFileName} contains errors.\n\n" \
+                    f"On the shapefile format specifications the length of attribute\n name is limited to ten (10) characters.\n\n"+msg
+                msg = msg + f"\nNomenclature file {shortFileName} coudn't using for labeling data."
+                self.showMsgBox(msg, QMessageBox.Critical)
+
+        return result
+
 
     def drawNomenclature(self, index):
         """
-            :param index:
-            :returns none:
+            param index: index of selected nomenclature (see nomenclatureSelector)
+            return none:
         """
-        #print(f"line:{self.lineno()},TnTnomenclatureWidget->drawNomenclature(index:{index})")
-        self.nomenclatureTree.clear()
-        self.setIndexCurrentNomenclature(index)
-        iname=self.nomenclatureSelector.itemText(index)
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(index:{index})")
+        self.nomenclatureQTreeWidget.clear()
+        fname = self.nomenclatureQComboBox.itemText(index)
 
-        self.setCurrentNomenclatureName(iname)
-        self.dumpCSVFile(self.nomenclatureFilesDict[iname])
-        self.nomenclatureTree.resizeColumnToContents(0)
-        self.nomenclatureTree.resizeColumnToContents(1)
-        if self.nomenclatureTree.columnWidth(1) > self.limit_width:
-            self.nomenclatureTree.setColumnWidth(1, self.limit_width)
-        self.nomenclatureTree.resizeColumnToContents(2)
+        self.dumpCSVFile(fname)
+
+        self.nomenclatureQTreeWidget.resizeColumnToContents(0)
+        self.nomenclatureQTreeWidget.resizeColumnToContents(1)
+        if self.nomenclatureQTreeWidget.columnWidth(1) > self.limit_width:
+            self.nomenclatureQTreeWidget.setColumnWidth(1, self.limit_width)
+        self.nomenclatureQTreeWidget.resizeColumnToContents(2)
+
+
+    def checkFieldsUnicity(self, filepathname, key_FileName, delimiter=','):
+        """
+            param filepathname: full file name path.
+            param key_FileName: file name without extension.
+            return Boolean: True if no errors in file (no duplicate fields or lines), Otherwise  False
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #  {inspect.currentframe().f_code.co_name}(filepathname={filepathname},\
+        #  key_FileName={key_FileName},delimiter={delimiter})")
+
+        result=True
+        initial_df = pd.read_csv(filepathname, sep=delimiter)
+        fieldNames = initial_df.columns.tolist()
+
+        if not self.checkAttrNameLengh(key_FileName, fieldNames):
+            result=False
+
+        else :
+            #Find full duplicate line (except first occurrence)
+            duplicateRows_df = initial_df[initial_df.duplicated()]
+
+            dict_temp={}
+            for fieldname in fieldNames :
+                tmp_df = initial_df[initial_df.duplicated([fieldname])]
+                tmp_df = pd.concat([tmp_df, duplicateRows_df])
+                # Dropping duplicate line.
+                tmp_df.drop_duplicates(keep=False, inplace=True)
+                if not tmp_df.empty :
+                    dict_temp[fieldname]=tmp_df.to_string(header=False)
+
+            if not duplicateRows_df.empty and dict_temp:
+
+                msg = f"ERROR. Nomenclature file {key_FileName} contains errors.\n\n"
+                if not duplicateRows_df.empty:
+                    msg=msg+"- The following lines are duplicated:\n"
+                    msg=msg+duplicateRows_df.to_string(header=False)+"\n\n"
+
+                if dict_temp:
+                    msg = msg + "- The following lines contains duplicates fields:\n"
+                    for k in dict_temp:
+                        msg = msg + f"field {k} :\n"
+                        msg = msg + f"{dict_temp[k]}\n\n"
+                msg=msg+f"Nomenclature file {key_FileName} not loaded."
+                self.showMsgBox(msg, QMessageBox.Critical)
+                result=False
+
+        return result
+
 
     def keyPressEvent(self, event):
         """
-            :param event:
-            :returns none:
+            param event:
+            return none:
         """
-        #print(f"line:{lineno()}, TnTnomenclatureWidget -> keyPressEvent()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #    {inspect.currentframe().f_code.co_name}()")
         if Qt.Key_0 <= event.key() <= Qt.Key_9 :
             self.searchCode=self.searchCode+str( event.text() )
         elif event.key() == Qt.Key_Return :
-            itemsList = self.nomenclatureTree.findItems( self.searchCode , Qt.MatchExactly, 0)
+            itemsList = self.nomenclatureQTreeWidget.findItems( self.searchCode , Qt.MatchExactly, 0)
             if itemsList :
-                self.nomenclatureTree.setCurrentItem( itemsList[0],
-                                                      0,
-                                                      QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                self.nomenclatureQTreeWidget.setCurrentItem( itemsList[0],
+                                                             0,
+                                                             QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
             self.searchCode=''
         else:
             return QWidget.keyPressEvent(self, event)
 
-    def classSelectionChanged(self):
+
+
+    def nomenclatureChanged(self, key_FileName):
         """
-            :param none:
-            :returns none:
+
+
+        Parameters
+        ----------
+        key_FileName : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTnomenclatureWidget -> classSelectionChanged()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(key_FileName={key_FileName})")
+        self.updateTableAttributs(key_FileName)
+        self.drawNomenclature(self.currentIndex_NomenclatureQComboBox())
+        self.comm.updateCurrentNomenclatureInfo.emit(key_FileName)
+
+
+    def rowClassSelectedChanged(self):
+        """
+            return none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
         try:
-            newClass=self.nomenclatureTree.selectedItems()[0]
-            self.classSelected=[newClass.text(0), newClass.text(1), newClass.text(2)]
+            item=self.nomenclatureQTreeWidget.selectedItems()[0]
+            self.rowClassSelected = [item.text(0),
+                                     item.text(1),
+                                     self.nomenclatureQTreeWidget.itemWidget(item, 2).text()]
+
+            self.comm.updateCurrentClassInfo.emit(self.rowClassSelected)
+
         except IndexError:
             pass
         return True

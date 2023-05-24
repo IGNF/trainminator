@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-/
+# -*- coding: utf-8 -*-
 """
 /***************************************************************************
 TnT_AdditionalView
@@ -9,7 +9,11 @@ Labelisation de données segmentées.
         begin                : 2021-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2021 by IGN
+        authors              : Yann Le Borgne
         email                : yann.le-borgne@ign.fr
+        version              : 1.3.0
+
+ 15/03/2022:  Ajout de "traces" entree dans les méthodes.
  ***************************************************************************/
 
 /***************************************************************************
@@ -27,14 +31,19 @@ import inspect
 from qgis.core import QgsProject
 from qgis.gui import QgsLayerTreeMapCanvasBridge
 
-
-from PyQt5           import  QtCore
-from PyQt5.QtGui     import (QIcon, QPixmap)
-from PyQt5.QtWidgets import (QSizePolicy, QWidget, QMainWindow,
-                             QPushButton, QVBoxLayout, QGridLayout,
-                             QHBoxLayout, QSpacerItem, QGroupBox,
-                             QDockWidget)
-
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import (
+    QSizePolicy,
+    QWidget,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QGridLayout,
+    QHBoxLayout,
+    QSpacerItem,
+    QGroupBox,
+    QDockWidget,
+)
 
 from .TnT_MapCanvas import TnTmapCanvas
 from .TnT_LayerTreeView import TnTLayerTreeView
@@ -44,290 +53,294 @@ def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
 
-def flocals():
-    """Returns the local namespace seen by this frame"""
-    return inspect.currentframe().f_back.f_locals
-
 class TnTadditionalView(QMainWindow):
     """
     Class managing the additional view.
     """
 
     def __init__(self, parent=None):
-        #QMainWindow.__init__(self, parent)
-        super(TnTadditionalView, self).__init__(parent)
+        QMainWindow.__init__(self, parent)
+
+        self.setObjectName("Additional_View")
+        self.resize(1300, 900)
 
         self.comm = TnTcommunicate()
         self.comm.closeAdditionalView.connect(self.close)
 
-        self.windowParent=parent
-        self.tntLayerTreeView=None
-        self.canvas=None
+        self.tntLayerTreeView = None
+        self.canvas = None
 
         self.setupUi()
 
-        self.setWindowFlags(self.windowFlags() # reuse initial flags
-                            & ~QtCore.Qt.WindowCloseButtonHint # and unset flag
-                           )
+        self.setWindowFlags(
+            self.windowFlags()  # reuse initial flags
+            & ~QtCore.Qt.WindowCloseButtonHint  # and unset flag
+        )
+
         self.show()
-
-
-    def module(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->module()")
-        return inspect.getmodule(self)
-
 
     def setCanvas(self, canvas=None):
         """
-            :param none:
-            :returns none:
+
+
+        Parameters
+        ----------
+        canvas : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setCanvas()")
-        self.canvas=canvas
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+        self.canvas = canvas
 
     def getCanvas(self):
         """
-            :param none:
-            :returns none:
+
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
         return self.canvas
 
     def unsetCanvas(self):
         """
-            :param none:
-            :returns none:
+
+
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->unsetCanvas()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.setCanvas()
 
-    def setSlave(self, slave=None):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"{lineno()}-{self.flocals()} TnTadditionalView : Passe setSlave()")
-        #self.canvas=None
-        self.canvas.setSlave(slave)
-
-    def unsetSlave(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"{lineno()} TnTadditionalView : Passe unsetSlave()")
-        self.canvas=None
-        #self.setSlave()
-
-    def getSlave(self):
-        """
-            :param none:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getSlave()")
-        return None
-        #return self.canvas.getSlave()
 
     def setupUi(self):
         """
-            :param none:
-            :returns none:
+            setup UI.
+
+
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setupUi()")
-        self.setObjectName("Additional View")
-        self.resize(1300, 900)
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
-        self.centralwidget = QWidget(self)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
-        self.centralwidget.setSizePolicy(sizePolicy)
 
-        self.verticalLayout = QVBoxLayout(self.centralwidget)
+        centralwidget = QWidget(self)
+        centralwidget.setObjectName("Central_Widget")
+        centralwidget.setSizePolicy(sizePolicy)
+        verticalLayout = QVBoxLayout(centralwidget)
 
-        self.topWidget = self.setTopWidget( QWidget(self.centralwidget) )
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.topWidget.sizePolicy().hasHeightForWidth())
-        self.topWidget.setSizePolicy(sizePolicy)
-        self.verticalLayout.addWidget(self.topWidget)
+        topWidget = self.setTopWidget(QWidget(centralwidget))
+        topWidget.setObjectName("Top_Widget")
+        verticalLayout.addWidget(topWidget)
 
-        self.widget_middle = QWidget(self.centralwidget)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.widget_middle.sizePolicy().hasHeightForWidth())
-        self.widget_middle.setSizePolicy(sizePolicy)
-        self.widget_middle.setObjectName("widget_middle")
-        self.horizontalLayout_middle = QHBoxLayout(self.widget_middle)
-        self.horizontalLayout_middle.setObjectName("horizontalLayout_middle")
+        middleWidget = QWidget(centralwidget)
+        middleWidget.setSizePolicy(sizePolicy)
+        middleWidget.setObjectName("Middle_Widget")
 
-        self.canvas=TnTmapCanvas(self.widget_middle,
-                                 "Canvas_AdditionalView")
+        horizontalLayout_middle = QHBoxLayout(middleWidget)
+        horizontalLayout_middle.setObjectName("Horizontal_Layout_middle")
 
-        self.horizontalLayout_middle.addWidget(self.canvas)
-        self.verticalLayout.addWidget(self.widget_middle)
-        self.setCentralWidget(self.centralwidget)
+        self.canvas = TnTmapCanvas(middleWidget, "Canvas_AdditionalView")
+        horizontalLayout_middle.addWidget(self.canvas)
 
-        self.dockWidget_west = QDockWidget(self)
+        verticalLayout.addWidget(middleWidget)
 
-        self.dockWidget_west.setFeatures(self.dockWidget_west .features() & ~QDockWidget.DockWidgetClosable)
+        self.setCentralWidget(centralwidget)
+
+        # DockWidget West ie (treeView)
+        dockWidget_west = QDockWidget(self)
+
+        dockWidget_west.setFeatures(
+            dockWidget_west.features() & ~QDockWidget.DockWidgetClosable
+        )
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dockWidget_west.sizePolicy().hasHeightForWidth())
-        self.dockWidget_west.setSizePolicy(sizePolicy)
+        dockWidget_west.setSizePolicy(sizePolicy)
 
-        self.dockWidgetContents_west = QWidget()
-        self.gridLayout_west = QGridLayout(self.dockWidgetContents_west)
+        dockWidgetContents_west = QWidget()
+        gridLayout_west = QGridLayout(dockWidgetContents_west)
 
-        #Used clone of initial layerRoot:
-        # Allows the selection of layers without affecting the state of the project LayerTreeRoot
-        self.tntLayerTreeView=TnTLayerTreeView( self, self.dockWidgetContents_west, QgsProject.instance().layerTreeRoot().clone() )
-        self.tntLayerTreeView.setParentWindow(self)
+        # Used clone of initial layerRoot:
+        # Allows the selection of layers without affecting the state of
+        # the project LayerTreeRoot
+        self.tntLayerTreeView = TnTLayerTreeView(
+            self,
+            dockWidgetContents_west,
+            QgsProject.instance().layerTreeRoot().clone(),
+        )
 
-        #sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.tntLayerTreeView.sizePolicy().hasHeightForWidth())
         self.tntLayerTreeView.setSizePolicy(sizePolicy)
-        self.gridLayout_west.addWidget(self.tntLayerTreeView, 0, 0, 1, 1)
 
-        self.dockWidget_west.setWidget(self.dockWidgetContents_west)
+        gridLayout_west.addWidget(self.tntLayerTreeView, 0, 0, 1, 1)
 
-        self.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockWidget_west)
+        dockWidget_west.setWidget(dockWidgetContents_west)
 
-        self.layerTreeMapCanvasBridge=QgsLayerTreeMapCanvasBridge(self.tntLayerTreeView.getLayerTreeRoot(), self.getCanvas())
+        self.addDockWidget(QtCore.Qt.DockWidgetArea(1), dockWidget_west)
 
-        self.centerAll_pushButton.clicked.connect( self.centerAll )
-        #Calling <synchro_AdditionalView()> method, on clicking button <synchro_pushButton>
-        self.synchro_pushButton.clicked.connect( self.synchro_AdditionalView )
+        self.layerTreeMapCanvasBridge = QgsLayerTreeMapCanvasBridge(
+            self.tntLayerTreeView.getLayerTreeRoot(), self.getCanvas()
+        )
 
-        self.retranslateUi(self)
         QtCore.QMetaObject.connectSlotsByName(self)
-
-    def retranslateUi(self, target):
-        """
-            :param target:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->retranslateUi()")
-        _translate = QtCore.QCoreApplication.translate
-        target.setWindowTitle(_translate("Additional View", "Additional View"))
 
 
     def setTopWidget(self, widget):
         """
-            :param widget:
-            :returns widget:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->setTopWidget()")
 
-        # Init layout of this widget_top
-        self.verticalLayout_top = QVBoxLayout(widget)
-        self.verticalLayout_top.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_top.setSpacing(0)
+
+        Parameters
+        ----------
+        widget : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        widget : TYPE
+            DESCRIPTION.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
         # Init Group box contains buttons which manage additional view
-        self.groupBox_view = QGroupBox(widget)
+
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.groupBox_view.sizePolicy().hasHeightForWidth())
-        self.groupBox_view.setSizePolicy(sizePolicy)
 
-        self.horizontalLayout_view = QHBoxLayout(self.groupBox_view)
-        self.horizontalLayout_view.setContentsMargins(4, 2, 4, 2)
-        self.horizontalLayout_view.setSpacing(4)
+        groupBox = QGroupBox(widget)
+        groupBox.setSizePolicy(sizePolicy)
 
-        self.centerAll_pushButton = QPushButton(self.groupBox_view)
-        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.centerAll_pushButton.sizePolicy().hasHeightForWidth())
-        self.centerAll_pushButton.setSizePolicy(sizePolicy)
+        # Change size policy for next pushButton
+        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Minimum)
 
-        self.centerAll_pushButton.setText("Center ALL")
-        self.centerAll_pushButton.setIconSize(QtCore.QSize(22, 22))
-        self.horizontalLayout_view.addWidget(self.centerAll_pushButton)
+        layout = QHBoxLayout(groupBox)
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(4)
+
+        centerAll_pushButton = QPushButton(groupBox)
+        centerAll_pushButton.setText("Center All")
+        centerAll_pushButton.setObjectName(centerAll_pushButton.text().replace(' ','_'))
+        centerAll_pushButton.setSizePolicy(sizePolicy)
+        layout.addWidget(centerAll_pushButton)
 
         # Spacer : push all  buttons on right side
-        spacerItem = QSpacerItem(558, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.horizontalLayout_view.addItem(spacerItem)
+        spacerItem = QSpacerItem(558,
+                                 20,
+                                 QSizePolicy.Expanding,
+                                 QSizePolicy.Minimum
+                                 )
+        layout.addItem(spacerItem)
 
-        self.synchro_pushButton = QPushButton(self.groupBox_view)
-        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.synchro_pushButton.sizePolicy().hasHeightForWidth())
-        self.synchro_pushButton.setSizePolicy(sizePolicy)
+        synchroViews_pushButton = QPushButton(groupBox)
+        synchroViews_pushButton.setText("Synchro Views")
+        synchroViews_pushButton.setObjectName(synchroViews_pushButton.text().replace(' ','_'))
+        synchroViews_pushButton.setSizePolicy(sizePolicy)
+        synchroViews_pushButton.setCheckable(True)
+        synchroViews_pushButton.setChecked(False)
+        layout.addWidget(synchroViews_pushButton)
 
-        self.synchro_pushButton.setText("Synchro View")
-        self.synchro_pushButton.setCheckable(True)
-        self.synchro_pushButton.setChecked(False)
+        centerAll_pushButton.clicked.connect(self.centerAll)
+        # # Calling <synchro_AdditionalView()> method,
+        # # on clicking button <synchro_pushButton>
+        synchroViews_pushButton.clicked.connect(self.synchronize_Views)
 
-        self.horizontalLayout_view.addWidget(self.synchro_pushButton)
-        self.verticalLayout_top.addWidget(self.groupBox_view)
+        return groupBox
 
-        return widget
-
-    def synchro_AdditionalView(self):
+    def synchronize_Views(self):
         """
-            :param none:
-            :returns none:
+
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->synchro_AdditionalView()")
-        # Change state of button Synchro/UnSynchro
-        self.toggleTextButton(self.synchro_pushButton, "Synchro View", "UnSynchro View")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
 
-        wp=self.windowParent
-        # Force checked for toggleTextButton() method
-        wp.synchro_pushButton.setChecked( not wp.synchro_pushButton.isChecked() )
-        wp.toggleTextButton(wp.synchro_pushButton, "Synchro View", "UnSynchro View")
-
-        wp.getActiveCanvas().toggleStateSynchroMode()
+        sender = self.sender()
+        self.toggleTextButton(
+            sender,
+            "Synchro Views",
+            "UnSynchro Views"
+        )
         self.getCanvas().toggleStateSynchroMode()
+        self.set_SynchronizeViews_State(sender, self.parent())
+
+    def set_SynchronizeViews_State(self, sender, view_target):
+        """
+
+        Parameters
+        ----------
+        sender : TYPE
+            DESCRIPTION.
+        view_target : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
+        widget_type = type(sender)
+        widget_name = sender.objectName()
+        button = view_target.findChild(widget_type, widget_name)
+        button.setChecked(sender.isChecked())
+        button.setText(sender.text())
+        view_target.getActiveCanvas().toggleStateSynchroMode()
 
     def toggleTextButton(self, pushButton, textON, textOFF):
         """
-            :param pushButton:
-            :param textON:
-            :param textOFF:
-            :returns none:
-        """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->toggleTextButton()")
-        t=(lambda:textON, lambda:textOFF)[pushButton.isChecked()]()
-        pushButton.setText(t)
+        Parameters
+        ----------
+        pushButton : TYPE
+            DESCRIPTION.
+        textON : TYPE
+            DESCRIPTION.
+        textOFF : TYPE
+            DESCRIPTION.
 
-    # def toggleIconButton(self, pushButton, offStateImpage, onStateImage, sizeIcon):
-    #     """
-    #         :param pushButton:
-    #         :param offStateImpage:
-    #         :param onStateImage:
-    #         :param sizeIcon:
-    #         :returns none:
-    #     """
-    #     #print(f"line:{lineno()}, TnTlabelingToolsBox->toggleIconButton()")
-    #     icon = QIcon()
-    #     # 'Off' state = unchecked state of pushButton
-    #     icon.addPixmap(QPixmap( offStateImpage ), QIcon.Normal, QIcon.Off)
-    #     # 'On' state = checked state of pushButton
-    #     icon.addPixmap(QPixmap( onStateImage ), QIcon.Normal, QIcon.On)
-    #     pushButton.setIcon(icon)
-    #     pushButton.setIconSize(sizeIcon)
-    #     pushButton.setCheckable(True)
+        Returns
+        -------
+        None.
+
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}(pushButton={pushButton}),")
+
+        t = (lambda: textON, lambda: textOFF)[pushButton.isChecked()]()
+        pushButton.setText(t)
 
     def centerAll(self):
         """
-            :param none:
-            :returns none:
+        Returns
+        -------
+        None.
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->centerAll()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->\
+        #       {inspect.currentframe().f_code.co_name}()")
+
         self.getCanvas().zoomToFullExtent()
