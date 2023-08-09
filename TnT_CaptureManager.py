@@ -40,10 +40,8 @@ from qgis.core import (QgsProject, QgsVectorLayer, QgsFeature,
 from qgis.gui import (QgsMapToolEmitPoint, QgsRubberBand)
 
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import (QApplication, QPushButton)
 from PyQt5.QtGui import QColor, QKeyEvent
-
-# from .TnT_UndoRedo import TnTUndoRedo
 
 
 def lineno():
@@ -51,19 +49,22 @@ def lineno():
     return inspect.currentframe().f_back.f_lineno
 
 
-class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
+class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
 #=============================================================================
     """
     User capture management class.
     Associated geometry of point type.
     """
-    def __init__(self, parent, canvas):
-        QgsMapToolEmitPoint.__init__(self, canvas)
-
+    def __init__(self, parent, canvas, nomenclaturewidget):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        super().__init__(canvas)
+        
         self.parent=parent
-        self.canvas = canvas
-        self.comm=parent.comm
+        self.canvas=canvas
+        self.nomenclaturewidget=nomenclaturewidget
 
         self.capture = False
         self.layer = None
@@ -72,7 +73,7 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         # self.tntundoredo=TnTUndoRedo()
 
         self.selectionRubberBand = self.createRubberBand(QgsWkbTypes.PointGeometry)
-        self.setGraphicRendering_RubberBand(self.selectionRubberBand)
+        self.setGraphicRenderingPoint_RubberBand(self.selectionRubberBand)
         self.selectionRubberBand.show()
 
 
@@ -88,7 +89,8 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             DESCRIPTION.
 
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(jsonFile={jsonFile})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
         return [self.selectionRubberBand]
 
     def createRubberBand(self, wkbTypes:QgsWkbTypes):
@@ -106,10 +108,12 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             DESCRIPTION.
 
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(wkbTypes={wkbTypes})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return QgsRubberBand(self.canvas, wkbTypes)
 
-    def setGraphicRendering_RubberBand(self,
+    def setGraphicRenderingPoint_RubberBand(self,
                             rubberBand,
                             icon=QgsRubberBand.ICON_CIRCLE,
                             iconSize=6,
@@ -117,8 +121,6 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
                             strokeColor=QColor(13, 195, 240, 200)
                             ):
         """
-
-
         Parameters
         ----------
         rubberBand : TYPE
@@ -137,10 +139,8 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         None.
 
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(rubberBand={rubberBand},"
-        #                                                                                      "icon={icon},iconSize={iconSize},"
-        #                                                                                      "widthLine={widthLine},"
-        #                                                                                      "strokeColor={strokeColor})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
         rubberBand.setIcon       ( icon )
         rubberBand.setIconSize   ( iconSize    )
@@ -150,8 +150,6 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
 
     def resetRubberBand(self, listRubberBand):
         """
-        
-
         Parameters
         ----------
         listRubberBand : TYPE
@@ -162,7 +160,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         None.
 
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listRubberBand={listRubberBand})")
+       # print(f"line:{lineno()},{self.__class__.__name__}->"+
+       #       f"{inspect.currentframe().f_code.co_name}()")
+       
         for rubberBand in listRubberBand:
             typeGeometry=rubberBand.asGeometry().type()
             rubberBand.reset(typeGeometry)
@@ -174,8 +174,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param point:
             returns none:
         """
-        # print(f"line:{lineno()}{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listRubberBand={listRubberBand},"
-        #                                                                                      point={point})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         for rubberBand in listRubberBand:
             rubberBand.addPoint(point,True)
 
@@ -185,7 +186,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         Remove last point from rubber band geometry.
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listRubberBand={listRubberBand})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         for rubberBand in listRubberBand:
             rubberBand.removeLastPoint()
 
@@ -195,11 +198,13 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
 
     def getPredicate(self):
         """
-        In TnTmapToolEmitPoint_V2 class , predicate is always 0 (0=intersect)
+        In TnTmapToolEmitPoint class , predicate is always 0 (0=intersect)
 
             returns: predicate
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return 0
 
     def setCapture(self, capture_state):
@@ -207,7 +212,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param capture_state:
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(capture_state={capture_state})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         self.capture=capture_state
 
 
@@ -215,7 +222,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return self.capture
 
 
@@ -223,7 +232,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         self.setCapture(not self.getCapture())
 
 
@@ -232,12 +243,17 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         self.lockAtStartCapture()
 
         #self.parent.labelInfo.setText("END=Mouse right click / ABORT=ESC / Ctrl+Z=deleting the last entry ")
 
-        self.layer=self.getActiveLabeledLayer().layer()
+        #self.layer=self.getActiveLabeledLayer().layer()
+        self.layer=self.canvas.currentLayer()
+
+
         if self.layer.hasSpatialIndex() != QgsFeatureSource.SpatialIndexPresent:
             prov=self.layer.dataProvider()
             prov.createSpatialIndex()
@@ -245,12 +261,6 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         if not self.selectionLayer :
             self.selectionLayer=self.createTempVectorLayer()
 
-
-        # cvl=self.layer.clone()
-        # self.tntundoredo.appendright(self.tntundoredo.undoStack,
-        #                              self.tntundoredo.initSelection("point",
-        #                                                             cvl))
-        # self.tntundoredo.printAttr()
 
         self.setCapture(True)
         self.capturing(e)
@@ -261,7 +271,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param e:
             returns none:
         """
-       # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         pt=self.toMapCoordinates(e.pos())
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         self.showSelected(self.selectionRubberBand, self.getPredicate())
@@ -271,7 +283,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         self.setCapture(False)
         self.unLockAtEndCapture()
 
@@ -279,7 +293,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+       # print(f"line:{lineno()},{self.__class__.__name__}->"+
+       #       f"{inspect.currentframe().f_code.co_name}()")
+       
         self.resetAll()
         self.layer.reload()
         self.unLockAtEndCapture()
@@ -288,16 +304,20 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        self.comm.lockAssociatedButton.emit()
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        #self.comm.lockAssociatedButton.emit()
 
 
     def unLockAtEndCapture(self):
         """
             returns
         """
-        # print(f"line:{lineno()}{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        self.comm.unLockAssociatedButton.emit()
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        #self.comm.unLockAssociatedButton.emit()
 
  # END About CAPTURE ############################
 
@@ -308,7 +328,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         Return a current active layer.
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return self.parent.getActiveLabeledLayer()
 
  # END About Layer ############################
@@ -320,7 +342,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-       # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         self.removeLastPoint2RubberBand(self.getListRubberBand())
         self.showSelected(self.selectionRubberBand,self.getPredicate())
 
@@ -331,7 +355,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param e:
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         identifiedSegments = self.identifyTool.identify(e.x(), e.y(),
                                                         self.identifyMode,
                                                         self.identifyType)
@@ -342,8 +368,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(rubber_band={rubber_band},"
-        #                                                                                       "predicate={predicate})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         geometry=rubber_band.asGeometry()
 
         self.selectionLayer=self.addGeometry(self.selectionLayer,geometry)
@@ -372,8 +399,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param geometry:
             returns temp_layer:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}("temp_layer={temp_layer},"
-        #                                                                                      "geometry={geometry})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         feature=None
         try :
             feature=next(temp_layer.getFeatures())
@@ -397,23 +425,41 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
 
 # BEGIN About Class ############################
 
+    def getAttributeValues( self,
+                            provider=None,
+                            attributs:dict=None
+                          ):
+        """
+            returns none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        fieldsAndValues = self.nomenclaturewidget.getSelectedValuesAsDict()
+        
+        for key in fieldsAndValues.keys():
+            index = provider.fieldNameIndex(key)
+            attributs[index]=fieldsAndValues[key]
+        return attributs
+
     def removeAllClass(self):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         prov=self.layer.dataProvider()
         caps=prov.capabilities()
 
-        fieldNameHeader = self.parent.mainWindow.nomenclatureWidget.getTableAttributsName()
+        attrs = {}
+        attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
-        index_code=prov.fieldNameIndex(fieldNameHeader[0])
-        index_label=prov.fieldNameIndex(fieldNameHeader[1])
-        index_labelColor=prov.fieldNameIndex(fieldNameHeader[2])
+        for key in attrs.keys():
+            attrs[key]=None
 
         for featureId in self.layer.selectedFeatureIds():
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                attrs = {index_code:None, index_label:'', index_labelColor:None }
                 prov.changeAttributeValues({ featureId : attrs })
 
         self.layer.removeSelection()
@@ -422,31 +468,35 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        prov=self.layer.dataProvider()
-        caps=prov.capabilities()
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        prov = self.layer.dataProvider()
+        caps = prov.capabilities()
 
-        fieldNameHeader = self.parent.mainWindow.nomenclatureWidget.getTableAttributsName()
+        attrs = {}
+        attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
-        index_code=prov.fieldNameIndex(fieldNameHeader[0])
-        index_label=prov.fieldNameIndex(fieldNameHeader[1])
-        index_labelColor=prov.fieldNameIndex(fieldNameHeader[2])
+        #histoire de faire simple
+        fieldIndexMap = {v: k for k, v in prov.fieldNameMap().items()}
+        key = list(attrs.keys())[1]
+        fieldCodeName = fieldIndexMap[key]
+        codeValue = attrs[key]
 
-        fieldCodeName=fieldNameHeader[0]
-        codeValue=self.parent.mainWindow.nomenclatureWidget.rowClassSelected[0]
-
-        param_sel = { 'INPUT':self.layer,
-                      'FIELD':fieldCodeName,
-                      'OPERATOR':0,  #0  =
-                      'VALUE':codeValue,
-                      'METHOD':3
+        param_sel = {'INPUT': self.layer,
+                     'FIELD': fieldCodeName,
+                     'OPERATOR': 0,  # 0  =
+                     'VALUE': codeValue,
+                     'METHOD': 3
                      }
-        processing.run('qgis:selectbyattribute',param_sel)
+        processing.run('qgis:selectbyattribute', param_sel)
+
+        for key in attrs.keys():
+            attrs[key] = None
 
         for featureId in self.layer.selectedFeatureIds():
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                attrs = {index_code:None, index_label:'', index_labelColor:None }
-                prov.changeAttributeValues({ featureId : attrs })
+                prov.changeAttributeValues({featureId: attrs})
 
         self.layer.removeSelection()
 
@@ -454,7 +504,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+       # print(f"line:{lineno()},{self.__class__.__name__}->"+
+       #       f"{inspect.currentframe().f_code.co_name}()")
+       
         self.resetRubberBand(self.getListRubberBand())
         QgsProject.instance().removeMapLayer(self.selectionLayer)
         self.selectionLayer=None
@@ -464,38 +516,34 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         prov=self.layer.dataProvider()
         caps=prov.capabilities()
 
-        rowClassSelected=self.parent.mainWindow.nomenclatureWidget.rowClassSelected
-        code=rowClassSelected[0]
-        label=rowClassSelected[1]
-        labelColor=rowClassSelected[2]
-        Int_color=int(labelColor.split('#')[1],16)
-
-        fieldNameHeader = self.parent.mainWindow.nomenclatureWidget.getTableAttributsName()
-        index_code=prov.fieldNameIndex(fieldNameHeader[0])
-        index_label=prov.fieldNameIndex(fieldNameHeader[1])
-        index_labelColor=prov.fieldNameIndex(fieldNameHeader[2])
+        attrs = {}
+        attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
         for featureId in self.layer.selectedFeatureIds():
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                attrs = {index_code:code, index_label:label, index_labelColor:Int_color }
                 prov.changeAttributeValues({ featureId : attrs })
 
         self.layer.removeSelection()
+
 
     def processUserInput(self):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        # if self.parent.getLabelingMode():
-        if self.parent.getPushButton("Labeling").isChecked():
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        task = self.parent.getTask()
+        if task == "Labeling" :
             self.applyClass()
         # elif self.parent.getDeleteAllMode():
-        elif self.parent.getPushButton("Delete_All").isChecked():
+        elif task == "Delete All":
             self.removeAllClass()
         else:
             self.removeCurrentClass()
@@ -510,7 +558,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         if QApplication.keyboardModifiers() == Qt.ControlModifier and e.key()==Qt.Key_Z: #CTRL+Z
             self.unStack()
         elif e.key()==Qt.Key_Escape:
@@ -523,7 +573,9 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}({e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         if e.type()==QEvent.MouseButtonPress:
             if e.button() == Qt.LeftButton :
                 if not self.getCapture() :
@@ -534,50 +586,53 @@ class TnTmapToolEmitPoint_V2(QgsMapToolEmitPoint):
 
                 self.endCapturing()
                 self.processUserInput()
-
+                
 
 # END About Event ##########################
-
 
     def createTempVectorLayer(self):
         """
             returns vl:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         vl = QgsVectorLayer("Point", "temporary_points", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
         return vl
 
-class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
+class TnTmapToolEmitPline(TnTmapToolEmitPoint):
     """
     User capture management class.
     Associated geometry of line type.
     """
-    def __init__(self, parent, canvas):
-        TnTmapToolEmitPoint_V2.__init__(self, parent, canvas)
+    def __init__(self, parent, canvas, nomenclaturewidget):
+        TnTmapToolEmitPoint.__init__(self, parent, canvas, nomenclaturewidget)
 
         self.pendingCapture = False
 
         self.selectionRubberBand = self.createRubberBand(QgsWkbTypes.LineGeometry)
-        self.setGraphicRendering_RubberBand(self.selectionRubberBand)
+        self.setGraphicRenderingLine_RubberBand(self.selectionRubberBand)
         self.selectionRubberBand.show()
 
         self.rbPoint    = self.createRubberBand(QgsWkbTypes.PointGeometry)
-        super().setGraphicRendering_RubberBand(self.rbPoint)
+        self.setGraphicRenderingPoint_RubberBand(self.rbPoint)
         self.rbPoint.show()
 
         self.dashRubberBand=self.createRubberBand(QgsWkbTypes.LineGeometry)
-        self.setGraphicRendering_RubberBand(self.dashRubberBand, Qt.DashLine, 1)
+        self.setGraphicRenderingLine_RubberBand(self.dashRubberBand, Qt.DashLine, 1)
         self.dashRubberBand.show()
 
 
 # BEGIN About RUBBERBAND ############################
     def getListRubberBand(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return [self.selectionRubberBand,self.rbPoint,self.dashRubberBand]
 
-    def setGraphicRendering_RubberBand (self,
+    def setGraphicRenderingLine_RubberBand (self,
                                         rubberBand,
                                         lineStyle=Qt.SolidLine,
                                         widthLine=2,
@@ -595,10 +650,8 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
         widthLine   :
         strokeColor :
         """
-        # print(f"line:{lineno()}{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(rubberBand={rubberBand},"
-        #                                                                                         "lineStyle={lineStyle},"
-        #                                                                                         "widthLine={widthLine},"
-        #                                                                                         "strokeColor={strokeColor})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
         rubberBand.setLineStyle  ( lineStyle )
         rubberBand.setWidth      ( widthLine )
         rubberBand.setStrokeColor( strokeColor )
@@ -611,7 +664,9 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+      # print(f"line:{lineno()},{self.__class__.__name__}->"+
+      #       f"{inspect.currentframe().f_code.co_name}()")
+      
         self.setCapture(False)
         self.dashRubberBand.reset(QgsWkbTypes.LineGeometry)
         self.unLockAtEndCapture()
@@ -624,7 +679,9 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+       # print(f"line:{lineno()},{self.__class__.__name__}->"+
+       #       f"{inspect.currentframe().f_code.co_name}()")
+       
         self.pendingCapture=pendingCapture
 
 
@@ -632,7 +689,9 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+      # print(f"line:{lineno()},{self.__class__.__name__}->"+
+      #       f"{inspect.currentframe().f_code.co_name}()")
+      
         self.resetRubberBand(self.getListRubberBand())
         QgsProject.instance().removeMapLayer(self.selectionLayer)
         self.selectionLayer=None
@@ -647,7 +706,9 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         if e.type()==QEvent.MouseButtonPress:
             if e.button() == Qt.LeftButton:
                 if not self.getCapture():
@@ -665,7 +726,9 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         if self.capture and not self.pendingCapture :
             self.capturing(e)
 
@@ -677,44 +740,48 @@ class TnTmapToolEmitPline_V2(TnTmapToolEmitPoint_V2):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(e={e})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         if e.button() == Qt.LeftButton and self.getCapture() :
             self.pendingCapture=True
-# END About Event ##########################
+            # END About Event ##########################
 
     def createTempVectorLayer(self):
         """
             returns vl:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+       # print(f"line:{lineno()},{self.__class__.__name__}->"+
+       #       f"{inspect.currentframe().f_code.co_name}()")
+       
         vl = QgsVectorLayer("LineString", "temporary_Lines", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
         return vl
 
-class TnTmapToolEmitPolygon_V2(TnTmapToolEmitPline_V2):
+class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
     """
     User capture management class.
     Associated geometry of polygon type.
     """
 
-    def __init__(self, parent, canvas, strictMode=False):
-        TnTmapToolEmitPline_V2.__init__(self, parent, canvas)
+    def __init__(self, parent, canvas, nomenclaturewidget, strictMode=False):
+        TnTmapToolEmitPline.__init__(self, parent, canvas, nomenclaturewidget)
 
         self.strictMode=strictMode
 
         self.selectionRubberBand = self.createRubberBand(QgsWkbTypes.PolygonGeometry)
-        self.setGraphicRendering_RubberBand(self.selectionRubberBand)
+        self.setGraphicRenderingPoly_RubberBand(self.selectionRubberBand)
         self.selectionRubberBand.show()
 
 # BEGIN About RUBBERBAND ############################
-    def setGraphicRendering_RubberBand (self,
+    def setGraphicRenderingPoly_RubberBand (self,
                                        rubberBand,
                                        lineStyle=Qt.SolidLine,
                                        widthLine=2,
                                        strokeColor=QColor(13, 195, 240, 255),
                                        fillColor=QColor(255, 254, 181, 10)
-                                       ):
+                                          ):
         """
         rubberBand  :
         lineStyle   :
@@ -722,11 +789,8 @@ class TnTmapToolEmitPolygon_V2(TnTmapToolEmitPline_V2):
         strokeColor :
         fillColor   :
         """
-        #print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(rubberBand={rubberBand},"
-        #                                                                                           "lineStyle={lineStyle}",
-        #                                                                                           "widthLine={widthLine},"
-        #                                                                                           "strokeColor={strokeColor},"
-        #                                                                                           "fillColor={fillColor})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
         rubberBand.setLineStyle  ( lineStyle )
         rubberBand.setWidth      ( widthLine   )
@@ -737,11 +801,13 @@ class TnTmapToolEmitPolygon_V2(TnTmapToolEmitPline_V2):
 # BEGIN About CAPTURE #############################
     def getPredicate(self):
         """
-        In TnTmapToolEmitPolygon_V2 class , predicate is 0 (0=intersect) or 6 (6=are within)
+        In TnTmapToolEmitPolygon class , predicate is 0 (0=intersect) or 6 (6=are within)
         following the value of self.strictMode.
             returns predicate.
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         return (lambda:0, lambda:6)[self.strictMode]()
 
     def capturing(self, e):
@@ -749,8 +815,9 @@ class TnTmapToolEmitPolygon_V2(TnTmapToolEmitPline_V2):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()}{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}({e})")
-
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         pt=self.toMapCoordinates(e.pos())
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         if self.rbPoint.numberOfVertices()>2:
@@ -763,7 +830,9 @@ class TnTmapToolEmitPolygon_V2(TnTmapToolEmitPline_V2):
         """
             returns vl:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         vl = QgsVectorLayer("Polygon", "temporary_polygons", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
