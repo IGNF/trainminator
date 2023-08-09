@@ -18,28 +18,24 @@ QPushButton:disabled {
     background-color: #E2E2E2;
     color: #737373;
     border-width: 1px;
-    border-color: #C7C7C7   
-}
-
-QPushButton[text="Delete all"]:checked,
-QPushButton[text="Delete current"]:checked {
-    background-color: #FFA500
+    border-color: #C7C7C7
 }
 
 QPushButton[text="Start"] {
-   font-style: normal;
-   font-weight: bold;
-   border-style: solid;
-   border-width: 3px;
-   border-color: #4EFB03;
-   border-radius: 2px;
-   min-height: 16px
+    /* background-color: #C9F47C */
+    background-color: #1CC88A;
+    font-size: 11px;
+    font-weight: bold 
 }
 
-QPushButton[text="Start"]:checked {
-    content: 'Stop';
-    color: black;
-    border-color: red   
+QPushButton[text="Stop"] {
+    font-size: 11px;
+    font-weight: bold
+}
+
+QPushButton[text="Delete All"]:checked,
+QPushButton[text="Delete Current"]:checked {
+    background-color: #FFA500
 }
 
 /* About QSlider graphics rendering */
@@ -65,10 +61,10 @@ QSlider::sub-page:horizontal {
     margin: 2px 0
 }
 
-/* About QLabel graphics rendering */     
+/* About QLabel graphics rendering */
 QLabel {
     background-color: lightgrey;
-    color: black;
+    color: black;   
     font-style: normal;
     font-weight: normal;
     border: 1px solid grey;
@@ -77,15 +73,34 @@ QLabel {
 }
 
 QLabel[objectName="slider_Label"] {
-    font-weight: bold
+     background-color: lightgrey;
+     color: black;     
+     font-weight: bold
 }
 
-QLabel[objectName="currentNomenclature_Label"],
-QLabel[objectName="currentClass_Label"] {
+QLabel[objectName="label_nomenclature"],
+QLabel[objectName="label_selection"],
+QLabel[objectName="label_vintage"],
+QLabel[objectName^="labelSeparator_"],
+QLabel[objectName^="label_opacity_"] {
+    background-color: none;
+    border: none;
+    color: none
+}
+
+QLabel[objectName="labelValue_CurrentColor"] {
+    background-color: none;
+    color: none;
+    border-radius: none;
+}
+
+QGroupBox[objectName="infoSelectionGroup"],
+QGroupBox[objectName="sliderGroup"],
+QGroupBox[objectName="stdDiffModeGroup"]{
     background-color: none;
     border: none
 }
-
+    
 /* About QMessageBox graphics rendering */
 QMessageBox QLabel {
     font-weight: bold
@@ -101,4 +116,29 @@ QgsMapCanvas:focus {
     border: 3px solid #FFC829;
     border-radius: 4px;
     padding:2px
+}
+
+QTreeWidget {
+    color: rgb(0, 0, 0);
+    selection-background-color: transparent;
+    show-decoration-selected: 1;    
+}
+
+QTreeView {
+    show-decoration-selected: 1
+}
+
+QTreeWidget::item:hover,
+QTreeWidget::item:hover:selected:active {
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    background-color: rgb(12, 128, 220)
+ }
+
+QTreeWidget::item:selected,
+QTreeWidget::item:selected:active,
+QTreeWidget::item:selected:!active {
+    color: rgb(255, 255, 255);
+    background-color: rgb(12, 128, 220)
 }

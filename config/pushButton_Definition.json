@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun  5 12:03:52 2023
+
+@author: YLe-Borgne
+"""
+"Fit_All",
+"Synchro_Views",
+
+{
+"Start": [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Stop":[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Labeling" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Delete_All" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Delete_Current" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Point" : [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Line" : [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Large_Polygon" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Strict_Polygon" : [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Show_Current": [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Show_Codes" : [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Show Context" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Only_Unlabelled" :[ "ToolTip":"",
+           "Shortcut":""
+         ],
+"All_Entities": [ "ToolTip":"",
+           "Shortcut":""
+         ],
+"Fill_Pyramid" : [ "ToolTip":"",
+           "Shortcut":""
+         ],
+
+Fill_Pyramid : [ "ToolTip":"",
+           "Shortcut":""
+         ]
+}

@@ -1,13 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/TraiNminaTor" >
-        <file>icons/trainminator_64x64.png</file>
-        <file>icons/edit.png</file>
-		<file>icons/gomme.png</file>
-		<file>icons/polygon.png</file>
-		<file>icons/Pan.png</file>
-		<file>icons/ZoomIn.png</file>
-		<file>icons/ZoomOut.png</file>
-		<file>icons/ZoomFull.png</file>
-		<file>icons/close.png</file>
+    <qresource prefix="/plugins/trainminator2" >
+        <file>icon.png</file>
     </qresource>
 </RCC>

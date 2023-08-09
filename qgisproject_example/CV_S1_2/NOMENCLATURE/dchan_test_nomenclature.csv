@@ -1,0 +1,13 @@
+code;class;color
+0;inconnu;(250,4,254)
+10;batiment;(255,0,0)
+11;zone_impermeable;(160,127,196)
+12;zone_permeable;(127,0,0)
+13;piscine;(0,196,196)
+21;sol_nu;(255,255,255)
+22;surface_eau;(0,0,255)
+24;neige;(196,255,255)
+30;temporaire;(255,125,0)
+300;artefact;(0,196,127)
+301;feuillus;(0,255,0)
+42;herbacés;(223,255,0)

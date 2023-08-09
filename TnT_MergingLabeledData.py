@@ -29,6 +29,7 @@ Labelisation de données segmentées.
  ***************************************************************************/
 """
 import inspect
+import time
 import glob
 import os
 import processing
@@ -43,6 +44,7 @@ from qgis.core import (QgsProject, QgsVectorLayer,
                        QgsLayerTreeLayer, QgsVectorFileWriter)
 
 
+
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
@@ -51,420 +53,417 @@ class TnTmergingLabeledData():
     """
     Class responsible for merging the different segmented layers.
     """
-    def __init__(self, parent=None):
-        self.parent=parent
-        self.listTreeLayers2Keep=[]
+    def __init__(self,
+                 masterWindow=None
+                 ):
 
-        # code:[label,labelColor]
+        self.masterWindow=masterWindow
+        self.workGroupName='FINAL_DATA'
+        self.absolutePathFinalData = None
+       
+
+        self.vLayersList = []
+        self.mostSegmentedLayer = None
+        self.dictOfvLayersListByVintageToKeep = {}
+
+        self.dictFieldIndex = {}
         self.listOfAttValues={}
 
-        self.workGroupName='FINAL_DATA'
-        self.workGroup=self.getRootGroup().findGroup(self.workGroupName)
+    def setAbsolutePathFinalData(self, path:str=None):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        self.absolutePathFinalData = path
 
-        self.progress=None
 
-    def getRootGroup(self):
+    def getAbsolutePathFinalData(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        return self.absolutePathFinalData
+
+    def initvLayersList(self, group):
         """
-            returns RootGroup:
+        This list contains all labeled vector layers.
+        Those present in the "LABELED_DATA_<vintage>" group in differential
+        labeling mode or  "LABELED_DATA" in normal labeling mode.
+
+        Warning the list created is sorted from the most segmented layer
+        to the least segmented
+
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getRootGroup()")
-        return self.parent.getRootGroup()
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-    def getWorkGroup(self):
+        self.vLayersList.clear()
+        layers = group.findLayers()
+        for index,_ in enumerate(layers, 1):
+            self.vLayersList.append(layers[-index].layer())
+
+    def initDictOfvLayersListByVintageToKeep(self, vintages:list):
         """
-        Return the current workgroup.
-            returns self.workGroup: the value of the attribute self.workGroup.
+        Dictionary of lists classified by vintage.
+        Each of the lists will contain the layers having at least one
+        labeled segment.
         """
-        #print(f"line:{lineno()}, TnTlabelingToolsBox->getWorkGroup()")
-        return self.workGroup
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-    def mergeAll(self, listTlayers):
-        """
-        Merge all the segmented layers present in the sorted list "listTlayers".
-            param listTlayers: The sorted list of segmented layers.
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
+        self.dictOfvLayersListByVintageToKeep.clear()
+        for vintage in vintages:
+            self.dictOfvLayersListByVintageToKeep[vintage]=[]
 
-        # Contourment du bug de la 3.14
-        # Test de l'existence de données dans le groupe final.
-        # Si oui, executer pour l'utilisateur un stop/start qui permet de liberer
-        # l'acces au shapefile finaux si ils existent, de les supprimer et de regenerer
-        # un jeu de données final.
 
-        self.parent.getPushButton("Fill_Pyramid").setEnabled(False)
-        returnMsgValue = 0
-
-        if  QgsProject.instance().layerTreeRoot().findGroup(self.workGroupName).findLayers():
-            returnMsgValue=self.showMsgBox()
-        if returnMsgValue == QMessageBox.Ok :
-            self.reMerge(self.parent)
-        elif returnMsgValue == QMessageBox.Cancel :
-            #self.doNothing()
-            pass
-        else:
-            self.merge(listTlayers)
-
-        self.parent.getPushButton("Fill_Pyramid").setEnabled(True)
-
-    def merge(self, listTlayers ):
-        """
-            param listTlayers:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        self.progress=self.showProgressDialog(self.parent)
-        self.progress.setModal(True)
-        self.progress.setMinimum(0)
-        self.progress.setMaximum(len(listTlayers)*18)
-
-        self.keepOnlyLayersLabeled(listTlayers)
-
-        if self.listTreeLayers2Keep :
-            self.mergingLevels()
-            self.progress.setLabelText("Processing Done.")
-        else :
-            self.progress.setLabelText("Nothing to do!!!.")
-
-        self.progress.setValue(self.progress.maximum())
-        timer = QTimer()
-        timer.timeout.connect(lambda:(self.stop(timer)))
-        timer.start(2000)
-
-    def reMerge(self, parent):
-        """
-            param parent:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        parent.enterStopMode()
-        parent.enterStartMode()
-
-        timer = QTimer()
-        timer.timeout.connect(lambda:(self.simpleStop(timer)))
-        timer.start(2000)
-
-         # Suppression bestiale des fichiers presents dans le rep FINAL_DATA/<nomenclature_name>
+    def createDir(self, dirName:str=None):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
         projectAbsolutePath=QgsProject.instance().absolutePath()
-        #currentNomenclatureName=self.parent.mainWindow.nomenclatureWidget.nomenclatureSelector.currentText()
-        currentNomenclatureName=self.getNomenclature().currentText_NomenclatureQComboBox()
-        AbsolutePath_FinalData=projectAbsolutePath+"/"+self.workGroupName+"/"+currentNomenclatureName.upper()+"/*"
+        AbsolutePath_FinalData=f"{projectAbsolutePath}/{dirName}"
+        os.makedirs(AbsolutePath_FinalData, exist_ok=True)
+        self.setAbsolutePathFinalData(AbsolutePath_FinalData)
+           
+    def clearAttrs(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        self.vLayersList = []
+        self.mostSegmentedLayer = None
+        self.dictOfvLayersListByVintageToKeep = {}
 
-        files = glob.glob(AbsolutePath_FinalData)
-        for f in files:
-            os.remove(f)
+        self.dictFieldIndex = {}
+        self.listOfAttValues={}
+      
+    def cleanData(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        layerTreeWidget = self.masterWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        group = root.findGroup(self.workGroupName)
+        
+        layers = group.findLayers()
+        if layers :
+            vLayer = layers[0].layer()
+            id_vLayer = vLayer.id()
+             
+            QgsProject.instance().removeMapLayer(id_vLayer)
+            group.removeAllChildren()
+            
+            absolutePathFinalData=self.getAbsolutePathFinalData()
+            if absolutePathFinalData :
+                files = glob.glob(f"{absolutePathFinalData}/*.*")
+                for f in files:
+                    os.remove(f)
+          
+    def merge(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-        #Cette liste a ete effacée lors du stop/start, on la recharge
-        listTlayers=parent.listLabeledLayers4Merging
-        self.merge(listTlayers)
+        self.cleanData()
+        self.clearAttrs()
 
-    def doNothing(self):
-        """
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        self.progress=self.showProgressDialog(self.parent)
-        self.progress.setLabelText("Nothing to do!!!.")
-        self.progress.setValue(self.progress.maximum())
-        timer = QTimer()
-        timer.timeout.connect(lambda:(self.stop(timer)))
-        timer.start(2000)
+        nomenclatureWidget = self.masterWindow.getTnTnomenclatureWidget()
+        nomenclatureName = nomenclatureWidget.getComboBox().currentText()
 
-    def getNomenclature(self):
-        """
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}")
-        return self.parent.mainWindow.nomenclatureWidget
+        self.createDir(
+            dirName=f"{self.workGroupName}/{nomenclatureName.upper()}")
 
-    def simpleStop(self, timer):
-        """
-            param timer:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        timer.stop()
+        layerTreeWidget = self.masterWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
 
-    def stop(self, timer):
-        """
-            param timer:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        timer.stop()
-        self.progress.close()
+        vintage = self.masterWindow.getVintage()
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
 
-    # Deleted files data failed, BUG on QGIS 3.14
-    # def deletePreviousMerge (self):
-    #     #print(f"line:{lineno()}, ->TnTmergingLabeledData:deletePreviousMerge()")
-    #     projectAbsolutePath=QgsProject.instance().absolutePath()
-    #     currentNomenclatureName=self.parent.mainWindow.nomenclatureWidget.nomenclatureSelector.currentText()
-    #     AbsolutePath_FinalData=projectAbsolutePath+"/"+self.workGroupName+"/"+currentNomenclatureName.upper()
+        group = root.findGroup(groupName)
+        self.initvLayersList(group)
+        #self.mostSegmentedLayer = self.vLayersList[0]
+        self.mostSegmentedLayer = self.vLayersList.pop(0)
 
-    #     group=QgsProject.instance().layerTreeRoot().findGroup(self.workGroupName)
+        finalGroup = root.findGroup(self.workGroupName)
 
-    #     root=QgsProject.instance().layerTreeRoot()
+        vlayerFinal = self.createFinalLayer(
+            group=finalGroup, vLayer=self.mostSegmentedLayer)
 
-    #     self.listTreeLayers.clear()
-    #     self.listOfAttValues.clear()
+        vintages = self.masterWindow.getVintages()
+        self.initDictOfvLayersListByVintageToKeep(vintages)
 
-    #     for tLayer in group.findLayers():
-    #         vLayer = QgsProject.instance().mapLayersByName(tLayer.layer().name())[0]
-    #         vLayer_treeLayer = root.findLayer(vLayer.id())
-    #         parent_group = vLayer_treeLayer.parent()
-    #         vLayer_treeLayer.setExpanded(False)
-    #         vLayer_treeLayer.setItemVisibilityChecked(False)
-    #         parent_group.removeChildNode(vLayer_treeLayer)
+        for vintage in vintages:
+            self.keepOnlyLayersLabeled(vintage=vintage)
 
-    #     try:
-    #         os.chdir(AbsolutePath_FinalData)
-    #     except FileNotFoundError:
-    #          pass
-    #     else :
-    #         for shpfile in glob.glob("*.shp"):
-    #            if not  QgsVectorFileWriter.deleteShapeFile(shpfile):
-    #                print(f"file : {shpfile} not deleted")
+        vlayerFinal.startEditing()
 
-    def keepOnlyLayersLabeled(self, listTlayers):
+        for vintage in self.dictOfvLayersListByVintageToKeep.keys():
+
+            # the table 'attributes Table' contains the attribute names
+            # for the most recent vintage
+            attributsTable = nomenclatureWidget.getAttributsTable()
+
+            index = 0
+            for field in attributsTable:
+                if field.split('_')[1] != vintage:
+                    attributsTable[index] = f"{field.split('_')[0]}_{vintage}"
+                index += 1
+
+            vLayers = self.dictOfvLayersListByVintageToKeep[vintage]
+
+            self.mergingLevels(
+                attributsTable=attributsTable,
+                vlayerFinal=vlayerFinal,
+                vLayers=vLayers
+            )
+
+        vlayerFinal.commitChanges(True)
+
+        finalGroup.setExpanded(True)
+        finalGroup.setItemVisibilityChecked(False)
+
+
+    def keepOnlyLayersLabeled(self, vintage:str=None):
         """
             Keep only the layers containing at least one labeled surface.
-            the layers to keep added to list "self.listTreeLayers2Keep".
+            the layers to keep added to dictionnary vLayersListByVintageToKeep.
 
             param listTlayers: layers list.
             returns none.
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}(listTlayers:{listTlayers})")
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-        fiedName = (self.getNomenclature().getTableAttributsName())[1]
+        fiedName=f"code_{vintage}"
 
-        self.listTreeLayers2Keep.clear()
-        self.progress.setValue(0)
-        for tlayer in listTlayers:
-            result=self.selectedByAtt(tlayer.layer(), fiedName, 'is not null')
+        for vlayer in self.vLayersList:
+            result=self.selectedByAtt(vlayer, fiedName, 'is not null')
             if result['OUTPUT'].selectedFeatureCount()>0:
-                self.listTreeLayers2Keep.append(tlayer)
-            tlayer.layer().removeSelection()
-            self.progress.setValue(self.progress.value()+1)
+                self.dictOfvLayersListByVintageToKeep[vintage].append(vlayer)
 
-    def duplicateData4Merge(self, vlayer):
+            vlayer.removeSelection()
+            #self.progress.setValue(self.progress.value()+1)
+
+
+    def setDictFieldIndex(self,
+                          attributsTable: list = None,
+                          vLayer: QgsVectorLayer = None
+                          ):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        self.dictFieldIndex.clear()
+        for attr in attributsTable:
+            idx = vLayer.dataProvider().fieldNameIndex(attr)
+            self.dictFieldIndex[attr] = idx
+
+
+    def getFielAnddIndex(self, fieldName):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        for key in self.dictFieldIndex.keys():
+            if key.startswith(fieldName):
+                return key, self.dictFieldIndex[key]
+        return None,None
+
+
+    def setListOfAttValues(self,
+                           vLayer: QgsVectorLayer = None):
         """
             param vlayer:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        transformContext = QgsProject.instance().transformContext()
-        options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName = vlayer.dataProvider().storageType()
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-        projectAbsolutePath=QgsProject.instance().absolutePath()
-        currentNomenclatureName=self.getNomenclature().currentText_NomenclatureQComboBox()
-
-        finalFileName=vlayer.name()+"_Final"
-        AbsolutePath_FinalData=projectAbsolutePath+"/"+self.workGroupName+"/"+currentNomenclatureName.upper()
-        os.makedirs(AbsolutePath_FinalData, exist_ok=True)
-        FullPathName_FinalData=AbsolutePath_FinalData+"/"+finalFileName+".shp"
-
-        error=QgsVectorFileWriter.writeAsVectorFormatV2(vlayer,
-                                                  FullPathName_FinalData,
-                                                  transformContext,
-                                                  options)
-
-        if error[0] != QgsVectorFileWriter.NoError:
-            print(f"line:{lineno()}, TnTmergingLabeledData:QgsVectorFileWriter.writeAsVectorFormatV2 fail")
-
-        vlayer_FinalData = QgsVectorLayer(FullPathName_FinalData,
-                                              finalFileName,
-                                              "ogr")
-
-        new_renderer=vlayer.renderer().clone()
-        vlayer_FinalData.setRenderer(new_renderer)
-
-        QgsProject.instance().addMapLayer(vlayer_FinalData,False)
-        tVlayer_FinalData=QgsLayerTreeLayer(vlayer_FinalData)
-        tVlayer_FinalData.setExpanded(False)
-
-        wGroup=self.getWorkGroup()
-        wGroup.insertChildNode(-1, tVlayer_FinalData)
-
-        return vlayer_FinalData
-
-    def showProgressDialog(self, parent):
-        """
-            param parent:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        progress = QProgressDialog(parent)
-        progress.setWindowTitle("Fill Pyramid Process")
-        progress.setLabelText("Processing in progress....")
-        progress.setCancelButtonText(None)
-        progress.setMinimumDuration(5)
-        progress.setWindowModality(QtCore.Qt.WindowModal)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
-        return progress
-
-    def showMsgBox(self):
-        """
-            param none:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        messageBox = QMessageBox()
-        messageBox.setIcon(QMessageBox.Warning)
-        messageBox.setWindowTitle("TrainMinaTor message")
-        messageBox.setText("Final data already exists, do you want to overwrite it?")
-        messageBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        returnMessageBox = messageBox.exec()
-        return returnMessageBox
-
-    def mergingLevels(self):
-        """
-            param none:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()"
-        tLayerBase=self.listTreeLayers2Keep.pop(0)
-        layerBase=tLayerBase.layer()
-
-        vlayer_FinalData=self.duplicateData4Merge(layerBase)
-
-        prov_vlayer_FinalData=vlayer_FinalData.dataProvider()
-        caps_vlayer_FinalData=prov_vlayer_FinalData.capabilities()
-        prov_vlayer_FinalData.createSpatialIndex()
-
-        fieldCode=(self.getNomenclature().getTableAttributsName())[0]
-        fieldLabel=(self.getNomenclature().getTableAttributsName())[1]
-        fieldColor=(self.getNomenclature().getTableAttributsName())[2]
-
-        idx_code       = prov_vlayer_FinalData.fieldNameIndex(fieldCode)
-        idx_label      = prov_vlayer_FinalData.fieldNameIndex(fieldLabel)
-        idx_labelColor = prov_vlayer_FinalData.fieldNameIndex(fieldColor)
-
-        vlayer_FinalData.startEditing()
-
-        #Process the rest of the items in the list
-        for tLayer2Merge in self.listTreeLayers2Keep :
-
-            layer2Merge=tLayer2Merge.layer()
-            layer2Merge.dataProvider().createSpatialIndex()
-            self.getListOfAttValues(layer2Merge)
-
-            for codeValue in self.listOfAttValues:
-                param_sel = { 'INPUT':layer2Merge,
-                              'FIELD':fieldCode,
-                              'OPERATOR':0,  #0  =
-                              'VALUE':codeValue,
-                              'METHOD':0
-                             }
-                processing.run('qgis:selectbyattribute',param_sel)
-                self.progress.setValue(self.progress.value()+1)
-
-                param_sel1 = {'INPUT':vlayer_FinalData,
-                              'FIELD':fieldCode,
-                              'OPERATOR':8,    #8= 'is null'
-                              'METHOD':0
-                             }
-                processing.run('qgis:selectbyattribute',param_sel1)
-                self.progress.setValue(self.progress.value()+1)
-
-                param_loc = { 'INPUT':vlayer_FinalData,
-                              'PREDICATE': 6, #are within
-                              'INTERSECT':QgsProcessingFeatureSourceDefinition(layer2Merge.id(), True),
-                              'METHOD':2
-                             }
-                processing.run('qgis:selectbylocation',param_loc)
-                self.progress.setValue(self.progress.value()+1)
-
-                labelValue=self.listOfAttValues[codeValue][0]
-                labelColorValue=self.listOfAttValues[codeValue][1]
-
-                for featureId in vlayer_FinalData.selectedFeatureIds():
-                    if caps_vlayer_FinalData and QgsVectorDataProvider.ChangeAttributeValues:
-                        attrs = {idx_code:codeValue, idx_label:labelValue, idx_labelColor:labelColorValue}
-                        prov_vlayer_FinalData.changeAttributeValues({ featureId : attrs })
-
-                layer2Merge.removeSelection()
-                vlayer_FinalData.removeSelection()
-                self.progress.setValue(self.progress.value()+1)
-
-            self.progress.setValue(self.progress.value()+1)
-
-        vlayer_FinalData.commitChanges(True)
-
-    def getListOfAttValues(self, vlayer):
-        """
-            param vlayer:
-            returns none:
-        """
-        print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-
-        fieldCode=(self.getNomenclature().getTableAttributsName())[0]
-        fieldLabel=(self.getNomenclature().getTableAttributsName())[1]
-        fieldColor=(self.getNomenclature().getTableAttributsName())[2]
+        fieldCode, idxCode = self.getFielAnddIndex('code')
 
         request = QgsFeatureRequest()
+        request = request.setFilterExpression(f"{fieldCode} IS NOT NULL")
 
-        reqtext='"{}" IS NOT NULL'.format(fieldLabel)
-        request = request.setFilterExpression('{}'.format(reqtext))
+        selected_features = vLayer.getFeatures(request)
 
-        selected_features = vlayer.getFeatures(request)
-
-        idx_code = vlayer.dataProvider().fieldNameIndex(fieldCode)
-        idx_label = vlayer.dataProvider().fieldNameIndex(fieldLabel)
-        idx_labelColor = vlayer.dataProvider().fieldNameIndex(fieldColor)
+        _, idxClass = self.getFielAnddIndex('class')
+        _, idxColor = self.getFielAnddIndex('color')
 
         for feature in selected_features:
-            self.listOfAttValues[ feature.attributes()[idx_code] ] = [
-                feature.attributes()[idx_label],
-                feature.attributes()[idx_labelColor] ]
+            self.listOfAttValues[feature.attributes()[idxCode]] = [
+                feature.attributes()[idxClass],
+                feature.attributes()[idxColor]]
 
-        vlayer.removeSelection()
+        vLayer.removeSelection()
+
+
+    def getListOfAttValues(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        return self.listOfAttValues
+
 
     def selectedByAtt(self, vlayer, fieldName, operatorId):
         """
             param vlayer:
             returns none:
+
+            #*************************
+            # OPERATOR Values:
+            # 0 — =
+            # 1 — ≠
+            # 2 — >
+            # 3 — >=
+            # 4 — <
+            # 5 — <=
+            # 6 — begins with
+            # 7 — contains
+            # 8 — is null
+            # 9 — is not null
+            # 10 — does not contain
+            #*************************
+
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->{inspect.currentframe().f_code.co_name}()")
-        #INPUT
-        #FIELD
-        #OPERATOR
-        #VALUE
-        #METHOD
-        #*************************
-        # OPERATOR Values:
-        # 0 — =
-        # 1 — ≠
-        # 2 — >
-        # 3 — >=
-        # 4 — <
-        # 5 — <=
-        # 6 — begins with
-        # 7 — contains
-        # 8 — is null
-        # 9 — is not null
-        # 10 — does not contain
-        #*************************
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
 
-        operator={'=':0,
-                  '≠':1,
-                  '>':2,
-                  '>=':3,
-                  '<':4,
-                  '<=':5,
-                  'begins with':6,
-                  'contains':7,
-                  'is null':8,
-                  'is not null':9,
-                  'does not contain':10 }
+        operator = {'=': 0,
+                    '≠': 1,
+                    '>': 2,
+                    '>=': 3,
+                    '<': 4,
+                    '<=': 5,
+                    'begins with': 6,
+                    'contains': 7,
+                    'is null': 8,
+                    'is not null': 9,
+                    'does not contain': 10}
 
-        alg_id="qgis:selectbyattribute"
+        alg_id = "qgis:selectbyattribute"
 
-        parameter_dictionary = {'INPUT':vlayer,
-                                'FIELD':fieldName,
+        parameter_dictionary = {'INPUT': vlayer,
+                                'FIELD': fieldName,
                                 'OPERATOR': operator[operatorId],
-                                'METHOD':0     #new selection
+                                'METHOD': 0  # new selection
                                 }
-        result=processing.run(alg_id, parameter_dictionary)
+        result = processing.run(alg_id, parameter_dictionary)
         return result
+
+
+    def createFinalLayer(self, group=None, vLayer=None):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        transformContext = QgsProject.instance().transformContext()
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = vLayer.dataProvider().storageType()
+
+        AbsolutePath_FinalData = self.getAbsolutePathFinalData()
+
+        finalFileName = vLayer.name()+"_Final"
+        fullPathName_FinalData = AbsolutePath_FinalData+"/"+finalFileName+".shp"
+
+        error = QgsVectorFileWriter.writeAsVectorFormatV3(
+            vLayer,
+            fullPathName_FinalData,
+            transformContext,
+            options
+        )
+
+        if error[0] != QgsVectorFileWriter.NoError:
+            print(f"line:{lineno()}, writeAsVectorFormatV3 fail")
+
+        vlayer_Final = QgsVectorLayer(fullPathName_FinalData,
+                                      finalFileName,
+                                      "ogr"
+                                      )
+
+        self.idVlayer_Final = vlayer_Final.id()
+
+        new_renderer = vLayer.renderer().clone()
+        vlayer_Final.setRenderer(new_renderer)
+
+        QgsProject.instance().addMapLayer(vlayer_Final, False)
+        # QgsProject.instance().addMapLayer(vlayer_Final)
+
+        tLayer_Final = QgsLayerTreeLayer(vlayer_Final)
+        tLayer_Final.setExpanded(False)
+
+        group.insertChildNode(-1, tLayer_Final)
+
+        return vlayer_Final
+
+
+    def mergingLevels(self,
+                      attributsTable:list = None,
+                      vlayerFinal:QgsVectorLayer = None,
+                      vLayers:list = None
+                      ):
+
+        """
+            param none:
+            returns none:
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        prov_vlayerFinal = vlayerFinal.dataProvider()
+        caps_vlayerFinal = prov_vlayerFinal.capabilities()
+
+        self.setDictFieldIndex(
+            attributsTable=attributsTable,
+            vLayer=vlayerFinal
+        )
+
+        #Process layers list
+        for vLayer in vLayers:
+
+            self.setListOfAttValues(vLayer=vLayer)
+            # vLayer.dataProvider().createSpatialIndex()
+           
+           
+            field_Code, idx_Code = self.getFielAnddIndex('code')
+            _, idx_Class = self.getFielAnddIndex('class')
+            _, idx_Color = self.getFielAnddIndex('color')
+
+            for code_Value in self.listOfAttValues.keys():
+
+                class_Value = self.listOfAttValues[code_Value][0]
+                Color_Value = self.listOfAttValues[code_Value][1]
+               
+                param_sel = {'INPUT': vLayer,
+                             'FIELD': field_Code,
+                             'OPERATOR': 0,  # 0  =
+                             'VALUE': code_Value,
+                             'METHOD': 0
+                             }
+                processing.run('qgis:selectbyattribute', param_sel)
+                # self.progress.setValue(self.progress.value()+1)
+
+                param_sel1 = {'INPUT': vlayerFinal,
+                              'FIELD': field_Code,
+                              'OPERATOR': 8,  # 8= 'is null'
+                              'METHOD': 0
+                              }
+                processing.run('qgis:selectbyattribute', param_sel1)
+                #         self.progress.setValue(self.progress.value()+1)
+
+                param_loc = {'INPUT': vlayerFinal,
+                             'PREDICATE': 6,  # are within
+                             'INTERSECT': QgsProcessingFeatureSourceDefinition(vLayer.id(), True),
+                             'METHOD': 2
+                             }
+                processing.run('qgis:selectbylocation', param_loc)
+                # self.progress.setValue(self.progress.value()+1)
+
+                for featureId in vlayerFinal.selectedFeatureIds():
+                    if caps_vlayerFinal and QgsVectorDataProvider.ChangeAttributeValues:
+                        attrs = {idx_Code: code_Value,
+                                 idx_Class: class_Value,
+                                 idx_Color: Color_Value
+                                 }
+                        prov_vlayerFinal.changeAttributeValues(
+                            {featureId: attrs})
+
+                vLayer.removeSelection()
+                vlayerFinal.removeSelection()
+                # self.progress.setValue(self.progress.value()+1)
+                

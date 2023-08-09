@@ -3,30 +3,29 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=TraiNminaTor_3
-qgisMinimumVersion=3.16.5
-
-description=Plugin de labelisation
-version=3.0
+name=trainminator2
+qgisMinimumVersion=3.0
+description=Plugin de labellisation
+version=2.0
 author=IGN
 email=yann.le-borgne@ign.fr
 
-about=Plugin de labelisation.
+about=Plugin de labellisation
 
 tracker=http://bugs
-repository=http://repo
+repository=http://gitlab.dockerforge.ign.fr/ocsge_ng
 # End of mandatory metadata
 
 # Recommended items:
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog=MAJ metadata file.
+# changelog=
 
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://homepage
+homepage=http://gitlab.dockerforge.ign.fr/ocsge_ng
 category=Plugins
 icon=icon.png
 # experimental flag
