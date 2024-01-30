@@ -1,4 +1,3 @@
-
 # TRAINMINATOR
 OUtil de labellisation mono ou bi date pour la segmentation sémantique
 et la détection du changement appliquée à la géomatique / télédétection.
