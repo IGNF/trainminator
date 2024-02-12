@@ -512,6 +512,68 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.selectionLayer=None
         self.setCapture(False)
 
+    
+    def getLayers(self):
+        """
+            returns layers of the vintage
+        """
+        mainWindow = self.parent.getMainWindow()
+        layerTreeWidget = mainWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        vintage = mainWindow.getVintage()
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
+        group = root.findGroup(groupName)
+        layers = group.findLayers()
+
+        return layers
+
+    
+    def filterLayers(self, layers):
+        """
+            Returns more segmented layers than self.layer
+        """
+        filteredLayersList = []
+        add = True
+        for index,_ in enumerate(layers, 1):
+            if layers[-index].layer() == self.layer:
+                add = False
+            if add :
+                filteredLayersList.append(layers[-index].layer())
+        return filteredLayersList
+
+
+    def propagateClass(self, attrs):
+        """
+            Propagate class in more segmented layer
+            returns None
+        """
+        
+        layers = self.getLayers()
+        filteredLayersList = self.filterLayers(layers)
+
+        for filteredLayer in filteredLayersList:
+
+            prov_vlayerFinal = filteredLayer.dataProvider()
+            caps_vlayerFinal = prov_vlayerFinal.capabilities()
+
+            param_loc = {'INPUT': filteredLayer,
+                             'PREDICATE': 6,  # are within
+                             'INTERSECT': QgsProcessingFeatureSourceDefinition(self.layer.id(), True),
+                             'METHOD': 0 # Create new selection
+                             }
+            processing.run('qgis:selectbylocation', param_loc)
+
+            for featureId in filteredLayer.selectedFeatureIds():
+                if caps_vlayerFinal and QgsVectorDataProvider.ChangeAttributeValues:
+                    prov_vlayerFinal.changeAttributeValues({featureId: attrs})
+            
+            filteredLayer.removeSelection()
+  
+
     def applyClass(self):
         """
             returns none:
@@ -529,6 +591,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({ featureId : attrs })
 
+        self.propagateClass(attrs)
         self.layer.removeSelection()
 
 
