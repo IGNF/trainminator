@@ -462,6 +462,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({ featureId : attrs })
 
+        self.propagateClass(attrs)
         self.layer.removeSelection()
 
     def removeCurrentClass(self):
