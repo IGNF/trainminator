@@ -42,7 +42,7 @@ from .TnT_CaptureManager import ( TnTmapToolEmitPoint,
                                   TnTmapToolEmitPolygon
                                 )
 from .TnT_ProjectManager import( TnTLayersManager )
-from .TnT_MergingLabeledData import ( TnTmergingLabeledData )
+from .TnT_SavingLabeledData import ( TnTSavingLabeledData )
 
 
 def lineno():
@@ -925,7 +925,7 @@ class mergeToolsGroup(groupQPushButton):
 
         self.setConnections()
         self.mergingLabeledData = None
-        self.setMergingLabeledData()
+        self.setSavingLabeledData()
 
     def setupLayout(self):
         layout=QVBoxLayout(self)
@@ -957,13 +957,11 @@ class mergeToolsGroup(groupQPushButton):
         
         fill_Pyramid_pushButton = self.findChild(QPushButton, "fill_Pyramid")
         fill_Pyramid_pushButton.clicked.connect(self.fillPyramid)
-        
-    def setMergingLabeledData(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
+
+    def setSavingLabeledData(self):
         
         masterWindow = self.getMasterWindow()
-        self.mergingLabeledData = TnTmergingLabeledData(masterWindow=masterWindow)       
+        self.savingLabeledData = TnTSavingLabeledData(masterWindow)       
         
 
     def fillPyramid(self):
@@ -973,7 +971,7 @@ class mergeToolsGroup(groupQPushButton):
         # masterWindow = self.getMasterWindow()
         # mergingLabeledData = TnTmergingLabeledData(masterWindow=masterWindow)
         
-        self.mergingLabeledData.merge()
+        self.savingLabeledData.save()
        
         
 
