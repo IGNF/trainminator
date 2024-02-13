@@ -2535,6 +2535,12 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
 
+        self.styleSheet_uncompleted = { "color":"",
+                                      "outline_color":"red",
+                                      "width_border":"1.00",
+                                      "style":"no"
+                                      }
+
         self.styleSheet_labeled = { "color":"",
                                     "outline_color":"black",
                                     "width_border":"0.10",
@@ -2815,6 +2821,16 @@ class TnTLayerTreeWidget(groupQWidgets):
             rule_n.setRuleKey(ruleKey)
 
             rootrule.appendChild(rule_n)
+
+        mainWindow = self.getMasterWindow()
+        vintages = mainWindow.getVintages()
+        field_code = ["code_{}".format(vintage) for vintage in vintages]
+        sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
+        for symbolLayer in sym_uncompleted.symbolLayers():
+            symbolLayer.setRenderingPass(1)
+        expression_uncompleted = f"({field_code[0]} is null and {field_code[1]} is not null) or ({field_code[1]} is null and {field_code[0]} is not null)"
+        rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
+        rootrule.appendChild(rule_uncompleted)
 
         return renderer
     
