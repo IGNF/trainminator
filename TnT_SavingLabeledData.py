@@ -42,11 +42,11 @@ class TnTSavingLabeledData:
             QgsProject.instance().removeMapLayer(id_vLayer)
             group.removeAllChildren()
             
-            absolutePathFinalData=self.getAbsolutePathFinalData()
-            if absolutePathFinalData :
-                files = glob.glob(f"{absolutePathFinalData}/*.*")
-                for f in files:
-                    os.remove(f)
+        absolutePathFinalData=self.getAbsolutePathFinalData()
+        if absolutePathFinalData :
+            files = glob.glob(f"{absolutePathFinalData}/*.*")
+            for f in files:
+                os.remove(f)
 
 
     def getAbsolutePathFinalData(self):
@@ -105,8 +105,6 @@ class TnTSavingLabeledData:
 
         group.insertChildNode(-1, tLayer_Final)
 
-        return vlayer_Final
-
 
     def getMostSegmentedLayer(self):
         """
@@ -164,6 +162,8 @@ class TnTSavingLabeledData:
         
     
     def checkCompletion(self, vlayerFinal):
+
+        error = True
         # get vintages
         vintages = self.masterWindow.getVintages()
 
@@ -183,16 +183,21 @@ class TnTSavingLabeledData:
             if count > 0:
                 self.returnErrorMessage(count, vintages[1], vlayerFinal)
             else:
-                iface.messageBar().pushMessage("Success !", "", level=Qgis.Success)
+                iface.messageBar().pushMessage("Success !", "", level=Qgis.Success, duration=0)
+                error = False
         vlayerFinal.removeSelection()
+        return error
 
         
 
 
     def save(self):
         
-        # remove previous final layer
-        self.cleanData()
+        # get most segmented layer
+        masterMostSegmentedLayer = self.getMostSegmentedLayer()
+
+        # Check that each feature labelised in a vintage is labelised in the other vintage
+        error = self.checkCompletion(masterMostSegmentedLayer)
         
         # get nomenclature name : final layer will be saved in "FINAL_DATA/[nomenclature_name]"
         nomenclatureWidget = self.masterWindow.getTnTnomenclatureWidget()
@@ -201,18 +206,16 @@ class TnTSavingLabeledData:
         # create directory "FINAL_DATA/[nomenclature_name]"
         self.createDir(dirName=f"{self.workGroupName}/{nomenclatureName.upper()}")
 
-        # get most segmented layers in the two vintages
-        masterMostSegmentedLayer = self.getMostSegmentedLayer()
+        # remove previous final layer
+        self.cleanData()
 
-        # create final layer
-        layerTreeWidget = self.masterWindow.getTnTLayerTreeWidget()
-        root = layerTreeWidget.layerTreeRoot()
-        finalGroup = root.findGroup(self.workGroupName)
-        vlayerFinal = self.createFinalLayer(group=finalGroup, vLayer=masterMostSegmentedLayer)
+        if not error:
 
-        finalGroup.setExpanded(True)
-        finalGroup.setItemVisibilityChecked(False)
+            # create final layer
+            layerTreeWidget = self.masterWindow.getTnTLayerTreeWidget()
+            root = layerTreeWidget.layerTreeRoot()
+            finalGroup = root.findGroup(self.workGroupName)
+            self.createFinalLayer(group=finalGroup, vLayer=masterMostSegmentedLayer)
 
-        # Check that each feature labelised in a vintage is labelised in the other vintage
-        self.checkCompletion(vlayerFinal)
-
+            finalGroup.setExpanded(True)
+            finalGroup.setItemVisibilityChecked(False)
