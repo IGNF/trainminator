@@ -1646,6 +1646,10 @@ class sliderGroup(groupQWidgets):
     #     slider = self.findChild(QSlider, "slider_sliderGroup")
     #     slider.setMaximum(maximum)
 
+    def setMaximum(self):
+        slider = self.findChild(QSlider, "slider_sliderGroup")
+        slider.setValue(slider.maximum())
+
     # def value(self):
     #     slider = self.findChild(QSlider, "slider_sliderGroup")
     #     slider.value()

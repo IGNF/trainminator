@@ -156,7 +156,12 @@ class TnTSavingLabeledData:
         map_Canvas_associated_window = self.masterWindow.associatedWindow.findChild(mapCanvas)
         map_Canvas_associated_window.setExtent(bbox)
 
-    
+        masterSliderGroup = self.masterWindow.getSliderGroup()
+        masterSliderGroup.setMaximum()
+
+        associatedSliderGroup = self.masterWindow.associatedWindow.getSliderGroup()
+        associatedSliderGroup.setMaximum()
+        
     
     def checkCompletion(self, vlayerFinal):
         # get vintages
