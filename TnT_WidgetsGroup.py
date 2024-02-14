@@ -2823,14 +2823,22 @@ class TnTLayerTreeWidget(groupQWidgets):
             rootrule.appendChild(rule_n)
 
         mainWindow = self.getMasterWindow()
-        vintages = mainWindow.getVintages()
-        field_code = ["code_{}".format(vintage) for vintage in vintages]
-        sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
-        for symbolLayer in sym_uncompleted.symbolLayers():
-            symbolLayer.setRenderingPass(1)
-        expression_uncompleted = f"({field_code[0]} is null and {field_code[1]} is not null) or ({field_code[1]} is null and {field_code[0]} is not null)"
-        rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
-        rootrule.appendChild(rule_uncompleted)
+        currentVintage = self.getVintage()
+        otherVintage = None
+        for vintage in mainWindow.getVintages():
+            if vintage != currentVintage:
+                otherVintage = vintage
+
+        if otherVintage is not None:
+            currentFieldCode = "code_{}".format(currentVintage)
+            otherFieldCode = "code_{}".format(otherVintage)
+            sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
+            for symbolLayer in sym_uncompleted.symbolLayers():
+                symbolLayer.setRenderingPass(1)
+            
+            expression_uncompleted = f"({currentFieldCode} is null and {otherFieldCode} is not null)"
+            rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
+            rootrule.appendChild(rule_uncompleted)
 
         return renderer
     
