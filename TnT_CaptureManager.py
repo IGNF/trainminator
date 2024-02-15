@@ -484,6 +484,11 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         fieldCodeName = fieldIndexMap[key]
         codeValue = attrs[key]
 
+        for key in attrs.keys():
+            attrs[key] = None
+        
+        self.propagateClass(attrs, codeValue=codeValue)
+
         param_sel = {'INPUT': self.layer,
                      'FIELD': fieldCodeName,
                      'OPERATOR': 0,  # 0  =
@@ -492,14 +497,10 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
                      }
         processing.run('qgis:selectbyattribute', param_sel)
 
-        for key in attrs.keys():
-            attrs[key] = None
-
         for featureId in self.layer.selectedFeatureIds():
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({featureId: attrs})
 
-        self.propagateClass(attrs, fieldCodeName=fieldCodeName, codeValue=codeValue)
         self.layer.removeSelection()
 
     def resetAll(self):
@@ -548,7 +549,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         return filteredLayersList
 
 
-    def propagateClass(self, attrs, fieldCodeName=None, codeValue=None):
+    def propagateClass(self, attrs, codeValue=None, modifyOnlyNullValue=False):
         """
             Propagate class in more segmented layer
             returns None
@@ -562,6 +563,10 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             prov_vlayerFinal = filteredLayer.dataProvider()
             caps_vlayerFinal = prov_vlayerFinal.capabilities()
 
+            fieldIndexMap = {v: k for k, v in prov_vlayerFinal.fieldNameMap().items()}
+            key = list(attrs.keys())[1]
+            fieldCodeName = fieldIndexMap[key]
+
             param_loc = {'INPUT': filteredLayer,
                              'PREDICATE': 6,  # are within
                              'INTERSECT': QgsProcessingFeatureSourceDefinition(self.layer.id(), True),
@@ -569,8 +574,17 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
                              }
             processing.run('qgis:selectbylocation', param_loc)
 
+            # case propagate label
+            if modifyOnlyNullValue:
+                param_sel = {'INPUT': filteredLayer,
+                        'FIELD': fieldCodeName,
+                        'OPERATOR': 8,  # 8  : is null
+                        'METHOD': 3
+                        }
+                processing.run('qgis:selectbyattribute', param_sel)
+
             # case propagate delete current
-            if fieldCodeName is not None and codeValue is not None:
+            if codeValue is not None:
                 param_sel = {'INPUT': filteredLayer,
                         'FIELD': fieldCodeName,
                         'OPERATOR': 0,  # 0  =
@@ -603,7 +617,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({ featureId : attrs })
 
-        self.propagateClass(attrs)
+        self.propagateClass(attrs, modifyOnlyNullValue=True)
         self.layer.removeSelection()
 
 
