@@ -805,6 +805,9 @@ class displayToolsGroup(groupQPushButton):
         mainWindow = self.getMainWindow()
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
+        associatedWindow = mainWindow.associatedWindow
+        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
