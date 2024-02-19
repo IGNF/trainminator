@@ -47,7 +47,7 @@ class mapCanvas(QgsMapCanvas):
         self.setAccessibleName(objectName)
 
         self.marker = None
-        self.synchroMode = False
+        self.synchroMode = True
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
@@ -64,6 +64,7 @@ class mapCanvas(QgsMapCanvas):
 
         self.setCanvasColor(Qt.black)
         self.setDefaultMarker()
+        self.setSynchroZoom()
 
 
     def getMasterWindow(self):

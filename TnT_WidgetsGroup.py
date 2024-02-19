@@ -1192,6 +1192,8 @@ class viewsManagerGroup(groupQPushButton):
 
         button2 = self.setQPushButton( QPushButton(self),
                                       checkable=True,
+                                      checked=True,
+                                      enabled=True,
                                       text="Synchro Views",
                                       objectName="synchro_Views",
                                       accessibleName="synchro_Views",
@@ -1219,13 +1221,7 @@ class viewsManagerGroup(groupQPushButton):
         map_canvas = mainWindow.findChild(mapCanvas, "mapCanvas")
         map_canvas.zoomAllToFullExtent()
 
-    def updateChecked_AllSyncButtons(self, sender, state):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        self.updateChecked_AllButton(sender)
-
-    def updateChecked_AllButton(self, sender):
+    def updateChecked_AllButtons(self, sender):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
         
@@ -1246,7 +1242,7 @@ class viewsManagerGroup(groupQPushButton):
         sender = self.sender()
         state = sender.isChecked()
         
-        self.updateChecked_AllSyncButtons(sender, state)
+        self.updateChecked_AllButtons(sender)
         self.setSynchroMode_Canvas(state)
 
 
