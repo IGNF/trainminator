@@ -140,9 +140,9 @@ class TnTSavingLabeledData:
         return result
 
 
-    def returnErrorMessage(self, count, vintage, vlayerFinal:QgsVectorLayer):
+    def returnErrorMessage(self, count0, count1, vintages, vlayerFinal:QgsVectorLayer):
         # return error message
-        iface.messageBar().pushMessage("Error", "{} features are not completed in vintage {}".format(count, vintage), level=Qgis.Critical)
+        iface.messageBar().pushMessage("Error", "{} features are not completed in vintage {} and {} in vintage {}".format(count0, vintages[0], count1, vintages[1]), level=Qgis.Critical)
         
         # Zoom on the first feature not completely labelised
         feature0 = vlayerFinal.selectedFeatures()[0]
@@ -159,8 +159,8 @@ class TnTSavingLabeledData:
 
         associatedSliderGroup = self.masterWindow.associatedWindow.getSliderGroup()
         associatedSliderGroup.setMaximum()
-        
-    
+
+
     def checkCompletion(self, vlayerFinal):
 
         error = True
@@ -171,24 +171,22 @@ class TnTSavingLabeledData:
         field_codes = ["code_{}".format(vintage) for vintage in vintages]
         
         # First request : features not labelised in vintage 1 and labelised in vintage 2
-        result = self.request(vlayerFinal, field_codes[0], field_codes[1])
-        count = result['OUTPUT'].selectedFeatureCount()
-        if count > 0:
-            self.returnErrorMessage(count, vintages[0], vlayerFinal)
+        result0 = self.request(vlayerFinal, field_codes[0], field_codes[1])
+        count0 = result0['OUTPUT'].selectedFeatureCount()
 
+        result1 = self.request(vlayerFinal, field_codes[1], field_codes[0])
+        count1 = result1['OUTPUT'].selectedFeatureCount()
+
+        if count0 > 0 or count1 > 0:
+            if count1 == 0:
+                self.request(vlayerFinal, field_codes[0], field_codes[1])
+            self.returnErrorMessage(count0, count1, vintages, vlayerFinal)
         else:
-            # Second request : features not labelised in vintage 2 and labelised in vintage 1
-            result = self.request(vlayerFinal, field_codes[1], field_codes[0])
-            count = result['OUTPUT'].selectedFeatureCount()
-            if count > 0:
-                self.returnErrorMessage(count, vintages[1], vlayerFinal)
-            else:
-                iface.messageBar().pushMessage("Success !", "", level=Qgis.Success, duration=0)
-                error = False
+            iface.messageBar().pushMessage("Success !", "", level=Qgis.Success, duration=0)
+            error = False
+
         vlayerFinal.removeSelection()
         return error
-
-        
 
 
     def save(self):
