@@ -38,7 +38,8 @@ from .TnT_WidgetsGroup import( menu_widget,
                                TnTnomenclatureWidget,
                                TnTnomenclatureWidget_Master,
                                TnTLayerTreeWidget,
-                               sliderGroup
+                               sliderGroup,
+                               selectingToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -150,6 +151,10 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         
         dockWidget = self.findChild(typeDock)
         return dockWidget
+
+    def getSelectingToolGroupWidget(self):
+        selectingToolGroupWidget =  self.findChild(selectingToolsGroup)
+        return selectingToolGroupWidget
     
     def getTnTnomenclatureWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
