@@ -805,6 +805,9 @@ class displayToolsGroup(groupQPushButton):
         mainWindow = self.getMainWindow()
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
+        associatedWindow = mainWindow.associatedWindow
+        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -2535,6 +2538,12 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
 
+        self.styleSheet_uncompleted = { "color":"",
+                                      "outline_color":"red",
+                                      "width_border":"1.00",
+                                      "style":"no"
+                                      }
+
         self.styleSheet_labeled = { "color":"",
                                     "outline_color":"black",
                                     "width_border":"0.10",
@@ -2815,6 +2824,24 @@ class TnTLayerTreeWidget(groupQWidgets):
             rule_n.setRuleKey(ruleKey)
 
             rootrule.appendChild(rule_n)
+
+        mainWindow = self.getMasterWindow()
+        currentVintage = self.getVintage()
+        otherVintage = None
+        for vintage in mainWindow.getVintages():
+            if vintage != currentVintage:
+                otherVintage = vintage
+
+        if otherVintage is not None:
+            currentFieldCode = "code_{}".format(currentVintage)
+            otherFieldCode = "code_{}".format(otherVintage)
+            sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
+            for symbolLayer in sym_uncompleted.symbolLayers():
+                symbolLayer.setRenderingPass(1)
+            
+            expression_uncompleted = f"({currentFieldCode} is null and {otherFieldCode} is not null)"
+            rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
+            rootrule.appendChild(rule_uncompleted)
 
         return renderer
     

@@ -37,7 +37,7 @@ from qgis.core import (QgsProject, QgsVectorLayer, QgsFeature,
                        QgsGeometry, QgsProcessingFeatureSourceDefinition,
                        QgsVectorDataProvider, QgsWkbTypes,QgsFeatureSource)
 
-from qgis.gui import (QgsMapToolEmitPoint, QgsRubberBand)
+from qgis.gui import (QgsMapToolEmitPoint, QgsRubberBand, QgsMapCanvas)
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import (QApplication, QPushButton)
@@ -288,6 +288,20 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         self.setCapture(False)
         self.unLockAtEndCapture()
+        
+        #Refresh canvas to display red line around uncompleted segments
+        parentSelectingToolGroup = self.parent
+        masterWindow = self.parent.getMasterWindow()
+        associatedWindow = masterWindow.associatedWindow
+        masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+
+        if masterSelectingToolGroup == parentSelectingToolGroup:
+            associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+            associatedCanvas.refresh()
+        else:
+            masterCanvas = masterWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+            masterCanvas.refresh()
+        
 
     def abortCapturing(self):
         """
