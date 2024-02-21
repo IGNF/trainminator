@@ -1202,6 +1202,15 @@ class viewsManagerGroup(groupQPushButton):
                                     )
         layout.addWidget(button2)
 
+        button3 = self.setQPushButton( QPushButton(self),
+				              checkable=True,
+				              text="Synchro Levels",
+				              objectName="synchro_Levels",
+				              accessibleName="synchro_Levels",
+				              toolTip="",
+				              keySequence=None
+				              )
+        layout.addWidget(button3)
 
     def setConnections(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1212,6 +1221,9 @@ class viewsManagerGroup(groupQPushButton):
 
         synchro_Views_pushButton = self.findChild(QPushButton, "synchro_Views")
         synchro_Views_pushButton.clicked.connect(self.synchroViews)
+
+        synchro_Levels_pushButton = self.findChild(QPushButton, "synchro_Levels")
+        synchro_Levels_pushButton.clicked.connect(self.synchroLevels)
 
     def fitAll(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1256,6 +1268,19 @@ class viewsManagerGroup(groupQPushButton):
             if canvas.isVisible() :
                 canvas.manageSynchroConnections(state)
 
+    def synchroLevels(self):
+        sender = self.sender()
+        state = sender.isChecked()
+        
+        self.updateChecked_AllButtons(sender)
+        self.setSynchroSlider_Level(state)
+        
+
+    def setSynchroSlider_Level(self, state=False):
+        mainWindow = self.getMainWindow()
+        main_slider = mainWindow.findChild(sliderGroup, "sliderGroup")
+        main_slider.manageSynchroSegmentationLevel(state)
+
 class viewsManagerGroup_Master(viewsManagerGroup):
 
     def __init__( self,
@@ -1298,6 +1323,9 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
         synchroViews_Button.setEnabled(False)
 
+        synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
+        synchroLevels_Button.setEnabled(False)
+
     def standardMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -1308,6 +1336,9 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         
         synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
         synchroViews_Button.setEnabled(True)
+
+        synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
+        synchroLevels_Button.setEnabled(True)
 
 
     def differentialMode(self):
@@ -1321,6 +1352,9 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
         synchroViews_Button.setEnabled(True)
 
+        synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
+        synchroLevels_Button.setEnabled(True)
+
     def setConnections(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -1329,6 +1363,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         addView_Button = self.findChild( QPushButton, "add_View" )
         addView_Button.clicked.connect( self.addView )
         addView_Button.clicked.connect( self.setEnabledButton_SynchroViews )
+        addView_Button.clicked.connect( self.setEnabledButton_SynchroLevels )
 
     def setEnabledButton_SynchroViews(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1338,6 +1373,13 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         sender=self.sender()
         synchro_Views_pushButton.setEnabled(sender.isChecked())
         
+    def setEnabledButton_SynchroLevels(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        synchroLevels_pushButton = self.findChild(QPushButton, "synchro_Levels")
+        sender=self.sender()
+        synchroLevels_pushButton.setEnabled(sender.isChecked())
         
 
     def addView(self):
@@ -1709,7 +1751,7 @@ class sliderGroup(groupQWidgets):
     def activateSegmentLevel(self, newIndex):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
+        
         layers_list = self.getListLabeledLayers()
 
         if layers_list:
@@ -1768,7 +1810,7 @@ class sliderGroup(groupQWidgets):
     def setShortCuts(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
+
         self.setSliderShortcut()
 
     def standardMode(self):
