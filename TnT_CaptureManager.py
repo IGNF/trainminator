@@ -503,7 +503,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
         key = list(attrs.keys())[1]
-        codeValue = int(attrs[key])
+        codeValue = attrs[key]
 
         for k in attrs.keys():
             attrs[k]=None
@@ -515,7 +515,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
-            if tntFeature.getAttributes()[key]==codeValue:
+            if str(tntFeature.getAttributes()[key])==codeValue:
                 tntFeature.removeCurrentClass(attrs, codeValue)
                 if tntFeature.parent is not None:
                     parents.append(tntFeature.parent)
@@ -557,19 +557,6 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
         return layers
 
-    
-    def filterLayers(self, layers):
-        """
-            Returns more segmented layers than self.layer
-        """
-        filteredLayersList = []
-        add = True
-        for index,_ in enumerate(layers, 1):
-            if layers[-index].layer() == self.layer:
-                add = False
-            if add :
-                filteredLayersList.append(layers[-index].layer())
-        return filteredLayersList
 
 
     def applyClass(self):

@@ -9,6 +9,7 @@ class TnTFeatures:
         self.layer = layer
         self.children = []
         self.parent = None
+        self.attrs = self.feature.attributes()
         
 
     def addChild(self, feature):
@@ -18,21 +19,73 @@ class TnTFeatures:
     def setParent(self, parent):
         self.parent = parent
 
+    def changeAttrs(self, attrs):
+        for k in attrs.keys():
+            self.attrs[k]=attrs[k]
 
-    def changeAttribute(self, attrs):
+
+    def changeAttribute_save(self, attrs):
         # Change attributes of the feature
-        attributesBeforeChange = self.getAttributes()
+        key = list(attrs.keys())[1]
+        attributesBeforeChange = self.getAttributes()[key]
         prov = self.layer.dataProvider()
         caps = prov.capabilities()
         if caps and QgsVectorDataProvider.ChangeAttributeValues:
             prov.changeAttributeValues({self.feature.id() : attrs})
+            self.changeAttrs(attrs)
         
         # Iterate on children
-        key = list(attrs.keys())[1]
         for child in self.children:
             childAttributes = child.getAttributes()
-            if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange[key]:
+            if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange:
                 child.changeAttribute(attrs)
+
+
+    def changeAttribute(self, attrs):
+        # Change attributes of the feature
+        key = list(attrs.keys())[1]
+        attributesBeforeChange = self.getAttributes()[key]
+
+
+        # Iterate on children
+        for child in self.children:
+            childAttributes = child.getAttributes()
+            if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange:
+                child.changeAttribute(attrs)
+            
+        labels = []
+        for child in self.children:
+            childAttributes = child.getAttributes()
+            labels.append(childAttributes[key])
+
+        labelsSet = set(labels)
+        
+
+        # First case : no children (last segmentation level)
+        if len(labelsSet)==0:
+            prov = self.layer.dataProvider()
+            caps = prov.capabilities()
+            if caps and QgsVectorDataProvider.ChangeAttributeValues:
+                prov.changeAttributeValues({self.feature.id() : attrs})
+                self.changeAttrs(attrs)
+        
+        # Second case : exactly one label not null
+        elif (len(labelsSet) == 1 and labels[0]!=NULL):
+            prov = self.layer.dataProvider()
+            caps = prov.capabilities()
+            if caps and QgsVectorDataProvider.ChangeAttributeValues:
+                prov.changeAttributeValues({self.feature.id() : attrs})
+                self.changeAttrs(attrs)
+
+        else:
+            attrsNull = {}
+            for k in attrs.keys():
+                attrsNull[k]=None
+            prov = self.layer.dataProvider()
+            caps = prov.capabilities()
+            if caps and QgsVectorDataProvider.ChangeAttributeValues:
+                prov.changeAttributeValues({self.feature.id() : attrsNull})
+                self.changeAttrs(attrsNull) 
 
     
     def removeCurrentClass(self, attrs, classId):
@@ -41,12 +94,13 @@ class TnTFeatures:
         caps = prov.capabilities()
         if caps and QgsVectorDataProvider.ChangeAttributeValues:
             prov.changeAttributeValues({self.feature.id() : attrs})
+            self.changeAttrs(attrs)
         
         # Iterate on children
         key = list(attrs.keys())[1]
         for child in self.children:
             childAttributes = child.getAttributes()
-            if childAttributes[key] == classId:
+            if str(childAttributes[key]) == classId:
                 child.removeCurrentClass(attrs, classId)
 
 
@@ -55,14 +109,13 @@ class TnTFeatures:
         caps = prov.capabilities()
         if caps and QgsVectorDataProvider.ChangeAttributeValues:
             prov.changeAttributeValues({self.feature.id() : attrs})
+            self.changeAttrs(attrs)
             for child in self.children:
                 child.removeAll(attrs)
 
 
     def getAttributes(self):
-        # return self.feature.attributes() doesn't work : it returns value at the beginning of the plugin...
-        feature = self.layer.getFeature(self.feature.id())
-        return feature.attributes()
+        return self.attrs
 
 
     def check(self, attrs, attrsNull):
@@ -81,6 +134,7 @@ class TnTFeatures:
             caps = prov.capabilities()
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({self.feature.id() : attrsNull})
+                self.changeAttrs(attrsNull)
                 modif = True
         
         # second case:
@@ -91,8 +145,10 @@ class TnTFeatures:
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 if labels[0] == NULL:
                     prov.changeAttributeValues({self.feature.id() : attrsNull})
+                    self.changeAttrs(attrsNull)
                 else:
                     prov.changeAttributeValues({self.feature.id() : attrs})
+                    self.changeAttrs(attrs)
                 modif = True
 
         if modif and self.parent is not None:
