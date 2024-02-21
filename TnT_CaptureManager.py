@@ -43,6 +43,8 @@ from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import (QApplication, QPushButton)
 from PyQt5.QtGui import QColor, QKeyEvent
 
+from .TnT_Features import TnTFeaturesManager
+
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -456,6 +458,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             attributs[index]=fieldsAndValues[key]
         return attributs
 
+
     def removeAllClass(self):
         """
             returns none:
@@ -464,7 +467,6 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         prov=self.layer.dataProvider()
-        caps=prov.capabilities()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
@@ -472,11 +474,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         for key in attrs.keys():
             attrs[key]=None
 
-        for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({ featureId : attrs })
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
-        self.propagateClass(attrs)
+        for featureId in self.layer.selectedFeatureIds():
+            tntFeature = tntFeaturesLevel.features[featureId]
+            tntFeature.removeAll(attrs)
+
         self.layer.removeSelection()
 
     def removeCurrentClass(self):
@@ -485,37 +490,29 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        prov = self.layer.dataProvider()
-        caps = prov.capabilities()
+
+        prov=self.layer.dataProvider()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
-        #histoire de faire simple
-        fieldIndexMap = {v: k for k, v in prov.fieldNameMap().items()}
         key = list(attrs.keys())[1]
-        fieldCodeName = fieldIndexMap[key]
-        codeValue = attrs[key]
+        codeValue = int(attrs[key])
 
-        for key in attrs.keys():
-            attrs[key] = None
-        
-        self.propagateClass(attrs, codeValue=codeValue)
+        for k in attrs.keys():
+            attrs[k]=None
 
-        param_sel = {'INPUT': self.layer,
-                     'FIELD': fieldCodeName,
-                     'OPERATOR': 0,  # 0  =
-                     'VALUE': codeValue,
-                     'METHOD': 3
-                     }
-        processing.run('qgis:selectbyattribute', param_sel)
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
         for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({featureId: attrs})
+            tntFeature = tntFeaturesLevel.features[featureId]
+            if tntFeature.getAttributes()[key]==codeValue:
+                tntFeature.removeCurrentClass(attrs, codeValue)
 
         self.layer.removeSelection()
+
 
     def resetAll(self):
         """
@@ -562,59 +559,18 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
                 filteredLayersList.append(layers[-index].layer())
         return filteredLayersList
 
+    def getTnTFeaturesLevel(self, layers):
+        masterWindow = self.parent.getMasterWindow()
+        listTnTFeaturesLevel = masterWindow.projectManager.tnTProjectObject.listTnTFeaturesLevel
+        for index,_ in enumerate(layers, 1):
+            if layers[-index].layer() == self.layer:
+                self.print_log("On renvoie la couche avec {} features".format(len(listTnTFeaturesLevel[index])))
+                return listTnTFeaturesLevel[index]
 
-    def propagateClass(self, attrs, codeValue=None, modifyOnlyNullValue=False):
-        """
-            Propagate class in more segmented layer
-            returns None
-        """
-        
-        layers = self.getLayers()
-        filteredLayersList = self.filterLayers(layers)
 
-        for filteredLayer in filteredLayersList:
-
-            prov_vlayerFinal = filteredLayer.dataProvider()
-            caps_vlayerFinal = prov_vlayerFinal.capabilities()
-
-            fieldIndexMap = {v: k for k, v in prov_vlayerFinal.fieldNameMap().items()}
-            key = list(attrs.keys())[1]
-            fieldCodeName = fieldIndexMap[key]
-
-            param_loc = {'INPUT': filteredLayer,
-                             'PREDICATE': 6,  # are within
-                             'INTERSECT': QgsProcessingFeatureSourceDefinition(self.layer.id(), True),
-                             'METHOD': 0 # Create new selection
-                             }
-            processing.run('qgis:selectbylocation', param_loc)
-
-            # case propagate label
-            if modifyOnlyNullValue:
-                param_sel = {'INPUT': filteredLayer,
-                        'FIELD': fieldCodeName,
-                        'OPERATOR': 8,  # 8  : is null
-                        'METHOD': 3
-                        }
-                processing.run('qgis:selectbyattribute', param_sel)
-
-            # case propagate delete current
-            if codeValue is not None:
-                param_sel = {'INPUT': filteredLayer,
-                        'FIELD': fieldCodeName,
-                        'OPERATOR': 0,  # 0  =
-                        'VALUE': codeValue,
-                        'METHOD': 3
-                        }
-                processing.run('qgis:selectbyattribute', param_sel)
-
-            for featureId in filteredLayer.selectedFeatureIds():
-                if caps_vlayerFinal and QgsVectorDataProvider.ChangeAttributeValues:
-                    prov_vlayerFinal.changeAttributeValues({featureId: attrs})
-            
-            filteredLayer.removeSelection()
-  
 
     def applyClass(self):
+    
         """
             returns none:
         """
@@ -622,16 +578,18 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         prov=self.layer.dataProvider()
-        caps=prov.capabilities()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
-        for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({ featureId : attrs })
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
-        self.propagateClass(attrs, modifyOnlyNullValue=True)
+        for featureId in self.layer.selectedFeatureIds():
+            tntFeature = tntFeaturesLevel.features[featureId]
+            tntFeature.changeAttribute(attrs)
+
         self.layer.removeSelection()
 
 
