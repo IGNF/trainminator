@@ -63,9 +63,40 @@ class TnTFeatures:
         # return self.feature.attributes() doesn't work : it returns value at the beginning of the plugin...
         feature = self.layer.getFeature(self.feature.id())
         return feature.attributes()
-            
 
 
+    def check(self, attrs, attrsNull):
+        key = list(attrs.keys())[1]
+        labels = []
+        for child in self.children:
+            labels.append(child.getAttributes()[key])
+        setLabels = set(labels)
+
+        modif = False
+        
+        # first case:
+        # at least two labels different and self.attributes is not null
+        if len(setLabels) >= 2 and self.getAttributes()[key] != NULL:
+            prov = self.layer.dataProvider()
+            caps = prov.capabilities()
+            if caps and QgsVectorDataProvider.ChangeAttributeValues:
+                prov.changeAttributeValues({self.feature.id() : attrsNull})
+                modif = True
+        
+        # second case:
+        # exactly one label and self.attributes different from the label
+        elif len(setLabels) == 1 and self.getAttributes()[key] != labels[0]:
+            prov = self.layer.dataProvider()
+            caps = prov.capabilities()
+            if caps and QgsVectorDataProvider.ChangeAttributeValues:
+                if labels[0] == NULL:
+                    prov.changeAttributeValues({self.feature.id() : attrsNull})
+                else:
+                    prov.changeAttributeValues({self.feature.id() : attrs})
+                modif = True
+
+        if modif and self.parent is not None:
+            self.parent.check(attrs, attrsNull)
 
 
 
@@ -99,7 +130,7 @@ class TnTFeaturesLevel:
                 f = tntFeaturesLevel.features[id]
                 if f.feature.geometry().within(feature.feature.geometry()):
                     feature.addChild(f)
-                    f.setParent = feature
+                    f.setParent(feature)
 
 
     def getFeature(self, feature):

@@ -478,9 +478,15 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
         tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
             tntFeature.removeAll(attrs)
+            if tntFeature.parent is not None:
+                parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrs)
 
         self.layer.removeSelection()
 
@@ -506,10 +512,16 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
         tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
             if tntFeature.getAttributes()[key]==codeValue:
                 tntFeature.removeCurrentClass(attrs, codeValue)
+                if tntFeature.parent is not None:
+                    parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrs)
 
         self.layer.removeSelection()
 
@@ -559,15 +571,6 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
                 filteredLayersList.append(layers[-index].layer())
         return filteredLayersList
 
-    def getTnTFeaturesLevel(self, layers):
-        masterWindow = self.parent.getMasterWindow()
-        listTnTFeaturesLevel = masterWindow.projectManager.tnTProjectObject.listTnTFeaturesLevel
-        for index,_ in enumerate(layers, 1):
-            if layers[-index].layer() == self.layer:
-                self.print_log("On renvoie la couche avec {} features".format(len(listTnTFeaturesLevel[index])))
-                return listTnTFeaturesLevel[index]
-
-
 
     def applyClass(self):
     
@@ -582,13 +585,23 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
+        attrsNull = {}
+        for k in attrs.keys():
+            attrsNull[k]=None
+
         masterWindow = self.parent.getMasterWindow()
         tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
         tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
             tntFeature.changeAttribute(attrs)
+            if tntFeature.parent is not None:
+                parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrsNull)
 
         self.layer.removeSelection()
 
