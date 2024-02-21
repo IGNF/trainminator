@@ -1278,8 +1278,8 @@ class viewsManagerGroup(groupQPushButton):
 
     def setSynchroSlider_Level(self, state=False):
         mainWindow = self.getMainWindow()
-        main_slider = mainWindow.findChild(sliderGroup, "sliderGroup")
-        main_slider.manageSynchroSegmentationLevel(state)
+        slider = mainWindow.findChild(sliderGroup, "sliderGroup")
+        slider.manageSynchroLevels(state)
 
 class viewsManagerGroup_Master(viewsManagerGroup):
 
@@ -1591,6 +1591,7 @@ class sliderGroup(groupQWidgets):
                         )
         self.setTitle("sliderGroup")
 
+        self.synchroMode = False
         self.setConnections()
         self.setShortCuts()
 
@@ -1780,6 +1781,30 @@ class sliderGroup(groupQWidgets):
         slider.valueChanged.connect(
                     lambda:(self.activateSegmentLevel(int(slider.value()-1)))
                                    )
+        slider.valueChanged.connect(self.setSynchroLevels)
+
+    def manageSynchroLevels(self, state):
+
+        self.synchroMode = state
+        self.setSynchroLevels()
+
+    def setSynchroLevels(self):
+        if self.synchroMode == True:  
+            mainWindow = self.getMainWindow()
+            main_slider = mainWindow.findChild(QSlider, "slider_sliderGroup")
+            value = main_slider.value()
+
+            if mainWindow == self.getMasterWindow():
+                associatedWindow = mainWindow.associatedWindow
+            else:
+                associatedWindow = self.getMasterWindow()
+                  
+            associatedSlider = associatedWindow.findChild(QSlider, "slider_sliderGroup")
+            associatedLaberSlider = associatedWindow.findChild(QLabel, "labelSlider_sliderGroup")
+            associatedSlider.setValue(value)
+            associatedLaberSlider.setText(f"level{value}")
+        else:
+            pass
 
     def getListLabeledLayers(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
