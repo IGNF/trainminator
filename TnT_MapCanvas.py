@@ -30,6 +30,10 @@ from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 from PyQt5.QtCore    import( Qt, QEvent )
 from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent )
 
+from qgis.gui import QgsMapMouseEvent
+from qgis.core import QgsGeometry, QgsPoint
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QShortcut
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -48,6 +52,7 @@ class mapCanvas(QgsMapCanvas):
 
         self.marker = None
         self.synchroMode = False
+        self.showInfo = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
@@ -214,6 +219,23 @@ class mapCanvas(QgsMapCanvas):
             for canvas in canvas_list :
                 canvas.showMousePointerMarker(qgspointXY)
 
+        if self.showInfo == True:
+            layer = self.currentLayer()
+            feats = [ feat for feat in layer.getFeatures() ]
+            qgspointXY = self.mapTool().toMapCoordinates(event.pos())
+            geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
+
+            id = -1
+            for feat in feats:
+                if geo_pt.within(feat.geometry()):
+                    id = feat.id()
+                    break            
+            
+            if id != -1:
+                print("classe 2016 :", feats[id].attribute('class_2016'))
+                print("classe 2019 :", feats[id].attribute('class_2019'))
+            
+            #qgspointXY =self.mapTool().toMapCoordinates(event.pos())
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
 
@@ -260,4 +282,9 @@ class mapCanvas(QgsMapCanvas):
         #         pass
         #     return True
     
+        if event.type()==QEvent.KeyPress and event.key()==Qt.Key_I:
+            if self.showInfo == True:
+                self.showInfo = False
+            else:
+                self.showInfo = True
         return QgsMapCanvas.event(self, event)
