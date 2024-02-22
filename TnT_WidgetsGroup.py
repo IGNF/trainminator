@@ -346,6 +346,7 @@ class startStopToolsGroup(groupQPushButton):
 
         start_pushButton = self.findChild(QPushButton, "start")
         start_pushButton.clicked.connect(self.startAndStop)
+        start_pushButton.clicked.connect(self.activateSynchroLevels)
 
 
     def startAndStop(self):
@@ -358,6 +359,12 @@ class startStopToolsGroup(groupQPushButton):
         self.changeBackGroundColor(sender, "#1CC88A", '#E74A3B')
         # Execute appropriate method.
         (getattr(self, t.lower()))()
+
+    def activateSynchroLevels(self):
+        masterWindow = self.getMasterWindow()
+        synchroLevels_Buttons = masterWindow.findChildren(QPushButton, "synchro_Levels")
+        for synchroButton in synchroLevels_Buttons:
+            synchroButton.setEnabled(True)
 
 
     def start(self):
@@ -1204,6 +1211,8 @@ class viewsManagerGroup(groupQPushButton):
 
         button3 = self.setQPushButton( QPushButton(self),
 				              checkable=True,
+                              checked=False,
+                              enabled=False,
 				              text="Synchro Levels",
 				              objectName="synchro_Levels",
 				              accessibleName="synchro_Levels",
@@ -1246,7 +1255,6 @@ class viewsManagerGroup(groupQPushButton):
         for button in button_list:
             button.setChecked(state)
 
-
     def synchroViews(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -1256,7 +1264,6 @@ class viewsManagerGroup(groupQPushButton):
         
         self.updateChecked_AllButtons(sender)
         self.setSynchroMode_Canvas(state)
-
 
     def setSynchroMode_Canvas(self, state=False):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1275,7 +1282,6 @@ class viewsManagerGroup(groupQPushButton):
         self.updateChecked_AllButtons(sender)
         self.setSynchroSlider_Level(state)
         
-
     def setSynchroSlider_Level(self, state=False):
         mainWindow = self.getMainWindow()
         slider = mainWindow.findChild(sliderGroup, "sliderGroup")
@@ -1353,7 +1359,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         synchroViews_Button.setEnabled(True)
 
         synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
-        synchroLevels_Button.setEnabled(True)
+        synchroLevels_Button.setEnabled(False)
 
     def setConnections(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1374,9 +1380,6 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         synchro_Views_pushButton.setEnabled(sender.isChecked())
         
     def setEnabledButton_SynchroLevels(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
         synchroLevels_pushButton = self.findChild(QPushButton, "synchro_Levels")
         sender=self.sender()
         synchroLevels_pushButton.setEnabled(sender.isChecked())
@@ -1800,9 +1803,10 @@ class sliderGroup(groupQWidgets):
                 associatedWindow = self.getMasterWindow()
                   
             associatedSlider = associatedWindow.findChild(QSlider, "slider_sliderGroup")
-            associatedLaberSlider = associatedWindow.findChild(QLabel, "labelSlider_sliderGroup")
             associatedSlider.setValue(value)
+            associatedLaberSlider = associatedWindow.findChild(QLabel, "labelSlider_sliderGroup")
             associatedLaberSlider.setText(f"level{value}")
+
         else:
             pass
 
