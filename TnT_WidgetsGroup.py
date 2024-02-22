@@ -822,6 +822,52 @@ class displayToolsGroup(groupQPushButton):
         self.setEnabled(False)
 
 
+class displayInfoGroup(groupQPushButton):
+    def __init__( self,
+                  parent = None,
+                  objectName = "displayInfo_Group"
+                ):
+
+        super().__init__( parent = parent,
+                          objectName = objectName
+                        )
+        self.setTitle("displayInfo_Group")
+
+    def setupLayout(self):
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        self.layout().setContentsMargins(4, 2, 4, 2)
+        self.layout().setSpacing(4)
+        
+    def setupUi(self):
+        layout = self.layout()
+
+        info_label_2016 = QLabel(self)
+        info_label_2016.setText("Label 2016 :")
+        info_label_2016.setObjectName("info_label_2016")
+        info_label_2016.setAccessibleName("info_label_2016")
+        info_label_2016.setAutoFillBackground(True)
+        info_label_2016.setEnabled(True)
+
+        layout.addWidget(info_label_2016)
+
+        info_label_2019 = QLabel(self)
+        info_label_2019.setText("Label 2019 :")
+        info_label_2019.setObjectName("info_label_2019")
+        info_label_2019.setAccessibleName("info_label_2019")
+        info_label_2019.setAutoFillBackground(True)
+        info_label_2019.setEnabled(True)
+
+        layout.addWidget(info_label_2019)
+    
+    def start(self):
+        self.setEnabled(True)
+        
+    def stop(self):
+        self.setEnabled(False)
+
+    
 class attributSelectingToolsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,
@@ -1128,6 +1174,9 @@ class toolsGroup_Master(toolsGroup_Differential):
         displayTools_Group = displayToolsGroup( parent=self )
         layout.addWidget(displayTools_Group)
 
+        displayInfo_Group = displayInfoGroup( parent=self )
+        layout.addWidget(displayInfo_Group)
+
         # Spacer : push all  buttons on right side
         vSpacerItem = QSpacerItem( 100,
                                    25,
@@ -1144,7 +1193,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         return [ taskToolsGroup,
                  selectingToolsGroup,
                  attributSelectingToolsGroup,
-                 displayToolsGroup
+                 displayToolsGroup,
+                 displayInfoGroup
                ]
 
     def getListGroupWhenCurrentNomenclatureChanged(self):

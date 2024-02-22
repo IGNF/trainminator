@@ -30,10 +30,8 @@ from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 from PyQt5.QtCore    import( Qt, QEvent )
 from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent )
 
-from qgis.gui import QgsMapMouseEvent
 from qgis.core import QgsGeometry, QgsPoint
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QLabel
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -210,16 +208,13 @@ class mapCanvas(QgsMapCanvas):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
         if self.getSynchroMode() :
             qgspointXY =self.mapTool().toMapCoordinates(event.pos())
             canvas_list= self.getAllCanvas()
             for canvas in canvas_list :
                 canvas.showMousePointerMarker(qgspointXY)
 
-        if self.showInfo == True:
+        if self.showInfo == True:            
             layer = self.currentLayer()
             feats = [ feat for feat in layer.getFeatures() ]
             qgspointXY = self.mapTool().toMapCoordinates(event.pos())
@@ -231,11 +226,13 @@ class mapCanvas(QgsMapCanvas):
                     id = feat.id()
                     break            
             
+            masterWindow = self.getMasterWindow()
+            label_2016 = masterWindow.findChild(QLabel, "info_label_2016")
+            label_2019 = masterWindow.findChild(QLabel, "info_label_2019")
             if id != -1:
-                print("classe 2016 :", feats[id].attribute('class_2016'))
-                print("classe 2019 :", feats[id].attribute('class_2019'))
+                label_2016.setText(f"Label 2016 :{feats[id].attribute('class_2016')}")
+                label_2019.setText(f"Label 2019 :{feats[id].attribute('class_2019')}")
             
-            #qgspointXY =self.mapTool().toMapCoordinates(event.pos())
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
 
