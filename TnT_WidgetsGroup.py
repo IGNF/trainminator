@@ -17,7 +17,7 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsTextFormat, QgsTextBufferSettings,
                        QgsVectorLayerSimpleLabeling,
                        QgsLinePatternFillSymbolLayer,
-                       QgsLineSymbol, QgsSymbol
+                       QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer
                       )
 
 from qgis.gui import ( QgsLayerTreeView )
@@ -1701,6 +1701,7 @@ class sliderGroup(groupQWidgets):
 
         slider.setValue(1)
         layers_list[0].setItemVisibilityChecked(True)
+        layers_list[-1].setItemVisibilityChecked(True)
 
         mainWindow = self.getMainWindow()
         layerTreeWidget = mainWindow.findChild(TnTLayerTreeWidget)
@@ -1720,11 +1721,39 @@ class sliderGroup(groupQWidgets):
         layers_list = self.getListLabeledLayers()
 
         if layers_list:
-            # Initialize all visibility to false
-            for layer in layers_list:
+            
+            # Initialize all visibility to false, except last layer
+            for i in range(len(layers_list)-1):
+                layer = layers_list[i]
                 layer.setItemVisibilityChecked(False)
 
             layers_list[newIndex].setItemVisibilityChecked(True)
+            
+            
+            # Display or hide yellow outline for the most segmented layer
+            mainWindow = self.getMainWindow()
+            layerTreeWidget = mainWindow.findChild(TnTLayerTreeWidget)
+            lastLayer = layers_list[-1]
+            nomenclatureWidget = layerTreeWidget.getTnTnomenclatureWidget()
+            associationTable = nomenclatureWidget.getAssociationTable()
+            vintage = layerTreeWidget.getVintage()
+            fieldName=f"code_{vintage}"
+            if newIndex == len(layers_list)-1:
+                # Display yellow outline
+                renderer = layerTreeWidget.createFillSymbolLastLayer(
+                    associationTable=associationTable,
+                    fieldName=fieldName,
+                    yellowOutline=True
+                )
+            
+            else:
+                # Hide yellow outline
+                renderer = layerTreeWidget.createFillSymbolLastLayer(
+                    associationTable=associationTable,
+                    fieldName=fieldName,
+                    yellowOutline=False
+                )
+            lastLayer.layer().setRenderer(renderer)
 
             # And set MapLayer to canvas  (ie is an active mapLayer)
             mainWindow = self.getMainWindow()
@@ -2538,16 +2567,14 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
 
-        self.styleSheet_uncompleted = { "color":"",
-                                      "outline_color":"red",
-                                      "width_border":"1.00",
-                                      "style":"no"
+        self.styleSheet_transparent = { "color":"",
+                                      "style":"no",
+                                      "outline_style":"no"
                                       }
 
         self.styleSheet_labeled = { "color":"",
-                                    "outline_color":"black",
-                                    "width_border":"0.10",
-                                    "style":"solid"
+                                    "style":"solid",
+                                    "outline_style":"no"
                                     }
 
         self.styleSheet_Default = { "color":"" ,
@@ -2799,16 +2826,32 @@ class TnTLayerTreeWidget(groupQWidgets):
 
             mapLayer.triggerRepaint()
 
-    def createFillSymbol(self,
-                         associationTable:dict = None,
-                         fieldName:str = "code"
-                         ):
+
+    def createFillSymbolLessSegmentedLayers(self):
         """
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         symbol = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
+        renderer = QgsRuleBasedRenderer(symbol)
+        return renderer
+
+
+    def createFillSymbolLastLayer(self,
+                         associationTable:dict = None,
+                         fieldName:str = "code",
+                         yellowOutline:bool = False
+                         ):
+        """
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        if yellowOutline:
+            symbol = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
+        else:
+            symbol = QgsFillSymbol.createSimple(self.styleSheet_transparent)
         renderer = QgsRuleBasedRenderer(symbol)
         rootrule = renderer.rootRule().children()[0]
 
@@ -2835,7 +2878,12 @@ class TnTLayerTreeWidget(groupQWidgets):
         if otherVintage is not None:
             currentFieldCode = "code_{}".format(currentVintage)
             otherFieldCode = "code_{}".format(otherVintage)
-            sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
+            symbol_lyr_line = QgsLinePatternFillSymbolLayer()
+            symbol_lyr_line.setColor(QColor("red"))
+            symbol_lyr_line.setLineWidth(0.5)
+            sym_uncompleted = QgsFillSymbol()
+            sym_uncompleted.deleteSymbolLayer(0)
+            sym_uncompleted.appendSymbolLayer(symbol_lyr_line)
             for symbolLayer in sym_uncompleted.symbolLayers():
                 symbolLayer.setRenderingPass(1)
             
@@ -2844,6 +2892,7 @@ class TnTLayerTreeWidget(groupQWidgets):
             rootrule.appendChild(rule_uncompleted)
 
         return renderer
+
     
     def createFillSymbolFromList(self,
                           listLayers: list = None,
@@ -2855,12 +2904,18 @@ class TnTLayerTreeWidget(groupQWidgets):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        for tlayer in listLayers:
-            renderer = self.createFillSymbol(
-                associationTable=associationTable,
-                fieldName=fieldName
-            )
+        for i in range(len(listLayers)-1):
+            
+            tlayer = listLayers[i]
+            renderer = self.createFillSymbolLessSegmentedLayers()
             tlayer.layer().setRenderer(renderer)
+
+        renderer = self.createFillSymbolLastLayer(
+            associationTable=associationTable,
+            fieldName=fieldName
+        )
+        tlayer = listLayers[-1]
+        tlayer.layer().setRenderer(renderer)
     
     
     def setVintage(self, vintage:str=None):
@@ -2976,16 +3031,7 @@ class TnTLayerTreeWidget(groupQWidgets):
             vLayer_Clone = treeLayer.layer().clone()
             tLayer = QgsLayerTreeLayer(vLayer_Clone)
 
-            nomenclatureWidget = self.getTnTnomenclatureWidget()
-            associationTable = nomenclatureWidget.getAssociationTable()
-
             vintage = self.getVintage()
-
-            renderer = self.createFillSymbol(
-                associationTable=associationTable,
-                fieldName=f"code_{vintage}"
-            )
-            vLayer_Clone.setRenderer(renderer)
 
             tLayer.setExpanded(False)
             #A corriger pb d'initialisation des visibilities
@@ -3167,6 +3213,21 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
             associationTable=associationTable,
             fieldName=f"code_{vintage}"
         )
+
+        masterWindow = self.getMasterWindow()
+        layerTreeWidget = masterWindow.associatedWindow.findChild(
+            TnTLayerTreeWidget
+        )
+        vintage = masterWindow.associatedWindow.getVintage()
+        newName = f"{oldName}_{vintage}"
+        root = layerTreeWidget.layerTreeRoot()
+        group = root.findGroup(newName)
+        layerTreeWidget.createFillSymbolFromList(
+            listLayers=group.findLayers(),
+            associationTable=associationTable,
+            fieldName=f"code_{vintage}"
+        )
+
          
         group = root.findGroup("FINAL_DATA")
         group.setExpanded(False)
