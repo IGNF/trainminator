@@ -346,6 +346,7 @@ class startStopToolsGroup(groupQPushButton):
 
         start_pushButton = self.findChild(QPushButton, "start")
         start_pushButton.clicked.connect(self.startAndStop)
+        start_pushButton.clicked.connect(self.activateDisplayLabelsShortcut)
 
 
     def startAndStop(self):
@@ -359,6 +360,13 @@ class startStopToolsGroup(groupQPushButton):
         # Execute appropriate method.
         (getattr(self, t.lower()))()
 
+    def activateDisplayLabelsShortcut(self):
+        masterWindow = self.getMasterWindow()
+        displayLabels = masterWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+        displayLabels.displayShortcut.setEnabled(True)
+        mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
+        for canvas in mapCanvas_list:
+            displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -822,16 +830,18 @@ class displayToolsGroup(groupQPushButton):
         self.setEnabled(False)
 
 
-class displayInfoGroup(groupQPushButton):
+class displayLabelsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,
-                  objectName = "displayInfo_Group"
+                  objectName = "displayLabels_Group"
                 ):
 
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle("displayInfo_Group")
+        self.setTitle("displayLabels_Group")
+        self.displayShortcut= QShortcut(QKeySequence(Qt.Key_I),self)
+        self.displayShortcut.setEnabled(False)
 
     def setupLayout(self):
         layout = QVBoxLayout(self)
@@ -843,29 +853,31 @@ class displayInfoGroup(groupQPushButton):
     def setupUi(self):
         layout = self.layout()
 
-        info_label_2016 = QLabel(self)
-        info_label_2016.setText("Label 2016 :")
-        info_label_2016.setObjectName("info_label_2016")
-        info_label_2016.setAccessibleName("info_label_2016")
-        info_label_2016.setAutoFillBackground(True)
-        info_label_2016.setEnabled(True)
+        label_2016_class = QLabel(self)
+        label_2016_class.setText("Classe 2016 :")
+        label_2016_class.setObjectName("label_2016_class")
+        label_2016_class.setAccessibleName("label_2016_class")
+        label_2016_class.setAutoFillBackground(True)
+        label_2016_class.setEnabled(True)
 
-        layout.addWidget(info_label_2016)
+        layout.addWidget(label_2016_class)
 
-        info_label_2019 = QLabel(self)
-        info_label_2019.setText("Label 2019 :")
-        info_label_2019.setObjectName("info_label_2019")
-        info_label_2019.setAccessibleName("info_label_2019")
-        info_label_2019.setAutoFillBackground(True)
-        info_label_2019.setEnabled(True)
+        label_2019_class = QLabel(self)
+        label_2019_class.setText("Classe 2019 :")
+        label_2019_class.setObjectName("label_2019_class")
+        label_2019_class.setAccessibleName("label_2019_class")
+        label_2019_class.setAutoFillBackground(True)
+        label_2019_class.setEnabled(True)
 
-        layout.addWidget(info_label_2019)
+        layout.addWidget(label_2019_class)
     
     def start(self):
         self.setEnabled(True)
+        self.displayShortcut.setEnabled(True)
         
     def stop(self):
         self.setEnabled(False)
+        self.displayShortcut.setEnabled(False)
 
     
 class attributSelectingToolsGroup(groupQPushButton):
@@ -1174,8 +1186,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         displayTools_Group = displayToolsGroup( parent=self )
         layout.addWidget(displayTools_Group)
 
-        displayInfo_Group = displayInfoGroup( parent=self )
-        layout.addWidget(displayInfo_Group)
+        displayLabels_Group = displayLabelsGroup( parent=self )
+        layout.addWidget(displayLabels_Group)
 
         # Spacer : push all  buttons on right side
         vSpacerItem = QSpacerItem( 100,
@@ -1194,7 +1206,7 @@ class toolsGroup_Master(toolsGroup_Differential):
                  selectingToolsGroup,
                  attributSelectingToolsGroup,
                  displayToolsGroup,
-                 displayInfoGroup
+                 displayLabelsGroup
                ]
 
     def getListGroupWhenCurrentNomenclatureChanged(self):

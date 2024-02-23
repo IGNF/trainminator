@@ -28,10 +28,10 @@ import inspect
 from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 
 from PyQt5.QtCore    import( Qt, QEvent )
-from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent )
+from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent, QKeySequence )
 
 from qgis.core import QgsGeometry, QgsPoint
-from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QLabel, QShortcut
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -50,7 +50,7 @@ class mapCanvas(QgsMapCanvas):
 
         self.marker = None
         self.synchroMode = False
-        self.showInfo = False
+        self.displayMode = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
@@ -91,6 +91,11 @@ class mapCanvas(QgsMapCanvas):
         self.marker.setIconType( QgsVertexMarker.ICON_CROSS )
         self.marker.setPenWidth( 1 )
 
+    def setDisplayMode(self):
+        if self.displayMode == True:
+            self.displayMode = False
+        else:
+            self.displayMode = True
 
     def zoomAllToFullExtent(self):
         """Zoom to the full extent of all layers currently visible in
@@ -214,27 +219,30 @@ class mapCanvas(QgsMapCanvas):
             for canvas in canvas_list :
                 canvas.showMousePointerMarker(qgspointXY)
 
-        if self.showInfo == True:            
-            layer = self.currentLayer()
-            feats = [ feat for feat in layer.getFeatures() ]
-            qgspointXY = self.mapTool().toMapCoordinates(event.pos())
-            geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
-
-            id = -1
-            for feat in feats:
-                if geo_pt.within(feat.geometry()):
-                    id = feat.id()
-                    break            
-            
-            masterWindow = self.getMasterWindow()
-            label_2016 = masterWindow.findChild(QLabel, "info_label_2016")
-            label_2019 = masterWindow.findChild(QLabel, "info_label_2019")
-            if id != -1:
-                label_2016.setText(f"Label 2016 :{feats[id].attribute('class_2016')}")
-                label_2019.setText(f"Label 2019 :{feats[id].attribute('class_2019')}")
+        if self.displayMode:
+            self.setDisplayLabels(event)       
             
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
+    def setDisplayLabels(self, event:QMouseEvent):
+        qgspointXY = self.mapTool().toMapCoordinates(event.pos())
+        geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
+
+        layer = self.currentLayer()
+        feats = [ feat for feat in layer.getFeatures() ]
+        id = -1
+        for feat in feats:
+            if geo_pt.within(feat.geometry()):
+                id = feat.id()
+                break            
+        
+        masterWindow = self.getMasterWindow()
+        label_2016_class = masterWindow.findChild(QLabel, "label_2016_class")
+        label_2019_class = masterWindow.findChild(QLabel, "label_2019_class")
+        
+        if id != -1:
+            label_2016_class.setText(f"Classe 2016 : {feats[id].attribute('class_2016')}")
+            label_2019_class.setText(f"Classe 2019 : {feats[id].attribute('class_2019')}")
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -278,10 +286,5 @@ class mapCanvas(QgsMapCanvas):
         #     except AttributeError:
         #         pass
         #     return True
-    
-        if event.type()==QEvent.KeyPress and event.key()==Qt.Key_I:
-            if self.showInfo == True:
-                self.showInfo = False
-            else:
-                self.showInfo = True
+
         return QgsMapCanvas.event(self, event)

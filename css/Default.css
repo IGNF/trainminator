@@ -78,7 +78,7 @@ QLabel[objectName="slider_Label"] {
      font-weight: bold
 }
 
-QLabel[objectName="info_label_2016"] {
+QLabel[objectName="label_2016_class"] {
     background-color: none;
     color: black;
     font-size: 11px;
@@ -86,7 +86,7 @@ QLabel[objectName="info_label_2016"] {
     border: none;
 }
 
-QLabel[objectName="info_label_2019"] {
+QLabel[objectName="label_2019_class"] {
     background-color: none;
     color: black;
     font-size: 11px;
