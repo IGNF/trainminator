@@ -2835,7 +2835,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         if showContext:
             groupsName = self.layerTreeRoot().children()
             for group in groupsName:
-                self.groupsVisibilityState[group] = group.isVisible()
+                if group.name().startswith("LABELED_DATA"):
+                    self.groupsVisibilityState[group] = True
+                else:
+                    self.groupsVisibilityState[group] = group.isVisible()
                 if not group.name() == keepGroup:
                     group.setItemVisibilityChecked(not showContext)
         else:
