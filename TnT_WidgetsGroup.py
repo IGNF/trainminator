@@ -805,6 +805,9 @@ class displayToolsGroup(groupQPushButton):
         mainWindow = self.getMainWindow()
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
+        associatedWindow = mainWindow.associatedWindow
+        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -2535,6 +2538,12 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
 
+        self.styleSheet_uncompleted = { "color":"",
+                                      "outline_color":"red",
+                                      "width_border":"1.00",
+                                      "style":"no"
+                                      }
+
         self.styleSheet_labeled = { "color":"",
                                     "outline_color":"black",
                                     "width_border":"0.10",
@@ -2558,20 +2567,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         self.setConnections()
 
     def setConnections(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        slider = self.findChild(QSlider)
-        slider.valueChanged.connect(self.changeLayerOpacity)
-
+        pass
 
     def setupUi(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        layout = self.layout()
-        slider_Group = self.initSliderGroup()
-        layout.addWidget(slider_Group)
+        pass
 
     def setupLayout(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -2649,83 +2648,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         self.model.setFlag( QgsLayerTreeModel.AllowNodeChangeVisibility)
         self.model.setFlag( QgsLayerTreeModel.ActionHierarchical)
 
-        self.view.setModel(self.model)
-
-    def initSliderGroup(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        container = QGroupBox(self)
-        longName = self.getLongName("sliderGroup", self.objectName())
-        container.setObjectName(longName)
-        container.setAccessibleName(longName)
-        container.setLayout(QHBoxLayout())
-        layout = container.layout()
-
-        sizePolicy = QSizePolicy(
-            QSizePolicy.Maximum,
-            QSizePolicy.Minimum
-        )
-
-        label_opacity = QLabel(container)
-        longName = self.getLongName("label_opacity", self.objectName())
-        label_opacity.setObjectName(longName)
-        label_opacity.setAccessibleName(longName)
-        label_opacity.setText("Opacity")
-
-        label_opacity.setSizePolicy(sizePolicy)
-        layout.addWidget(label_opacity)
-
-        sizePolicy.setHorizontalPolicy(QSizePolicy.Minimum)
-
-        slider = QSlider(Qt.Horizontal, container)
-        longName = self.getLongName("slider", self.objectName())
-        slider.setObjectName(longName)
-        slider.setAccessibleName(longName)
-
-        slider.setMinimum(0)
-        slider.setMaximum(100)
-        slider.setTickInterval(25)
-        slider.setTickPosition(QSlider.TicksAbove)
-        slider.setPageStep(25)
-        slider.setSingleStep(5)
-        slider.setValue(100)
-
-        slider.setSizePolicy(sizePolicy)
-        layout.addWidget(slider)
-
-        sizePolicy.setHorizontalPolicy(QSizePolicy.Maximum)
-
-        label = QLabel(container)
-        longName = self.getLongName("label", self.objectName())
-        label.setObjectName(longName)
-        label.setAccessibleName(longName)
-        label.setText(f"{str(slider.maximum())}%")
-
-        label.setSizePolicy(sizePolicy)
-        layout.addWidget(label)
-
-        return container
-    
-
-    def changeLayerOpacity(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #   f"{inspect.currentframe().f_code.co_name}()")
-
-        slider = self.sender()
-        newOpacity = slider.value()/100
-
-        current_Layer =self.view.currentLayer()
-
-        if isinstance(current_Layer, QgsRasterLayer):
-            current_Layer.renderer().setOpacity(newOpacity)
-
-        elif isinstance(current_Layer, QgsVectorLayer):
-            current_Layer.setOpacity(newOpacity)
-
-        label = self.findChild(QLabel)
-        label.setText(f"{str(slider.value())}%")
-        
+        self.view.setModel(self.model)           
 
     def getGroupChildren(self, grouproot_name:str):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -2815,6 +2738,24 @@ class TnTLayerTreeWidget(groupQWidgets):
             rule_n.setRuleKey(ruleKey)
 
             rootrule.appendChild(rule_n)
+
+        mainWindow = self.getMasterWindow()
+        currentVintage = self.getVintage()
+        otherVintage = None
+        for vintage in mainWindow.getVintages():
+            if vintage != currentVintage:
+                otherVintage = vintage
+
+        if otherVintage is not None:
+            currentFieldCode = "code_{}".format(currentVintage)
+            otherFieldCode = "code_{}".format(otherVintage)
+            sym_uncompleted = QgsFillSymbol.createSimple(self.styleSheet_uncompleted)
+            for symbolLayer in sym_uncompleted.symbolLayers():
+                symbolLayer.setRenderingPass(1)
+            
+            expression_uncompleted = f"({currentFieldCode} is null and {otherFieldCode} is not null)"
+            rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
+            rootrule.appendChild(rule_uncompleted)
 
         return renderer
     
