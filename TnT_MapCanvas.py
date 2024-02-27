@@ -218,18 +218,17 @@ class mapCanvas(QgsMapCanvas):
             canvas_list= self.getAllCanvas()
             for canvas in canvas_list :
                 canvas.showMousePointerMarker(qgspointXY)
-
+            
         if self.displayMode:
-            self.setDisplayLabels(event)       
+            qgspointXY = self.mapTool().toMapCoordinates(event.pos())
+            geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
+            self.showDisplayLabels(geo_pt)       
             
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
-    def setDisplayLabels(self, event:QMouseEvent):
-        qgspointXY = self.mapTool().toMapCoordinates(event.pos())
-        geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
-
+    def showDisplayLabels(self, geo_pt):
         layer = self.currentLayer()
-        feats = [ feat for feat in layer.getFeatures() ]
+        feats = [feat for feat in layer.getFeatures()]
         id = -1
         for feat in feats:
             if geo_pt.within(feat.geometry()):
@@ -237,12 +236,14 @@ class mapCanvas(QgsMapCanvas):
                 break            
         
         masterWindow = self.getMasterWindow()
-        label_2016_class = masterWindow.findChild(QLabel, "label_2016_class")
-        label_2019_class = masterWindow.findChild(QLabel, "label_2019_class")
+        labels_2016 = masterWindow.findChildren(QLabel, "label_2016_class")
+        labels_2019 = masterWindow.findChildren(QLabel, "label_2019_class")
         
         if id != -1:
-            label_2016_class.setText(f"Classe 2016 : {feats[id].attribute('class_2016')}")
-            label_2019_class.setText(f"Classe 2019 : {feats[id].attribute('class_2019')}")
+            for label_2016 in labels_2016:
+                label_2016.setText(f"Classe 2016 : {feats[id].attribute('class_2016')}")
+            for label_2019 in labels_2019:
+                label_2019.setText(f"Classe 2019 : {feats[id].attribute('class_2019')}")
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -252,6 +253,9 @@ class mapCanvas(QgsMapCanvas):
             canvas_list= self.getAllCanvas()
             for canvas in canvas_list :
                 canvas.marker.hide()
+        
+        if self.displayMode:
+            pass
         
         return QgsMapCanvas.leaveEvent(self, event)
 

@@ -390,7 +390,8 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
         self.groupsTypeList=[ sliderGroup,
                               infoSelectionGroup,
                               taskToolsGroup,
-                              selectingToolsGroup
+                              selectingToolsGroup,
+                              displayLabelsGroup
                             ]
 
 
