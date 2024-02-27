@@ -17,7 +17,7 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsTextFormat, QgsTextBufferSettings,
                        QgsVectorLayerSimpleLabeling,
                        QgsLinePatternFillSymbolLayer,
-                       QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer
+                       QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
 
 from qgis.gui import ( QgsLayerTreeView )
@@ -2881,6 +2881,7 @@ class TnTLayerTreeWidget(groupQWidgets):
             symbol_lyr_line = QgsLinePatternFillSymbolLayer()
             symbol_lyr_line.setColor(QColor("red"))
             symbol_lyr_line.setLineWidth(0.5)
+            symbol_lyr_line.setCoordinateReference(Qgis.SymbolCoordinateReference.Viewport)
             sym_uncompleted = QgsFillSymbol()
             sym_uncompleted.deleteSymbolLayer(0)
             sym_uncompleted.appendSymbolLayer(symbol_lyr_line)
