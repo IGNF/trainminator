@@ -1,6 +1,8 @@
 
-from qgis.core  import (QgsVectorLayer, QgsSpatialIndex, QgsFeature, NULL, QgsVectorDataProvider)
+from qgis.core  import (QgsVectorLayer, QgsSpatialIndex, QgsFeature, NULL, QgsVectorDataProvider, Qgis)
 from typing import List
+from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.utils import iface
 
 class TnTFeatures:
 
@@ -208,13 +210,25 @@ class TnTFeaturesManager:
         self.createTnTFeaturesLevel()
         
     def createTnTFeaturesLevel(self):
+        progressMessageBar = iface.messageBar().createMessage("Loading...")
+        progress = QProgressBar()
+        progress.setMaximum(2*len(self.layers)-1)
+        progressMessageBar.layout().addWidget(progress)
+        iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
+        compte = 0
+        progress.setValue(compte)
         for layer in self.layers:
             self.tntFeaturesLevel.append(TnTFeaturesLevel.createTnTFeaturesLevel(layer))
+            compte += 1
+            progress.setValue(compte)
 
         for i in range(1, len(self.tntFeaturesLevel)):
             tntFeaturesLevel_i = self.tntFeaturesLevel[i]
             tntFeaturesLevel_i1 = self.tntFeaturesLevel[i-1]
             tntFeaturesLevel_i1.searchChildren(tntFeaturesLevel_i)
+            compte += 1
+            progress.setValue(compte)
+        iface.messageBar().clearWidgets()
         
 
     def getFeature(self, feature, layer):
