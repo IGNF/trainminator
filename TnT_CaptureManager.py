@@ -43,6 +43,8 @@ from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import (QApplication, QPushButton)
 from PyQt5.QtGui import QColor, QKeyEvent
 
+from .TnT_Features import TnTFeaturesManager
+
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -456,6 +458,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             attributs[index]=fieldsAndValues[key]
         return attributs
 
+
     def removeAllClass(self):
         """
             returns none:
@@ -464,7 +467,6 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         prov=self.layer.dataProvider()
-        caps=prov.capabilities()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
@@ -472,9 +474,19 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         for key in attrs.keys():
             attrs[key]=None
 
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
+
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({ featureId : attrs })
+            tntFeature = tntFeaturesLevel.features[featureId]
+            tntFeature.removeAll(attrs)
+            if tntFeature.parent is not None:
+                parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrs)
 
         self.layer.removeSelection()
 
@@ -484,35 +496,35 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        prov = self.layer.dataProvider()
-        caps = prov.capabilities()
+
+        prov=self.layer.dataProvider()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
-        #histoire de faire simple
-        fieldIndexMap = {v: k for k, v in prov.fieldNameMap().items()}
         key = list(attrs.keys())[1]
-        fieldCodeName = fieldIndexMap[key]
         codeValue = attrs[key]
 
-        param_sel = {'INPUT': self.layer,
-                     'FIELD': fieldCodeName,
-                     'OPERATOR': 0,  # 0  =
-                     'VALUE': codeValue,
-                     'METHOD': 3
-                     }
-        processing.run('qgis:selectbyattribute', param_sel)
+        for k in attrs.keys():
+            attrs[k]=None
 
-        for key in attrs.keys():
-            attrs[key] = None
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({featureId: attrs})
+            tntFeature = tntFeaturesLevel.features[featureId]
+            if str(tntFeature.getAttributes()[key])==codeValue:
+                tntFeature.removeCurrentClass(attrs, codeValue)
+                if tntFeature.parent is not None:
+                    parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrs)
 
         self.layer.removeSelection()
+
 
     def resetAll(self):
         """
@@ -526,7 +538,29 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.selectionLayer=None
         self.setCapture(False)
 
+    
+    def getLayers(self):
+        """
+            returns layers of the vintage
+        """
+        mainWindow = self.parent.getMainWindow()
+        layerTreeWidget = mainWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        vintage = mainWindow.getVintage()
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
+        group = root.findGroup(groupName)
+        layers = group.findLayers()
+
+        return layers
+
+
+
     def applyClass(self):
+    
         """
             returns none:
         """
@@ -534,14 +568,27 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         prov=self.layer.dataProvider()
-        caps=prov.capabilities()
 
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs)
 
+        attrsNull = {}
+        for k in attrs.keys():
+            attrsNull[k]=None
+
+        masterWindow = self.parent.getMasterWindow()
+        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
+
+        parents = []
         for featureId in self.layer.selectedFeatureIds():
-            if caps and QgsVectorDataProvider.ChangeAttributeValues:
-                prov.changeAttributeValues({ featureId : attrs })
+            tntFeature = tntFeaturesLevel.features[featureId]
+            tntFeature.changeAttribute(attrs)
+            if tntFeature.parent is not None:
+                parents.append(tntFeature.parent)
+
+        for parent in set(parents):
+            parent.check(attrs, attrsNull)
 
         self.layer.removeSelection()
 
