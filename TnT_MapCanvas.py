@@ -237,27 +237,16 @@ class mapCanvas(QgsMapCanvas):
 
 
     def event(self, event: QEvent):
-        """
-            param event:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        # evt_Type=event.type()
-        # if evt_Type==QEvent.KeyPress and event.key()==Qt.Key_Space:
-        #     #Additional view canvas does not have a toolbox, ignore error
-        #     try:
-        #         self.parent().getPushButton('Show Context').keyPressEvent(event)
-        #     except AttributeError:
-        #         pass
-        #     return True
-    
-        # if evt_Type==QEvent.KeyRelease and event.key()==Qt.Key_Space :
-        #     #Additional view canvas does not have a toolbox, ignore error
-        #     try:
-        #         self.parent().getPushButton('Show Context').keyReleaseEvent(event)
-        #     except AttributeError:
-        #         pass
-        #     return True
+        
+        evt_Type=event.type()
+        if (evt_Type==QEvent.KeyPress or evt_Type==QEvent.KeyRelease) and event.key()==Qt.Key_W:
+            masterWindow = self.getMasterWindow()
+
+            showContext = evt_Type==QEvent.KeyPress
+            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+
+            associatedWindow = masterWindow.associatedWindow
+            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            return True
     
         return QgsMapCanvas.event(self, event)
