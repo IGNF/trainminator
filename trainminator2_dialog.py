@@ -37,7 +37,9 @@ from PyQt5.QtWidgets import( QFileDialog, QMenuBar, QMainWindow,
 from .TnT_WidgetsGroup import( menu_widget, 
                                TnTnomenclatureWidget,
                                TnTnomenclatureWidget_Master,
-                               TnTLayerTreeWidget, selectingToolsGroup
+                               TnTLayerTreeWidget,
+                               sliderGroup,
+                               selectingToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -167,6 +169,10 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         
         layerTreeWidget =  self.findChild(TnTLayerTreeWidget)
         return layerTreeWidget
+
+    def getSliderGroup(self):
+        sliderGroupWidget = self.findChild(sliderGroup)
+        return sliderGroupWidget
     
     
     def start_SliderGroup(self):
