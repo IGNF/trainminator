@@ -78,6 +78,24 @@ QLabel[objectName="slider_Label"] {
      font-weight: bold
 }
 
+QLabel[objectName="label_2016_class"] {
+    background-color: none;
+    color: black;
+    font-size: 11px;
+    font-style: italic;
+    border: none;
+    width:20px;
+}
+
+QLabel[objectName="label_2019_class"] {
+    background-color: none;
+    color: black;
+    font-size: 11px;
+    font-style: italic;
+    border: none;
+    width:20px;
+}
+
 QLabel[objectName="label_nomenclature"],
 QLabel[objectName="label_selection"],
 QLabel[objectName="label_vintage"],

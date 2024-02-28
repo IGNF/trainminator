@@ -346,6 +346,7 @@ class startStopToolsGroup(groupQPushButton):
 
         start_pushButton = self.findChild(QPushButton, "start")
         start_pushButton.clicked.connect(self.startAndStop)
+        start_pushButton.clicked.connect(self.activateDisplayLabelsShortcut)
 
 
     def startAndStop(self):
@@ -359,6 +360,19 @@ class startStopToolsGroup(groupQPushButton):
         # Execute appropriate method.
         (getattr(self, t.lower()))()
 
+    def activateDisplayLabelsShortcut(self):
+        masterWindow = self.getMasterWindow()
+        
+        master_displayLabels = masterWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+        differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+
+        master_displayLabels.displayShortcut.setEnabled(True)
+        differ_displayLabels.displayShortcut.setEnabled(True)
+        
+        mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
+        for canvas in mapCanvas_list:
+            master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
+            differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -822,6 +836,56 @@ class displayToolsGroup(groupQPushButton):
         self.setEnabled(False)
 
 
+class displayLabelsGroup(groupQPushButton):
+    def __init__( self,
+                  parent = None,
+                  objectName = "displayLabels_Group"
+                ):
+
+        super().__init__( parent = parent,
+                          objectName = objectName
+                        )
+        self.setTitle("displayLabels_Group")
+        self.displayShortcut = QShortcut(QKeySequence(Qt.Key_I),self)
+        self.displayShortcut.setEnabled(False)
+
+    def setupLayout(self):
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        self.layout().setContentsMargins(4, 2, 4, 2)
+        self.layout().setSpacing(4)
+        
+    def setupUi(self):
+        layout = self.layout()
+
+        label_2016_class = QLabel(self)
+        label_2016_class.setText("Classe 2016 :")
+        label_2016_class.setObjectName("label_2016_class")
+        label_2016_class.setAccessibleName("label_2016_class")
+        label_2016_class.setAutoFillBackground(True)
+        label_2016_class.setEnabled(True)
+
+        layout.addWidget(label_2016_class)
+
+        label_2019_class = QLabel(self)
+        label_2019_class.setText("Classe 2019 :")
+        label_2019_class.setObjectName("label_2019_class")
+        label_2019_class.setAccessibleName("label_2019_class")
+        label_2019_class.setAutoFillBackground(True)
+        label_2019_class.setEnabled(True)
+
+        layout.addWidget(label_2019_class)
+    
+    def start(self):
+        self.setEnabled(True)
+        self.displayShortcut.setEnabled(True)
+        
+    def stop(self):
+        self.setEnabled(False)
+        self.displayShortcut.setEnabled(False)
+
+    
 class attributSelectingToolsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,
@@ -1077,6 +1141,9 @@ class toolsGroup_Differential(toolsGroup_Base):
                                  )
         layout.addItem(vSpacerItem)
 
+        displayLabels_Group = displayLabelsGroup(parent=self)
+        layout.addWidget(displayLabels_Group)
+
 
     def setupSelectingToolsGroup( self, parent=None ):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1085,12 +1152,11 @@ class toolsGroup_Differential(toolsGroup_Base):
         selectingTools_Group =selectingToolsGroup( parent=parent )
         return selectingTools_Group
 
-
     def getListGroupWhenStartOrStop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        return [taskToolsGroup,selectingToolsGroup]
+        return [taskToolsGroup,selectingToolsGroup,displayLabelsGroup]
 
 
 class toolsGroup_Master(toolsGroup_Differential):
@@ -1126,6 +1192,9 @@ class toolsGroup_Master(toolsGroup_Differential):
         displayTools_Group = displayToolsGroup( parent=self )
         layout.addWidget(displayTools_Group)
 
+        displayLabels_Group = displayLabelsGroup(parent=self)
+        layout.addWidget(displayLabels_Group)
+
         # Spacer : push all  buttons on right side
         vSpacerItem = QSpacerItem( 100,
                                    25,
@@ -1142,7 +1211,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         return [ taskToolsGroup,
                  selectingToolsGroup,
                  attributSelectingToolsGroup,
-                 displayToolsGroup
+                 displayToolsGroup,
+                 displayLabelsGroup
                ]
 
     def getListGroupWhenCurrentNomenclatureChanged(self):

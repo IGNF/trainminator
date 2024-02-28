@@ -45,6 +45,7 @@ from .TnT_WidgetsGroup import ( toolsGroup_Base,
                                 selectingToolsGroup,
                                 attributSelectingToolsGroup,
                                 displayToolsGroup,
+                                displayLabelsGroup,
                                 mergeToolsGroup,
                                 taskToolsGroup
                               )
@@ -402,7 +403,8 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
         self.groupsTypeList=[ sliderGroup,
                               infoSelectionGroup,
                               taskToolsGroup,
-                              selectingToolsGroup
+                              selectingToolsGroup,
+                              displayLabelsGroup
                             ]
 
 
@@ -558,7 +560,8 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
                               taskToolsGroup,
                               selectingToolsGroup,
                               attributSelectingToolsGroup,
-                              displayToolsGroup
+                              displayToolsGroup,
+                              displayLabelsGroup
                              ]
 
     def initViewsManagerGroup(self, parent=None):
