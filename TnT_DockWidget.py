@@ -19,6 +19,8 @@ from .TnT_WidgetsGroup import( TnTnomenclatureWidget,
                              )
 from .TnT_ProjectManager import( TnTLayersManager )
 
+from PyQt5.QtCore import QEvent, Qt
+
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -73,6 +75,30 @@ class TraiNminaTor2_DockWidget( QDockWidget ):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         pass
+
+    
+    def getMasterWindow(self):
+
+        parent = self.parent()
+        while parent.objectName()!="TraiNminaTor2Dialog_Master" :
+            parent = parent.parent()
+        return parent
+
+    
+    def event(self, event:QEvent) -> bool:
+        evt_Type=event.type()
+        if (evt_Type==QEvent.KeyRelease or evt_Type==QEvent.ShortcutOverride) and event.key()==Qt.Key_W:
+            masterWindow = self.getMasterWindow()
+
+
+            showContext = evt_Type!=QEvent.KeyRelease
+            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+
+            associatedWindow = masterWindow.associatedWindow
+            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            return True
+        
+        return super().event(event)
 
 
 
