@@ -712,6 +712,24 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         vl = QgsVectorLayer("Point", "temporary_points", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
+        
+        masterWindow = self.parent.getMasterWindow()
+        vintage = masterWindow.getVintage()
+        layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+
+        associatedWindow = masterWindow.associatedWindow
+        vintage = associatedWindow.getVintage()
+        layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+    
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+        
         return vl
 
 class TnTmapToolEmitPline(TnTmapToolEmitPoint):
@@ -873,6 +891,24 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         vl = QgsVectorLayer("LineString", "temporary_Lines", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
+        
+        masterWindow = self.parent.getMasterWindow()
+        vintage = masterWindow.getVintage()
+        layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+
+        associatedWindow = masterWindow.associatedWindow
+        vintage = associatedWindow.getVintage()
+        layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+    
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+        
         return vl
 
 class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
@@ -953,4 +989,22 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
         vl = QgsVectorLayer("Polygon", "temporary_polygons", "memory")
         vl.setCrs(self.layer.crs())
         QgsProject.instance().addMapLayer(vl)
+        
+        masterWindow = self.parent.getMasterWindow()
+        vintage = masterWindow.getVintage()
+        layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+
+        associatedWindow = masterWindow.associatedWindow
+        vintage = associatedWindow.getVintage()
+        layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+    
+        for g in root.children():
+            if g.name() == f"LABELED_DATA_{vintage}":
+                g.setItemVisibilityChecked(True)
+        
         return vl
