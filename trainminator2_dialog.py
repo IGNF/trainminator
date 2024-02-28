@@ -37,7 +37,9 @@ from PyQt5.QtWidgets import( QFileDialog, QMenuBar, QMainWindow,
 from .TnT_WidgetsGroup import( menu_widget, 
                                TnTnomenclatureWidget,
                                TnTnomenclatureWidget_Master,
-                               TnTLayerTreeWidget
+                               TnTLayerTreeWidget,
+                               sliderGroup,
+                               selectingToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -149,6 +151,10 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         
         dockWidget = self.findChild(typeDock)
         return dockWidget
+
+    def getSelectingToolGroupWidget(self):
+        selectingToolGroupWidget =  self.findChild(selectingToolsGroup)
+        return selectingToolGroupWidget
     
     def getTnTnomenclatureWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -163,6 +169,10 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         
         layerTreeWidget =  self.findChild(TnTLayerTreeWidget)
         return layerTreeWidget
+
+    def getSliderGroup(self):
+        sliderGroupWidget = self.findChild(sliderGroup)
+        return sliderGroupWidget
     
     
     def start_SliderGroup(self):

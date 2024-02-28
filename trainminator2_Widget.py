@@ -45,6 +45,7 @@ from .TnT_WidgetsGroup import ( toolsGroup_Base,
                                 selectingToolsGroup,
                                 attributSelectingToolsGroup,
                                 displayToolsGroup,
+                                displayLabelsGroup,
                                 mergeToolsGroup,
                                 taskToolsGroup
                               )
@@ -361,6 +362,19 @@ class TraiNminaTor2Widget_Base(QGroupBox):
 
         pass
 
+    def event(self, event:QEvent) -> bool:
+        
+        evt_Type=event.type()
+        if (evt_Type==QEvent.KeyRelease or evt_Type==QEvent.KeyPress) and event.key()==Qt.Key_W:
+            masterWindow = self.getMasterWindow()
+
+            showContext = evt_Type==QEvent.KeyPress
+            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+
+            associatedWindow = masterWindow.associatedWindow
+            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+        return super().event(event)
+
 
 class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
 
@@ -389,7 +403,8 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
         self.groupsTypeList=[ sliderGroup,
                               infoSelectionGroup,
                               taskToolsGroup,
-                              selectingToolsGroup
+                              selectingToolsGroup,
+                              displayLabelsGroup
                             ]
 
 
@@ -545,7 +560,8 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
                               taskToolsGroup,
                               selectingToolsGroup,
                               attributSelectingToolsGroup,
-                              displayToolsGroup
+                              displayToolsGroup,
+                              displayLabelsGroup
                              ]
 
     def initViewsManagerGroup(self, parent=None):

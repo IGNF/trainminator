@@ -17,7 +17,7 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsTextFormat, QgsTextBufferSettings,
                        QgsVectorLayerSimpleLabeling,
                        QgsLinePatternFillSymbolLayer,
-                       QgsLineSymbol, QgsSymbol
+                       QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
 
 from qgis.gui import ( QgsLayerTreeView )
@@ -42,7 +42,7 @@ from .TnT_CaptureManager import ( TnTmapToolEmitPoint,
                                   TnTmapToolEmitPolygon
                                 )
 from .TnT_ProjectManager import( TnTLayersManager )
-from .TnT_MergingLabeledData import ( TnTmergingLabeledData )
+from .TnT_SavingLabeledData import ( TnTSavingLabeledData )
 
 
 def lineno():
@@ -347,7 +347,7 @@ class startStopToolsGroup(groupQPushButton):
         start_pushButton = self.findChild(QPushButton, "start")
         start_pushButton.clicked.connect(self.startAndStop)
         start_pushButton.clicked.connect(self.activateSynchroLevels)
-
+        start_pushButton.clicked.connect(self.activateDisplayLabelsShortcut)
 
     def startAndStop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -360,12 +360,26 @@ class startStopToolsGroup(groupQPushButton):
         # Execute appropriate method.
         (getattr(self, t.lower()))()
 
+
     def activateSynchroLevels(self):
         masterWindow = self.getMasterWindow()
         synchroLevels_Buttons = masterWindow.findChildren(QPushButton, "synchro_Levels")
         for synchroButton in synchroLevels_Buttons:
             synchroButton.setEnabled(True)
 
+    def activateDisplayLabelsShortcut(self):
+        masterWindow = self.getMasterWindow()
+        
+        master_displayLabels = masterWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+        differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+
+        master_displayLabels.displayShortcut.setEnabled(True)
+        differ_displayLabels.displayShortcut.setEnabled(True)
+        
+        mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
+        for canvas in mapCanvas_list:
+            master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
+            differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -812,6 +826,9 @@ class displayToolsGroup(groupQPushButton):
         mainWindow = self.getMainWindow()
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
+        associatedWindow = mainWindow.associatedWindow
+        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -826,6 +843,56 @@ class displayToolsGroup(groupQPushButton):
         self.setEnabled(False)
 
 
+class displayLabelsGroup(groupQPushButton):
+    def __init__( self,
+                  parent = None,
+                  objectName = "displayLabels_Group"
+                ):
+
+        super().__init__( parent = parent,
+                          objectName = objectName
+                        )
+        self.setTitle("displayLabels_Group")
+        self.displayShortcut = QShortcut(QKeySequence(Qt.Key_I),self)
+        self.displayShortcut.setEnabled(False)
+
+    def setupLayout(self):
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        self.layout().setContentsMargins(4, 2, 4, 2)
+        self.layout().setSpacing(4)
+        
+    def setupUi(self):
+        layout = self.layout()
+
+        label_2016_class = QLabel(self)
+        label_2016_class.setText("Classe 2016 :")
+        label_2016_class.setObjectName("label_2016_class")
+        label_2016_class.setAccessibleName("label_2016_class")
+        label_2016_class.setAutoFillBackground(True)
+        label_2016_class.setEnabled(True)
+
+        layout.addWidget(label_2016_class)
+
+        label_2019_class = QLabel(self)
+        label_2019_class.setText("Classe 2019 :")
+        label_2019_class.setObjectName("label_2019_class")
+        label_2019_class.setAccessibleName("label_2019_class")
+        label_2019_class.setAutoFillBackground(True)
+        label_2019_class.setEnabled(True)
+
+        layout.addWidget(label_2019_class)
+    
+    def start(self):
+        self.setEnabled(True)
+        self.displayShortcut.setEnabled(True)
+        
+    def stop(self):
+        self.setEnabled(False)
+        self.displayShortcut.setEnabled(False)
+
+    
 class attributSelectingToolsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,
@@ -932,7 +999,7 @@ class mergeToolsGroup(groupQPushButton):
 
         self.setConnections()
         self.mergingLabeledData = None
-        self.setMergingLabeledData()
+        self.setSavingLabeledData()
 
     def setupLayout(self):
         layout=QVBoxLayout(self)
@@ -964,13 +1031,11 @@ class mergeToolsGroup(groupQPushButton):
         
         fill_Pyramid_pushButton = self.findChild(QPushButton, "fill_Pyramid")
         fill_Pyramid_pushButton.clicked.connect(self.fillPyramid)
-        
-    def setMergingLabeledData(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
+
+    def setSavingLabeledData(self):
         
         masterWindow = self.getMasterWindow()
-        self.mergingLabeledData = TnTmergingLabeledData(masterWindow=masterWindow)       
+        self.savingLabeledData = TnTSavingLabeledData(masterWindow)       
         
 
     def fillPyramid(self):
@@ -980,7 +1045,7 @@ class mergeToolsGroup(groupQPushButton):
         # masterWindow = self.getMasterWindow()
         # mergingLabeledData = TnTmergingLabeledData(masterWindow=masterWindow)
         
-        self.mergingLabeledData.merge()
+        self.savingLabeledData.save()
        
         
 
@@ -1083,6 +1148,9 @@ class toolsGroup_Differential(toolsGroup_Base):
                                  )
         layout.addItem(vSpacerItem)
 
+        displayLabels_Group = displayLabelsGroup(parent=self)
+        layout.addWidget(displayLabels_Group)
+
 
     def setupSelectingToolsGroup( self, parent=None ):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1091,12 +1159,11 @@ class toolsGroup_Differential(toolsGroup_Base):
         selectingTools_Group =selectingToolsGroup( parent=parent )
         return selectingTools_Group
 
-
     def getListGroupWhenStartOrStop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        return [taskToolsGroup,selectingToolsGroup]
+        return [taskToolsGroup,selectingToolsGroup,displayLabelsGroup]
 
 
 class toolsGroup_Master(toolsGroup_Differential):
@@ -1132,6 +1199,9 @@ class toolsGroup_Master(toolsGroup_Differential):
         displayTools_Group = displayToolsGroup( parent=self )
         layout.addWidget(displayTools_Group)
 
+        displayLabels_Group = displayLabelsGroup(parent=self)
+        layout.addWidget(displayLabels_Group)
+
         # Spacer : push all  buttons on right side
         vSpacerItem = QSpacerItem( 100,
                                    25,
@@ -1148,7 +1218,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         return [ taskToolsGroup,
                  selectingToolsGroup,
                  attributSelectingToolsGroup,
-                 displayToolsGroup
+                 displayToolsGroup,
+                 displayLabelsGroup
                ]
 
     def getListGroupWhenCurrentNomenclatureChanged(self):
@@ -1691,6 +1762,10 @@ class sliderGroup(groupQWidgets):
     #     slider = self.findChild(QSlider, "slider_sliderGroup")
     #     slider.setMaximum(maximum)
 
+    def setMaximum(self):
+        slider = self.findChild(QSlider, "slider_sliderGroup")
+        slider.setValue(slider.maximum())
+
     # def value(self):
     #     slider = self.findChild(QSlider, "slider_sliderGroup")
     #     slider.value()
@@ -1741,6 +1816,7 @@ class sliderGroup(groupQWidgets):
 
         slider.setValue(1)
         layers_list[0].setItemVisibilityChecked(True)
+        layers_list[-1].setItemVisibilityChecked(True)
 
         mainWindow = self.getMainWindow()
         layerTreeWidget = mainWindow.findChild(TnTLayerTreeWidget)
@@ -1760,11 +1836,39 @@ class sliderGroup(groupQWidgets):
         layers_list = self.getListLabeledLayers()
 
         if layers_list:
-            # Initialize all visibility to false
-            for layer in layers_list:
+            
+            # Initialize all visibility to false, except last layer
+            for i in range(len(layers_list)-1):
+                layer = layers_list[i]
                 layer.setItemVisibilityChecked(False)
 
             layers_list[newIndex].setItemVisibilityChecked(True)
+            
+            
+            # Display or hide yellow outline for the most segmented layer
+            mainWindow = self.getMainWindow()
+            layerTreeWidget = mainWindow.findChild(TnTLayerTreeWidget)
+            lastLayer = layers_list[-1]
+            nomenclatureWidget = layerTreeWidget.getTnTnomenclatureWidget()
+            associationTable = nomenclatureWidget.getAssociationTable()
+            vintage = layerTreeWidget.getVintage()
+            fieldName=f"code_{vintage}"
+            if newIndex == len(layers_list)-1:
+                # Display yellow outline
+                renderer = layerTreeWidget.createFillSymbolLastLayer(
+                    associationTable=associationTable,
+                    fieldName=fieldName,
+                    yellowOutline=True
+                )
+            
+            else:
+                # Hide yellow outline
+                renderer = layerTreeWidget.createFillSymbolLastLayer(
+                    associationTable=associationTable,
+                    fieldName=fieldName,
+                    yellowOutline=False
+                )
+            lastLayer.layer().setRenderer(renderer)
 
             # And set MapLayer to canvas  (ie is an active mapLayer)
             mainWindow = self.getMainWindow()
@@ -2603,10 +2707,14 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
 
+        self.styleSheet_transparent = { "color":"",
+                                      "style":"no",
+                                      "outline_style":"no"
+                                      }
+
         self.styleSheet_labeled = { "color":"",
-                                    "outline_color":"black",
-                                    "width_border":"0.10",
-                                    "style":"solid"
+                                    "style":"solid",
+                                    "outline_style":"no"
                                     }
 
         self.styleSheet_Default = { "color":"" ,
@@ -2626,20 +2734,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         self.setConnections()
 
     def setConnections(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        slider = self.findChild(QSlider)
-        slider.valueChanged.connect(self.changeLayerOpacity)
-
+        pass
 
     def setupUi(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        layout = self.layout()
-        slider_Group = self.initSliderGroup()
-        layout.addWidget(slider_Group)
+        pass
 
     def setupLayout(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -2717,83 +2815,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         self.model.setFlag( QgsLayerTreeModel.AllowNodeChangeVisibility)
         self.model.setFlag( QgsLayerTreeModel.ActionHierarchical)
 
-        self.view.setModel(self.model)
-
-    def initSliderGroup(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        container = QGroupBox(self)
-        longName = self.getLongName("sliderGroup", self.objectName())
-        container.setObjectName(longName)
-        container.setAccessibleName(longName)
-        container.setLayout(QHBoxLayout())
-        layout = container.layout()
-
-        sizePolicy = QSizePolicy(
-            QSizePolicy.Maximum,
-            QSizePolicy.Minimum
-        )
-
-        label_opacity = QLabel(container)
-        longName = self.getLongName("label_opacity", self.objectName())
-        label_opacity.setObjectName(longName)
-        label_opacity.setAccessibleName(longName)
-        label_opacity.setText("Opacity")
-
-        label_opacity.setSizePolicy(sizePolicy)
-        layout.addWidget(label_opacity)
-
-        sizePolicy.setHorizontalPolicy(QSizePolicy.Minimum)
-
-        slider = QSlider(Qt.Horizontal, container)
-        longName = self.getLongName("slider", self.objectName())
-        slider.setObjectName(longName)
-        slider.setAccessibleName(longName)
-
-        slider.setMinimum(0)
-        slider.setMaximum(100)
-        slider.setTickInterval(25)
-        slider.setTickPosition(QSlider.TicksAbove)
-        slider.setPageStep(25)
-        slider.setSingleStep(5)
-        slider.setValue(100)
-
-        slider.setSizePolicy(sizePolicy)
-        layout.addWidget(slider)
-
-        sizePolicy.setHorizontalPolicy(QSizePolicy.Maximum)
-
-        label = QLabel(container)
-        longName = self.getLongName("label", self.objectName())
-        label.setObjectName(longName)
-        label.setAccessibleName(longName)
-        label.setText(f"{str(slider.maximum())}%")
-
-        label.setSizePolicy(sizePolicy)
-        layout.addWidget(label)
-
-        return container
-    
-
-    def changeLayerOpacity(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #   f"{inspect.currentframe().f_code.co_name}()")
-
-        slider = self.sender()
-        newOpacity = slider.value()/100
-
-        current_Layer =self.view.currentLayer()
-
-        if isinstance(current_Layer, QgsRasterLayer):
-            current_Layer.renderer().setOpacity(newOpacity)
-
-        elif isinstance(current_Layer, QgsVectorLayer):
-            current_Layer.setOpacity(newOpacity)
-
-        label = self.findChild(QLabel)
-        label.setText(f"{str(slider.value())}%")
-        
+        self.view.setModel(self.model)           
 
     def getGroupChildren(self, grouproot_name:str):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -2858,16 +2880,32 @@ class TnTLayerTreeWidget(groupQWidgets):
 
             mapLayer.triggerRepaint()
 
-    def createFillSymbol(self,
-                         associationTable:dict = None,
-                         fieldName:str = "code"
-                         ):
+
+    def createFillSymbolLessSegmentedLayers(self):
         """
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         symbol = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
+        renderer = QgsRuleBasedRenderer(symbol)
+        return renderer
+
+
+    def createFillSymbolLastLayer(self,
+                         associationTable:dict = None,
+                         fieldName:str = "code",
+                         yellowOutline:bool = False
+                         ):
+        """
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        if yellowOutline:
+            symbol = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
+        else:
+            symbol = QgsFillSymbol.createSimple(self.styleSheet_transparent)
         renderer = QgsRuleBasedRenderer(symbol)
         rootrule = renderer.rootRule().children()[0]
 
@@ -2884,7 +2922,32 @@ class TnTLayerTreeWidget(groupQWidgets):
 
             rootrule.appendChild(rule_n)
 
+        mainWindow = self.getMasterWindow()
+        currentVintage = self.getVintage()
+        otherVintage = None
+        for vintage in mainWindow.getVintages():
+            if vintage != currentVintage:
+                otherVintage = vintage
+
+        if otherVintage is not None:
+            currentFieldCode = "code_{}".format(currentVintage)
+            otherFieldCode = "code_{}".format(otherVintage)
+            symbol_lyr_line = QgsLinePatternFillSymbolLayer()
+            symbol_lyr_line.setColor(QColor("red"))
+            symbol_lyr_line.setLineWidth(0.5)
+            symbol_lyr_line.setCoordinateReference(Qgis.SymbolCoordinateReference.Viewport)
+            sym_uncompleted = QgsFillSymbol()
+            sym_uncompleted.deleteSymbolLayer(0)
+            sym_uncompleted.appendSymbolLayer(symbol_lyr_line)
+            for symbolLayer in sym_uncompleted.symbolLayers():
+                symbolLayer.setRenderingPass(1)
+            
+            expression_uncompleted = f"({currentFieldCode} is null and {otherFieldCode} is not null)"
+            rule_uncompleted = QgsRuleBasedRenderer.Rule(sym_uncompleted, 0, 0, expression_uncompleted)
+            rootrule.appendChild(rule_uncompleted)
+
         return renderer
+
     
     def createFillSymbolFromList(self,
                           listLayers: list = None,
@@ -2896,12 +2959,18 @@ class TnTLayerTreeWidget(groupQWidgets):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        for tlayer in listLayers:
-            renderer = self.createFillSymbol(
-                associationTable=associationTable,
-                fieldName=fieldName
-            )
+        for i in range(len(listLayers)-1):
+            
+            tlayer = listLayers[i]
+            renderer = self.createFillSymbolLessSegmentedLayers()
             tlayer.layer().setRenderer(renderer)
+
+        renderer = self.createFillSymbolLastLayer(
+            associationTable=associationTable,
+            fieldName=fieldName
+        )
+        tlayer = listLayers[-1]
+        tlayer.layer().setRenderer(renderer)
     
     
     def setVintage(self, vintage:str=None):
@@ -2962,7 +3031,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         if showContext:
             groupsName = self.layerTreeRoot().children()
             for group in groupsName:
-                self.groupsVisibilityState[group] = group.isVisible()
+                if group.name().startswith("LABELED_DATA"):
+                    self.groupsVisibilityState[group] = True
+                else:
+                    self.groupsVisibilityState[group] = group.isVisible()
                 if not group.name() == keepGroup:
                     group.setItemVisibilityChecked(not showContext)
         else:
@@ -3017,16 +3089,7 @@ class TnTLayerTreeWidget(groupQWidgets):
             vLayer_Clone = treeLayer.layer().clone()
             tLayer = QgsLayerTreeLayer(vLayer_Clone)
 
-            nomenclatureWidget = self.getTnTnomenclatureWidget()
-            associationTable = nomenclatureWidget.getAssociationTable()
-
             vintage = self.getVintage()
-
-            renderer = self.createFillSymbol(
-                associationTable=associationTable,
-                fieldName=f"code_{vintage}"
-            )
-            vLayer_Clone.setRenderer(renderer)
 
             tLayer.setExpanded(False)
             #A corriger pb d'initialisation des visibilities
@@ -3208,6 +3271,21 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
             associationTable=associationTable,
             fieldName=f"code_{vintage}"
         )
+
+        masterWindow = self.getMasterWindow()
+        layerTreeWidget = masterWindow.associatedWindow.findChild(
+            TnTLayerTreeWidget
+        )
+        vintage = masterWindow.associatedWindow.getVintage()
+        newName = f"{oldName}_{vintage}"
+        root = layerTreeWidget.layerTreeRoot()
+        group = root.findGroup(newName)
+        layerTreeWidget.createFillSymbolFromList(
+            listLayers=group.findLayers(),
+            associationTable=associationTable,
+            fieldName=f"code_{vintage}"
+        )
+
          
         group = root.findGroup("FINAL_DATA")
         group.setExpanded(False)

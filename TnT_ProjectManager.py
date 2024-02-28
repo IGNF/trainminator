@@ -22,6 +22,8 @@ from PyQt5.QtCore    import QVariant
 from PyQt5.QtWidgets import QProgressDialog, QMessageBox
 from PyQt5.QtGui     import (QColor, QFont)
 
+from .TnT_Features import TnTFeaturesManager
+
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -515,6 +517,7 @@ class TnTLayersManager():
 
         index = 1
         # progress.setValue(0)
+        layers = []        
         for dataSegmented in listDataSegmented:
 
             filedata_name = os.path.split(
@@ -554,8 +557,12 @@ class TnTLayersManager():
                 layerTreeLayer_DataLabeled.setExpanded(False)
                 layerTreeLayer_DataLabeled.setItemVisibilityChecked(False)
 
+                layers.append(vlayer_DataLabeled)
+
                 # progress.setValue(progress.value()+1)
                 index += 1
+
+        self.tntFeaturesManager = TnTFeaturesManager(layers)
 
         # progress.setLabelText("Loading data Done.")
         # progress.setValue(progress.maximum())

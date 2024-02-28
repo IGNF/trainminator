@@ -28,8 +28,10 @@ import inspect
 from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 
 from PyQt5.QtCore    import( Qt, QEvent )
-from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent )
+from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent, QKeySequence )
 
+from qgis.core import QgsGeometry, QgsPoint
+from PyQt5.QtWidgets import QLabel, QShortcut
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -48,6 +50,7 @@ class mapCanvas(QgsMapCanvas):
 
         self.marker = None
         self.synchroMode = True
+        self.displayMode = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
@@ -89,6 +92,11 @@ class mapCanvas(QgsMapCanvas):
         self.marker.setIconType( QgsVertexMarker.ICON_CROSS )
         self.marker.setPenWidth( 1 )
 
+    def setDisplayMode(self):
+        if self.displayMode == True:
+            self.displayMode = False
+        else:
+            self.displayMode = True
 
     def zoomAllToFullExtent(self):
         """Zoom to the full extent of all layers currently visible in
@@ -206,17 +214,37 @@ class mapCanvas(QgsMapCanvas):
         """
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
         if self.getSynchroMode() :
             qgspointXY =self.mapTool().toMapCoordinates(event.pos())
             canvas_list= self.getAllCanvas()
             for canvas in canvas_list :
                 canvas.showMousePointerMarker(qgspointXY)
-
+            
+        if self.displayMode:
+            qgspointXY = self.mapTool().toMapCoordinates(event.pos())
+            geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
+            self.showDisplayLabels(geo_pt)       
+            
         return QgsMapCanvas.mouseMoveEvent(self, event)
 
+    def showDisplayLabels(self, geo_pt):
+        layer = self.currentLayer()
+        feats = [feat for feat in layer.getFeatures()]
+        id = -1
+        for feat in feats:
+            if geo_pt.within(feat.geometry()):
+                id = feat.id()
+                break            
+        
+        masterWindow = self.getMasterWindow()
+        labels_2016 = masterWindow.findChildren(QLabel, "label_2016_class")
+        labels_2019 = masterWindow.findChildren(QLabel, "label_2019_class")
+        
+        if id != -1:
+            for label_2016 in labels_2016:
+                label_2016.setText(f"Classe 2016 : {feats[id].attribute('class_2016')}")
+            for label_2019 in labels_2019:
+                label_2019.setText(f"Classe 2019 : {feats[id].attribute('class_2019')}")
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -226,6 +254,9 @@ class mapCanvas(QgsMapCanvas):
             canvas_list= self.getAllCanvas()
             for canvas in canvas_list :
                 canvas.marker.hide()
+        
+        if self.displayMode:
+            pass
         
         return QgsMapCanvas.leaveEvent(self, event)
 
@@ -238,27 +269,15 @@ class mapCanvas(QgsMapCanvas):
 
 
     def event(self, event: QEvent):
-        """
-            param event:
-            returns none:
-        """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        # evt_Type=event.type()
-        # if evt_Type==QEvent.KeyPress and event.key()==Qt.Key_Space:
-        #     #Additional view canvas does not have a toolbox, ignore error
-        #     try:
-        #         self.parent().getPushButton('Show Context').keyPressEvent(event)
-        #     except AttributeError:
-        #         pass
-        #     return True
-    
-        # if evt_Type==QEvent.KeyRelease and event.key()==Qt.Key_Space :
-        #     #Additional view canvas does not have a toolbox, ignore error
-        #     try:
-        #         self.parent().getPushButton('Show Context').keyReleaseEvent(event)
-        #     except AttributeError:
-        #         pass
-        #     return True
+        evt_Type=event.type()
+        if (evt_Type==QEvent.KeyPress or evt_Type==QEvent.KeyRelease) and event.key()==Qt.Key_W:
+            masterWindow = self.getMasterWindow()
+
+            showContext = evt_Type==QEvent.KeyPress
+            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+
+            associatedWindow = masterWindow.associatedWindow
+            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            return True
     
         return QgsMapCanvas.event(self, event)
