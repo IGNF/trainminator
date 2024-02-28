@@ -84,6 +84,7 @@ QLabel[objectName="label_2016_class"] {
     font-size: 11px;
     font-style: italic;
     border: none;
+    width:20px;
 }
 
 QLabel[objectName="label_2019_class"] {
@@ -92,6 +93,7 @@ QLabel[objectName="label_2019_class"] {
     font-size: 11px;
     font-style: italic;
     border: none;
+    width:20px;
 }
 
 QLabel[objectName="label_nomenclature"],
