@@ -1280,12 +1280,13 @@ class viewsManagerGroup(groupQPushButton):
         state = sender.isChecked()
         
         self.updateChecked_AllButtons(sender)
-        self.setSynchroSlider_Level(state)
+        self.setSynchroLevels_Slider(state)
         
-    def setSynchroSlider_Level(self, state=False):
-        mainWindow = self.getMainWindow()
-        slider = mainWindow.findChild(sliderGroup, "sliderGroup")
-        slider.manageSynchroLevels(state)
+    def setSynchroLevels_Slider(self, state=False):
+        masterWindow = self.getMasterWindow()
+        slider_list = masterWindow.findChildren(sliderGroup, "sliderGroup")
+        for slider in slider_list:
+            slider.manageSynchroLevels(state)
 
 class viewsManagerGroup_Master(viewsManagerGroup):
 
