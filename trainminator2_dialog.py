@@ -456,10 +456,12 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         self.centralWidget().currentNomenclatureChanged(
             nomenclatureName=nomenclatureName
         )
-        self.associatedWindow.currentNomenclatureChanged(
-            nomenclatureName=nomenclatureName,
-            treeWidgetSrc=treeWidgetSrc
-        )
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.currentNomenclatureChanged(
+                nomenclatureName=nomenclatureName,
+                treeWidgetSrc=treeWidgetSrc
+            )
         
         
     def start(self):
@@ -475,7 +477,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         self.centralWidget().start()
         
         self.start_SliderGroup()
-        self.associatedWindow.start_SliderGroup()
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.start_SliderGroup()
         
     
     def stop(self):

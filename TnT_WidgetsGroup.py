@@ -371,15 +371,18 @@ class startStopToolsGroup(groupQPushButton):
         masterWindow = self.getMasterWindow()
         
         master_displayLabels = masterWindow.findChild(displayLabelsGroup, "displayLabels_Group")
-        differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+        if masterWindow.projectManager.isDifferential:
+            differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
 
         master_displayLabels.displayShortcut.setEnabled(True)
-        differ_displayLabels.displayShortcut.setEnabled(True)
+        if masterWindow.projectManager.isDifferential:
+            differ_displayLabels.displayShortcut.setEnabled(True)
         
         mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
         for canvas in mapCanvas_list:
             master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
-            differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
+            if masterWindow.projectManager.isDifferential:
+                differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -815,9 +818,8 @@ class displayToolsGroup(groupQPushButton):
         sender = self.sender()
 
         mainWindow = self.getMainWindow()
-        qLabel = mainWindow.findChild(QLabel, "labelValue_CurrentVintage")
-        if qLabel:
-            vintage = qLabel.text()
+        vintage = mainWindow.getVintage()
+        if vintage:
             keepGroup = f"CONTEXT_{vintage}"
         else:
             keepGroup = "CONTEXT"
@@ -827,7 +829,12 @@ class displayToolsGroup(groupQPushButton):
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
         associatedWindow = mainWindow.associatedWindow
-        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+        vintage = associatedWindow.getVintage()
+        if vintage:
+            keepGroup = f"CONTEXT_{vintage}"
+        else:
+            keepGroup = "CONTEXT"
+        associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1269,27 +1276,27 @@ class viewsManagerGroup(groupQPushButton):
         layout.addWidget(button1)
 
         button2 = self.setQPushButton( QPushButton(self),
-                                      checkable=True,
-                                      checked=True,
-                                      enabled=True,
-                                      text="Synchro Views",
-                                      objectName="synchro_Views",
-                                      accessibleName="synchro_Views",
-                                      toolTip="",
-                                      keySequence=None
+                                    checkable=True,
+                                    checked=True,
+                                    enabled=True,
+                                    text="Synchro Views",
+                                    objectName="synchro_Views",
+                                    accessibleName="synchro_Views",
+                                    toolTip="",
+                                    keySequence=None
                                     )
         layout.addWidget(button2)
 
         button3 = self.setQPushButton( QPushButton(self),
-				              checkable=True,
-                              checked=False,
-                              enabled=False,
-				              text="Synchro Levels",
-				              objectName="synchro_Levels",
-				              accessibleName="synchro_Levels",
-				              toolTip="",
-				              keySequence=None
-				              )
+                            checkable=True,
+                            checked=False,
+                            enabled=False,
+                            text="Synchro Levels",
+                            objectName="synchro_Levels",
+                            accessibleName="synchro_Levels",
+                            toolTip="",
+                            keySequence=None
+                            )
         layout.addWidget(button3)
 
     def setConnections(self):
@@ -1411,13 +1418,6 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         labelingMode_Button = self.findChild(QLabel, "labeling_Mode")
         labelingMode_Button.setText("Standard labeling mode")
         self.changeVisiblePushButton("add_View")
-        
-        synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
-        synchroViews_Button.setEnabled(True)
-
-        synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
-        synchroLevels_Button.setEnabled(True)
-
 
     def differentialMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1852,7 +1852,10 @@ class sliderGroup(groupQWidgets):
             nomenclatureWidget = layerTreeWidget.getTnTnomenclatureWidget()
             associationTable = nomenclatureWidget.getAssociationTable()
             vintage = layerTreeWidget.getVintage()
-            fieldName=f"code_{vintage}"
+            if vintage:
+                fieldName=f"code_{vintage}"
+            else:
+                fieldName="code"
             if newIndex == len(layers_list)-1:
                 # Display yellow outline
                 renderer = layerTreeWidget.createFillSymbolLastLayer(
@@ -2930,8 +2933,14 @@ class TnTLayerTreeWidget(groupQWidgets):
                 otherVintage = vintage
 
         if otherVintage is not None:
-            currentFieldCode = "code_{}".format(currentVintage)
-            otherFieldCode = "code_{}".format(otherVintage)
+            if currentVintage:  
+                currentFieldCode = "code_{}".format(currentVintage)
+            else:
+                currentFieldCode = "code"
+            if otherVintage:
+                otherFieldCode = "code_{}".format(otherVintage)
+            else:
+                otherFieldCode = "code"
             symbol_lyr_line = QgsLinePatternFillSymbolLayer()
             symbol_lyr_line.setColor(QColor("red"))
             symbol_lyr_line.setLineWidth(0.5)
@@ -3103,7 +3112,10 @@ class TnTLayerTreeWidget(groupQWidgets):
             nodeName = node.name()
             
             if nodeName.startswith("LABELED_DATA"):
-                groupName = f"LABELED_DATA_{vintage}"
+                if vintage:
+                    groupName = f"LABELED_DATA_{vintage}"
+                else:
+                    groupName = "LABELED_DATA"
                 tLayer.setItemVisibilityChecked(False)
             else :
                 groupName = node.name()
@@ -3160,9 +3172,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         vintage = self.getVintage()
-        oldName = "LABELED_DATA"
-        newName = f"{oldName}_{vintage}"  
-        self.renameGroup(oldName, newName)
+        if vintage:
+            oldName = "LABELED_DATA"
+            newName = f"{oldName}_{vintage}"  
+            self.renameGroup(oldName, newName)
         
         root = self.layerTreeRoot()
         
@@ -3182,11 +3195,12 @@ class TnTLayerTreeWidget(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
  
         vintage = self.getVintage()
-        newName = "LABELED_DATA"
-        oldName = f"{newName}_{vintage}"
+        if vintage: 
+            newName = "LABELED_DATA"
+            oldName = f"{newName}_{vintage}"
 
-        self.removeAllChildren(oldName)
-        self.renameGroup(oldName, newName)
+            self.removeAllChildren(oldName)
+            self.renameGroup(oldName, newName)
          
         root = self.layerTreeRoot()
         
@@ -3260,31 +3274,47 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
         vintage = self.getVintage()
 
         oldName = "LABELED_DATA"
-        newName = f"{oldName}_{vintage}"
-        self.renameGroup(oldName, newName)
+        if vintage:
+            newName = f"{oldName}_{vintage}"
+            self.renameGroup(oldName, newName)
+        else:
+            newName = oldName
 
         root = self.layerTreeRoot()
         group = root.findGroup(newName)
 
+        if vintage:
+            fieldName = f"code_{vintage}"
+        else:
+            fieldName = "code"
+
         self.createFillSymbolFromList(
             listLayers=group.findLayers(),
             associationTable=associationTable,
-            fieldName=f"code_{vintage}"
+            fieldName=fieldName
         )
 
+        
         masterWindow = self.getMasterWindow()
-        layerTreeWidget = masterWindow.associatedWindow.findChild(
-            TnTLayerTreeWidget
-        )
-        vintage = masterWindow.associatedWindow.getVintage()
-        newName = f"{oldName}_{vintage}"
-        root = layerTreeWidget.layerTreeRoot()
-        group = root.findGroup(newName)
-        layerTreeWidget.createFillSymbolFromList(
-            listLayers=group.findLayers(),
-            associationTable=associationTable,
-            fieldName=f"code_{vintage}"
-        )
+        if masterWindow.projectManager.isDifferential:
+            layerTreeWidget = masterWindow.associatedWindow.findChild(
+                TnTLayerTreeWidget
+            )
+            vintage = masterWindow.associatedWindow.getVintage()
+            if vintage:
+                fieldName = f"code_{vintage}"
+                newName = f"{oldName}_{vintage}"
+            else:
+                fieldName = "code"
+                newName = oldName
+            root = layerTreeWidget.layerTreeRoot()
+            group = root.findGroup(newName)
+            
+            layerTreeWidget.createFillSymbolFromList(
+                listLayers=group.findLayers(),
+                associationTable=associationTable,
+                fieldName=fieldName
+            )
 
          
         group = root.findGroup("FINAL_DATA")

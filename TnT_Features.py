@@ -26,23 +26,6 @@ class TnTFeatures:
             self.attrs[k]=attrs[k]
 
 
-    def changeAttribute_save(self, attrs):
-        # Change attributes of the feature
-        key = list(attrs.keys())[1]
-        attributesBeforeChange = self.getAttributes()[key]
-        prov = self.layer.dataProvider()
-        caps = prov.capabilities()
-        if caps and QgsVectorDataProvider.ChangeAttributeValues:
-            prov.changeAttributeValues({self.feature.id() : attrs})
-            self.changeAttrs(attrs)
-        
-        # Iterate on children
-        for child in self.children:
-            childAttributes = child.getAttributes()
-            if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange:
-                child.changeAttribute(attrs)
-
-
     def changeAttribute(self, attrs):
         # Change attributes of the feature
         key = list(attrs.keys())[1]

@@ -90,12 +90,23 @@ class TraiNminaTor2_DockWidget( QDockWidget ):
         if (evt_Type==QEvent.KeyRelease or evt_Type==QEvent.ShortcutOverride) and event.key()==Qt.Key_W:
             masterWindow = self.getMasterWindow()
 
-
             showContext = evt_Type!=QEvent.KeyRelease
-            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+            vintage = masterWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            masterWindow.showContext(showContext=showContext, keepGroup=keepGroup)
+
+            
 
             associatedWindow = masterWindow.associatedWindow
-            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            vintage = associatedWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
             return True
         
         return super().event(event)

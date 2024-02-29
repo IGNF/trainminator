@@ -274,10 +274,20 @@ class mapCanvas(QgsMapCanvas):
             masterWindow = self.getMasterWindow()
 
             showContext = evt_Type==QEvent.KeyPress
-            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+            vintage = masterWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            masterWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
             associatedWindow = masterWindow.associatedWindow
-            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            vintage = associatedWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
             return True
     
         return QgsMapCanvas.event(self, event)
