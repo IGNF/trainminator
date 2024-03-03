@@ -2465,14 +2465,31 @@ class TnTnomenclatureWidget_Master(TnTnomenclatureWidget):
             key = (os.path.basename (nomenclatureFile ).split('.'))[0]
             value = nomenclatureFile
             self.nomenclaturesDict[key]=value
-
+        # NOTE code pour activer le widget nomenclature et le remplir
         comboBox = self.getComboBox()
         comboBox.setEnabled(True)
         comboBox.clear()
+        
 
         keys = self.nomenclaturesDict.keys()
         for key in keys :
             comboBox.addItem(key)
+
+    def disable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(True)
+
+    def clear_and_disable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature and supprimer le contenu
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+        comboBox.clear()
+    def clear_nomenclature(self):
+        # NOTE code pour supprimer le contenu de nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+        comboBox.clear()
 
     def detectDelimiter(self, header):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+

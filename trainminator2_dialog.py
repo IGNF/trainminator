@@ -53,6 +53,8 @@ from .trainminator2_Widget import( TraiNminaTor2Widget_Base,
                                    TraiNminaTor2Widget_Master
                                  )
 from .TnT_ProjectManager import TnTProjectManager
+from .debug.logger import get_logger
+logger = get_logger()
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -560,10 +562,14 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         #Keep only files (reject filterName)
         nomenclatureFiles = nomenclatures[0]
         if nomenclatureFiles:
+            """
+            On fixe la nomenclature ici
+            """
             nomenclatureWidget = self.findChild(
                 TnTnomenclatureWidget_Master,
                 "TnTnomenclatureWidget_Master"
             )
+            logger('set nomenclature')
             nomenclatureWidget.setNomenclaturesDict(nomenclatureFiles)
             #user chose nomenclature, unlock group
 
