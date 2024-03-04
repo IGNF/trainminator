@@ -33,6 +33,7 @@ TODO: gestion d'une stack undo/redo
 import inspect
 
 from qgis import processing
+from qgis._core import QgsMapLayer
 from qgis.core import (QgsProject, QgsVectorLayer, QgsFeature,
                        QgsGeometry, QgsProcessingFeatureSourceDefinition,
                        QgsVectorDataProvider, QgsWkbTypes,QgsFeatureSource)
@@ -304,7 +305,10 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.disable_selecting_tool_group()
         self.disable_slider_group()
         self.capturing(e)
-
+    def enable_fill_pyramid(self):
+        main_window = self.parent.getMasterWindow()
+        merge_tool_group = main_window.get_merge_tools_group()
+        merge_tool_group.setEnabled(True)
 
     def capturing(self, e):
         """
@@ -344,7 +348,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             masterCanvas.refresh()
         self.enable_selecting_tool_group()
         self.enable_slider_group()
-
+        self.enable_fill_pyramid()
     def abortCapturing(self):
         """
             returns none:
@@ -780,6 +784,7 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         self.unLockAtEndCapture()
         self.enable_selecting_tool_group()
         self.enable_slider_group()
+        self.enable_fill_pyramid()
 
 
 # End About CAPTURE   ############################
@@ -932,7 +937,8 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         if self.rbPoint.numberOfVertices()>2:
             self.showSelected(self.selectionRubberBand, self.getPredicate())
-
+        self.disable_selecting_tool_group()
+        self.disable_slider_group()
 # End About CAPTURE   ############################
 
 

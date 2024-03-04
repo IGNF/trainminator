@@ -1202,7 +1202,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         startStopTools_Group = startStopToolsGroup( parent=self )
         layout.addWidget( startStopTools_Group )
 
-        mergeTools_Group = mergeToolsGroup( parent=self )
+        mergeTools_Group = mergeToolsGroup( parent=self)
+        # mergeTools_Group.setEnabled(False)
         layout.addWidget( mergeTools_Group )
 
         taskTools_Group = taskToolsGroup ( parent=self )
@@ -1239,6 +1240,7 @@ class toolsGroup_Master(toolsGroup_Differential):
                  displayToolsGroup,
                  displayLabelsGroup
                ]
+
 
     def getListGroupWhenCurrentNomenclatureChanged(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+

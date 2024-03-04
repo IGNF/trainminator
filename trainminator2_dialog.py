@@ -39,6 +39,7 @@ from .TnT_WidgetsGroup import( menu_widget,
                                TnTnomenclatureWidget_Master,
                                TnTLayerTreeWidget,
                                sliderGroup,
+                               mergeToolsGroup,
                                selectingToolsGroup
                              )
 
@@ -392,7 +393,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
     
         projectManager = self.projectManager
         return projectManager.getVintages()
-        
+
+    def get_merge_tools_group(self):
+        return self.findChild(mergeToolsGroup, "mergeToolsGroup")
 
     def standardMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
