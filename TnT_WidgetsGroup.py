@@ -711,7 +711,11 @@ class selectingToolsGroup(groupQPushButton):
 
         self.setEnabled(False)
 
+    def enable_tool(self):
+        self.setEnabled(True)
 
+    def disable_tool(self):
+        self.setEnabled(False)
 class displayToolsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,

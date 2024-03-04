@@ -45,7 +45,6 @@ from PyQt5.QtGui import QColor, QKeyEvent
 
 from .TnT_Features import TnTFeaturesManager
 
-
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
@@ -239,7 +238,17 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         self.setCapture(not self.getCapture())
 
+    def disable_selecting_tool_group(self):
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries
+        masterWindow = self.parent.getMasterWindow()
+        masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        masterSelectingToolGroup.disable_tool()
 
+    def enable_selecting_tool_group(self):
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        masterWindow = self.parent.getMasterWindow()
+        masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        masterSelectingToolGroup.enable_tool()
     def startCapturing(self, e):
         """
             param e:
@@ -265,6 +274,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
 
         self.setCapture(True)
+        # NOTE: résolution issue freeze sélection géométrie
+        self.disable_selecting_tool_group()
         self.capturing(e)
 
 
@@ -296,6 +307,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         masterWindow = self.parent.getMasterWindow()
         associatedWindow = masterWindow.associatedWindow
         masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        self.enable_selecting_tool_group()
 
         if masterSelectingToolGroup == parentSelectingToolGroup:
             associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
@@ -332,7 +345,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        self.enable_selecting_tool_group()
         #self.comm.unLockAssociatedButton.emit()
 
  # END About CAPTURE ############################
@@ -727,7 +741,8 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         """
       # print(f"line:{lineno()},{self.__class__.__name__}->"+
       #       f"{inspect.currentframe().f_code.co_name}()")
-      
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        self.enable_selecting_tool_group()
         self.setCapture(False)
         self.dashRubberBand.reset(QgsWkbTypes.LineGeometry)
         self.unLockAtEndCapture()
