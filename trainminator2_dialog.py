@@ -47,7 +47,6 @@ from .TnT_DockWidget import( TnTLayerTree_DockWidget,
                              TnTNomenclature_DockWidget,
                              TnTNomenclature_DockWidget_Master
                            )
-
 from .trainminator2_Widget import( TraiNminaTor2Widget_Base,
                                    TraiNminaTor2Widget_Differential,
                                    TraiNminaTor2Widget_Master

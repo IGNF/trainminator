@@ -475,7 +475,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             attrs[key]=None
 
         masterWindow = self.parent.getMasterWindow()
-        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesManager: TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
         tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
         parents = []

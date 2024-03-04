@@ -8,8 +8,6 @@ import csv
 import inspect
 import sys
 
-
-
 from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsProject, QgsLayerTreeNode, QgsLayerTreeLayer,
                        QgsWkbTypes, QgsRuleBasedRenderer, QgsVectorFileWriter,
@@ -19,15 +17,12 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsLinePatternFillSymbolLayer,
                        QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
-
 from qgis.gui import ( QgsLayerTreeView )
-
 from PyQt5 import QtCore
 from PyQt5.QtCore    import( Qt, QVariant )
 from PyQt5.QtGui     import( QColor, QBrush, QPalette,
                              QFont, QKeySequence
                            )
-
 from PyQt5.QtWidgets import( QSizePolicy, QPushButton, QComboBox,
                              QVBoxLayout, QHBoxLayout, QSpacerItem, QGroupBox,
                              QDockWidget, QMenu, QMenuBar,
@@ -43,8 +38,9 @@ from .TnT_CaptureManager import ( TnTmapToolEmitPoint,
                                 )
 from .TnT_ProjectManager import( TnTLayersManager )
 from .TnT_SavingLabeledData import ( TnTSavingLabeledData )
+from .debug.logger import get_logger
 
-
+logger = get_logger()
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
@@ -380,7 +376,7 @@ class startStopToolsGroup(groupQPushButton):
         for canvas in mapCanvas_list:
             master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
             differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
-
+        # logger(f'hierarchical layers loaded! in {str(self)}')
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -390,7 +386,15 @@ class startStopToolsGroup(groupQPushButton):
 
         masterWindow=self.getMasterWindow()
         masterWindow.start()
-
+        # NOTE ICI on gère issue 1, garde fou nomenclature après start
+        nomenclatureWidget = masterWindow.findChild(
+            TnTnomenclatureWidget_Master,
+            "TnTnomenclatureWidget_Master"
+        )
+        nomenclatureWidget.disable_nomenclature()
+        menu_nomenclature_widget = masterWindow.findChild(menu_widget,
+                                                          "menu_Nomenclature")
+        menu_nomenclature_widget.disable_menu()
     def stop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -400,6 +404,16 @@ class startStopToolsGroup(groupQPushButton):
 
         masterWindow=self.getMasterWindow()
         masterWindow.stop()
+        # NOTE ICI on gère issue 1, garde fou nomenclature après stop, accpeter le changement
+        # NOTE de nomenclature
+        nomenclatureWidget = masterWindow.findChild(
+            TnTnomenclatureWidget_Master,
+            "TnTnomenclatureWidget_Master"
+        )
+        nomenclatureWidget.enable_nomenclature()
+        menu_nomenclature_widget = masterWindow.findChild(menu_widget,
+                                                          "menu_Nomenclature")
+        menu_nomenclature_widget.enable_menu()
 
 
 class taskToolsGroup(groupQPushButton):
@@ -1996,6 +2010,11 @@ class menu_widget(QMenu):
         super().setObjectName(objectName)
         super().setAccessibleName(objectName)
 
+    def disable_menu(self):
+        self.setEnabled(False)
+
+    def enable_menu(self):
+        self.setEnabled(True)
 
     def createAction( self,
                       text = "no_text",
@@ -2476,6 +2495,11 @@ class TnTnomenclatureWidget_Master(TnTnomenclatureWidget):
             comboBox.addItem(key)
 
     def disable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+
+    def enable_nomenclature(self):
         # NOTE code pour désactiver le widget nomenclature
         comboBox = self.getComboBox()
         comboBox.setEnabled(True)
@@ -3180,7 +3204,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         oldName = "LABELED_DATA"
         newName = f"{oldName}_{vintage}"  
         self.renameGroup(oldName, newName)
-        
+
         root = self.layerTreeRoot()
         
         group = root.findGroup("FINAL_DATA")
@@ -3273,6 +3297,7 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
             associationTable=associationTable,
             nomenclatureName=nomenclatureName
         )
+        logger(f'hierarchical layers loaded! in {str(self)}')
 
         vintage = self.getVintage()
 
