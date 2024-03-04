@@ -324,10 +324,12 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
        # print(f"line:{lineno()},{self.__class__.__name__}->"+
        #       f"{inspect.currentframe().f_code.co_name}()")
-       
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        self.enable_selecting_tool_group()
         self.resetAll()
         self.layer.reload()
         self.unLockAtEndCapture()
+
 
     def lockAtStartCapture(self):
         """
