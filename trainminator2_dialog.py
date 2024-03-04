@@ -181,7 +181,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         self.centralWidget().start_SliderGroup()
-        
+
             
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+

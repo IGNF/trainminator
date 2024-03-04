@@ -239,16 +239,42 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.setCapture(not self.getCapture())
 
     def disable_selecting_tool_group(self):
-        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries
+        # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie
+
         masterWindow = self.parent.getMasterWindow()
+        associatedWindow = masterWindow.associatedWindow
+        associatedSelectingToolGroup = associatedWindow.getSelectingToolGroupWidget()
         masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
         masterSelectingToolGroup.disable_tool()
+        associatedSelectingToolGroup.disable_tool()
 
     def enable_selecting_tool_group(self):
-        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie, réactivation
         masterWindow = self.parent.getMasterWindow()
+        associatedWindow = masterWindow.associatedWindow
+        associatedSelectingToolGroup = associatedWindow.getSelectingToolGroupWidget()
         masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
         masterSelectingToolGroup.enable_tool()
+        associatedSelectingToolGroup.disable_tool()
+
+    def enable_slider_group(self):
+        # NOTE résolution issue 1 freeze le changement de slider pendant changement de géométrie, réactivation
+        masterWindow = self.parent.getMasterWindow()
+        associatedWindow = masterWindow.associatedWindow
+        associatedSelectingToolGroup = associatedWindow.getSliderGroup()
+        masterSelectingToolGroup = masterWindow.getSliderGroup()
+        masterSelectingToolGroup.setEnabled(True)
+        associatedSelectingToolGroup.setEnabled(True)
+
+    def disable_slider_group(self):
+        # NOTE résolution issue 1 freeze le changement de slider pendant saisie de géométrie
+        masterWindow = self.parent.getMasterWindow()
+        associatedWindow = masterWindow.associatedWindow
+        associatedSelectingToolGroup = associatedWindow.getSliderGroup()
+        masterSelectingToolGroup = masterWindow.getSliderGroup()
+        masterSelectingToolGroup.setEnabled(False)
+        associatedSelectingToolGroup.setEnabled(False)
+
     def startCapturing(self, e):
         """
             param e:
@@ -276,6 +302,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.setCapture(True)
         # NOTE: résolution issue freeze sélection géométrie
         self.disable_selecting_tool_group()
+        self.disable_slider_group()
         self.capturing(e)
 
 
@@ -308,7 +335,6 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         associatedWindow = masterWindow.associatedWindow
         masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
         # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
-        self.enable_selecting_tool_group()
 
         if masterSelectingToolGroup == parentSelectingToolGroup:
             associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
@@ -316,7 +342,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         else:
             masterCanvas = masterWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
             masterCanvas.refresh()
-        
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
 
     def abortCapturing(self):
         """
@@ -325,10 +352,12 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
        # print(f"line:{lineno()},{self.__class__.__name__}->"+
        #       f"{inspect.currentframe().f_code.co_name}()")
         # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
-        self.enable_selecting_tool_group()
+
         self.resetAll()
         self.layer.reload()
         self.unLockAtEndCapture()
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
 
 
     def lockAtStartCapture(self):
@@ -349,6 +378,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         #       f"{inspect.currentframe().f_code.co_name}()")
         # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
         self.enable_selecting_tool_group()
+        self.enable_slider_group()
         #self.comm.unLockAssociatedButton.emit()
 
  # END About CAPTURE ############################
@@ -744,10 +774,12 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
       # print(f"line:{lineno()},{self.__class__.__name__}->"+
       #       f"{inspect.currentframe().f_code.co_name}()")
         # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
-        self.enable_selecting_tool_group()
+
         self.setCapture(False)
         self.dashRubberBand.reset(QgsWkbTypes.LineGeometry)
         self.unLockAtEndCapture()
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
 
 
 # End About CAPTURE   ############################
