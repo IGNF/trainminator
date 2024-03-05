@@ -865,6 +865,7 @@ class displayLabelsGroup(groupQPushButton):
         label_year0_class.setAccessibleName("label_year0_class")
         label_year0_class.setAutoFillBackground(True)
         label_year0_class.setEnabled(True)
+        label_year0_class.setMinimumWidth(200)
         label_year0_class.setMaximumWidth(200)
 
         layout.addWidget(label_year0_class)
@@ -875,6 +876,7 @@ class displayLabelsGroup(groupQPushButton):
         label_year1_class.setAccessibleName("label_year1_class")
         label_year1_class.setAutoFillBackground(True)
         label_year1_class.setEnabled(True)
+        label_year1_class.setMinimumWidth(200)
         label_year1_class.setMaximumWidth(200)
 
         layout.addWidget(label_year1_class)
