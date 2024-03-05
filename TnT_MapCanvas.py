@@ -236,21 +236,21 @@ class mapCanvas(QgsMapCanvas):
             if geo_pt.within(feat.geometry()):
                 id = feat.id()
                 break            
-        
-        years = []
-        for att in layer.fields().names():
-            if 'class' in att:
-                years.append(att)
-            
+                    
         masterWindow = self.getMasterWindow()
         labels_year0 = masterWindow.findChildren(QLabel, "label_year0_class")
         labels_year1 = masterWindow.findChildren(QLabel, "label_year1_class")
+
+        year0 = masterWindow.getVintage()
+        year1 = masterWindow.associatedWindow.getVintage()
+        att0 = "class_" + str(year0)
+        att1 = "class_" + str(year1)
         
         if id != -1:
             for label in labels_year0:
-                label.setText(f"Classe {years[0][-4:]} : {feats[id].attribute(years[0])}")
+                label.setText(f"Classe {year0} : {feats[id].attribute(att0)}")
             for label in labels_year1:
-                label.setText(f"Classe {years[1][-4:]} : {feats[id].attribute(years[1])}")
+                label.setText(f"Classe {year1} : {feats[id].attribute(att1)}")
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
