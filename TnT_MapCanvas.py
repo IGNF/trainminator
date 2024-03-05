@@ -32,6 +32,7 @@ from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent, QKeySequence )
 
 from qgis.core import QgsGeometry, QgsPoint
 from PyQt5.QtWidgets import QLabel, QShortcut
+import numpy as np
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -236,15 +237,20 @@ class mapCanvas(QgsMapCanvas):
                 id = feat.id()
                 break            
         
+        years = []
+        for att in layer.fields().names():
+            if 'class' in att:
+                years.append(att)
+            
         masterWindow = self.getMasterWindow()
-        labels_2016 = masterWindow.findChildren(QLabel, "label_2016_class")
-        labels_2019 = masterWindow.findChildren(QLabel, "label_2019_class")
+        labels_year0 = masterWindow.findChildren(QLabel, "label_year0_class")
+        labels_year1 = masterWindow.findChildren(QLabel, "label_year1_class")
         
         if id != -1:
-            for label_2016 in labels_2016:
-                label_2016.setText(f"Classe 2016 : {feats[id].attribute('class_2016')}")
-            for label_2019 in labels_2019:
-                label_2019.setText(f"Classe 2019 : {feats[id].attribute('class_2019')}")
+            for label in labels_year0:
+                label.setText(f"Classe {years[0][-4:]} : {feats[id].attribute(years[0])}")
+            for label in labels_year1:
+                label.setText(f"Classe {years[1][-4:]} : {feats[id].attribute(years[1])}")
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
