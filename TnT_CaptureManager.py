@@ -239,42 +239,43 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         self.setCapture(not self.getCapture())
 
+    def get_master_windows(self):
+        master_window = self.parent.getMasterWindow()
+        associated_window = master_window.associatedWindow
+        return master_window, associated_window
+
     def disable_selecting_tool_group(self):
         # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie
 
-        masterWindow = self.parent.getMasterWindow()
-        associatedWindow = masterWindow.associatedWindow
-        associatedSelectingToolGroup = associatedWindow.getSelectingToolGroupWidget()
-        masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        master_window, associated_window = self.get_master_windows()
+        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup.disable_tool()
         associatedSelectingToolGroup.disable_tool()
 
     def enable_selecting_tool_group(self):
         # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie, réactivation
-        masterWindow = self.parent.getMasterWindow()
-        associatedWindow = masterWindow.associatedWindow
-        associatedSelectingToolGroup = associatedWindow.getSelectingToolGroupWidget()
-        masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        master_window, associated_window = self.get_master_windows()
+        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup.enable_tool()
-        associatedSelectingToolGroup.disable_tool()
+        associatedSelectingToolGroup.enable_tool()
 
     def enable_slider_group(self):
         # NOTE résolution issue 1 freeze le changement de slider pendant changement de géométrie, réactivation
-        masterWindow = self.parent.getMasterWindow()
-        associatedWindow = masterWindow.associatedWindow
-        associatedSelectingToolGroup = associatedWindow.getSliderGroup()
-        masterSelectingToolGroup = masterWindow.getSliderGroup()
-        masterSelectingToolGroup.setEnabled(True)
-        associatedSelectingToolGroup.setEnabled(True)
+        master_window, associated_window = self.get_master_windows()
+        associated_slider_group= associated_window.getSliderGroup()
+        master_slider_group = master_window.getSliderGroup()
+        master_slider_group.setEnabled(True)
+        associated_slider_group.setEnabled(True)
 
     def disable_slider_group(self):
         # NOTE résolution issue 1 freeze le changement de slider pendant saisie de géométrie
-        masterWindow = self.parent.getMasterWindow()
-        associatedWindow = masterWindow.associatedWindow
-        associatedSelectingToolGroup = associatedWindow.getSliderGroup()
-        masterSelectingToolGroup = masterWindow.getSliderGroup()
-        masterSelectingToolGroup.setEnabled(False)
-        associatedSelectingToolGroup.setEnabled(False)
+        master_window, associated_window = self.get_master_windows()
+        associated_slider_group = associated_window.getSliderGroup()
+        master_slider_group = master_window.getSliderGroup()
+        master_slider_group.setEnabled(False)
+        associated_slider_group.setEnabled(False)
 
     def startCapturing(self, e):
         """
