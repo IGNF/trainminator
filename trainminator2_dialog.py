@@ -202,21 +202,6 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         # layerTreeView_dock.stop()
         pass
     
-    def showCurrentClass(self, showCurrentClass:bool=False):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
-        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
-        
-        
-    def showCodes(self, showCodes:bool=False, wantedGroupName:str="LABELED_DATA"):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
-        layerTreeView_dock.showCodes(showCodes=showCodes, wantedGroupName=wantedGroupName)
-    
 
     def showContext(self, showContext:bool=False, keepGroup:str="CONTEXT"):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -317,6 +302,14 @@ class TraiNminaTor2Dialog_Differential(TraiNminaTor2Dialog_Base):
         layerTreeView_dock.stop(tntlayers_Manager=tntlayers_Manager)
         
         self.centralWidget().stop()
+
+    
+    def showCurrentClass(self, showCurrentClass:bool=False):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
    
         
     def currentNomenclatureChanged(self,
@@ -492,6 +485,16 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         self.associatedWindow.stop()
         self.centralWidget().stop()
+
+    def showCurrentClass(self, showCurrentClass:bool=False):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
         
     def setUpMenus(self):

@@ -43,7 +43,6 @@ from .TnT_WidgetsGroup import ( toolsGroup_Base,
                                 sliderGroup,
                                 startStopToolsGroup,
                                 selectingToolsGroup,
-                                attributSelectingToolsGroup,
                                 displayToolsGroup,
                                 displayLabelsGroup,
                                 mergeToolsGroup,
@@ -584,7 +583,6 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
                               mergeToolsGroup,
                               taskToolsGroup,
                               selectingToolsGroup,
-                              attributSelectingToolsGroup,
                               displayToolsGroup,
                               displayLabelsGroup
                              ]

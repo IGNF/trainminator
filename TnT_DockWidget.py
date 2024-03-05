@@ -185,14 +185,6 @@ class TnTLayerTree_DockWidget( TraiNminaTor2_DockWidget ):
         layerTreeWidget.showCurrentClass(showCurrentClass=showCurrentClass)
         
         
-    def showCodes(self, showCodes:bool=False, wantedGroupName:str="LABELED_DATA"):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeWidget = self.findChild(TnTLayerTreeWidget)
-        layerTreeWidget.showCodes(showCodes=showCodes, wantedGroupName=wantedGroupName)
-        
-        
     def showContext(self, showContext:bool=False, keepGroup:str="CONTEXT" ):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
