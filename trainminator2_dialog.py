@@ -32,7 +32,7 @@ from PyQt5.QtCore import( Qt, QEvent )
 from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import( QFileDialog, QMenuBar, QMainWindow,
-                             QTreeWidget)
+                             QTreeWidget, QLabel)
 
 from .TnT_WidgetsGroup import( menu_widget, 
                                TnTnomenclatureWidget,
@@ -402,6 +402,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
             self.associatedWindow = TraiNminaTor2Dialog_Base(self)
 
         self.centralWidget().standardMode()
+
+        labels_year1 = self.findChildren(QLabel, "label_year1_class")[0]
+        labels_year1.hide()
         # do not show it. the user decides if he wants to see it or not.
 
     def differentialMode(self):

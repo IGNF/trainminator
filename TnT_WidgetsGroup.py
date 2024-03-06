@@ -2880,16 +2880,18 @@ class TnTLayerTreeWidget(groupQWidgets):
 
         root = self.layerTreeRoot()     
         vintage = self.getVintage()
-        group = root.findGroup(f"LABELED_DATA_{vintage}")
+        if vintage:
+            fieldName = f"code_{vintage}"
+            group = root.findGroup(f"LABELED_DATA_{vintage}")
+        else:
+            fieldName = "code"
+            group = root.findGroup(f"LABELED_DATA")
+        
 
         nomenclatureWidget = self.getTnTnomenclatureWidget()
         
         key = nomenclatureWidget.getSelectedValues()[1]
         
-        if vintage:
-            fieldName = f"code_{vintage}"
-        else:
-            fieldName = "code"
         
         ruleKey = f"{fieldName}_{key}"
 
