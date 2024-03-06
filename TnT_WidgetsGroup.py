@@ -842,23 +842,27 @@ class displayLabelsGroup(groupQPushButton):
     def setupUi(self):
         layout = self.layout()
 
-        label_2016_class = QLabel(self)
-        label_2016_class.setText("Classe 2016 :")
-        label_2016_class.setObjectName("label_2016_class")
-        label_2016_class.setAccessibleName("label_2016_class")
-        label_2016_class.setAutoFillBackground(True)
-        label_2016_class.setEnabled(True)
+        label_year0_class = QLabel(self)
+        label_year0_class.setText("Classe :")
+        label_year0_class.setObjectName("label_year0_class")
+        label_year0_class.setAccessibleName("label_year0_class")
+        label_year0_class.setAutoFillBackground(True)
+        label_year0_class.setEnabled(True)
+        label_year0_class.setMinimumWidth(200)
+        label_year0_class.setMaximumWidth(200)
 
-        layout.addWidget(label_2016_class)
+        layout.addWidget(label_year0_class)
 
-        label_2019_class = QLabel(self)
-        label_2019_class.setText("Classe 2019 :")
-        label_2019_class.setObjectName("label_2019_class")
-        label_2019_class.setAccessibleName("label_2019_class")
-        label_2019_class.setAutoFillBackground(True)
-        label_2019_class.setEnabled(True)
+        label_year1_class = QLabel(self)
+        label_year1_class.setText("Classe :")
+        label_year1_class.setObjectName("label_year1_class")
+        label_year1_class.setAccessibleName("label_year1_class")
+        label_year1_class.setAutoFillBackground(True)
+        label_year1_class.setEnabled(True)
+        label_year1_class.setMinimumWidth(200)
+        label_year1_class.setMaximumWidth(200)
 
-        layout.addWidget(label_2019_class)
+        layout.addWidget(label_year1_class)
     
     def start(self):
         self.setEnabled(True)
