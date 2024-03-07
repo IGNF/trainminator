@@ -2073,6 +2073,8 @@ class TnTnomenclatureWidget( groupQWidgets ):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         item = self.getSelectedItems()
+        if item is None:
+            return None
         colorValue = item.background(0).color().value()
         codeValue = item.text(1)
         classValue =item.text(2)
@@ -2196,6 +2198,13 @@ class TnTnomenclatureWidget( groupQWidgets ):
         if item :
             dockWidgetParent = self.getDockWidgetParent()
             dockWidgetParent.itemSelectionChanged(item)
+            masterWindow = self.getMasterWindow()
+            showCurrent_pushButton = masterWindow.findChild(QPushButton, "show_Current")
+            if showCurrent_pushButton is not None:
+                showCurrentClass = showCurrent_pushButton.isChecked()
+                masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
+                if masterWindow.projectManager.isDifferential:
+                    masterWindow.associatedWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
 
     def lockGroupByType(self, groupsTypeList=None) :
@@ -2890,15 +2899,16 @@ class TnTLayerTreeWidget(groupQWidgets):
 
         nomenclatureWidget = self.getTnTnomenclatureWidget()
         
-        key = nomenclatureWidget.getSelectedValues()[1]
-        
-        
-        ruleKey = f"{fieldName}_{key}"
+        selectedValues = nomenclatureWidget.getSelectedValues()
+        if selectedValues is not None and group is not None:
+            key = selectedValues[1]
+            
+            ruleKey = f"{fieldName}_{key}"
 
-        if showCurrentClass:
-            self.activateDisplayingRule(group=group, ruleKey=ruleKey)
-        else:
-            self.activateDisplayingRule(group=group)
+            if showCurrentClass:
+                self.activateDisplayingRule(group=group, ruleKey=ruleKey)
+            else:
+                self.activateDisplayingRule(group=group)
             
 
     def showContext(self,
