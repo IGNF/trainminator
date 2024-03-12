@@ -44,6 +44,7 @@ from PyQt5.QtWidgets import (QApplication, QPushButton)
 from PyQt5.QtGui import QColor, QKeyEvent
 
 from .TnT_Features import TnTFeaturesManager
+from .TnT_MapCanvas import mapCanvas
 
 
 def lineno():
@@ -636,8 +637,16 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
+        mainWindow = self.parent.getMainWindow()
+        if mainWindow == self.parent.getMasterWindow():
+            associatedWindow = mainWindow.associatedWindow
+        else:
+            associatedWindow = self.parent.getMasterWindow()
+        associatedCanvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
         
         if e.type()==QEvent.MouseButtonPress:
+            self.canvas.setStyleSheet("border-width:5px; border-color:orange;")
+            associatedCanvas.setStyleSheet("border-width:5px; border-color:grey;")
             if e.button() == Qt.LeftButton :
                 if not self.getCapture() :
                     self.startCapturing(e)
