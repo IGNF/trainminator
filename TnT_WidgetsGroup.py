@@ -1495,7 +1495,13 @@ class infoSelectionGroup(groupQWidgets):
         layout = self.layout()
         self.layout().setSpacing(1)
 
-        self.setPairLabelValues("NOMENCLATURE", ["CurrentNomenclature"])
+        self.setPairLabelValues( "SELECTION",
+                                 ["CurrentColor",
+                                  "CurrentCode",
+                                  "CurrentClass"]
+                               )
+        
+
 
         spacerItem = QSpacerItem( 40,
                                   20,
@@ -1513,11 +1519,7 @@ class infoSelectionGroup(groupQWidgets):
                                   )
         layout.addItem(spacerItem)
 
-        self.setPairLabelValues( "SELECTION",
-                                 ["CurrentColor",
-                                  "CurrentCode",
-                                  "CurrentClass"]
-                               )
+        self.setPairLabelValues("NOMENCLATURE", ["CurrentNomenclature"])
 
     def setPairLabelValues( self,
                             textLabel="no text",
@@ -1570,6 +1572,7 @@ class infoSelectionGroup(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         label = self.findChild(QLabel, "labelValue_CurrentColor")
+        label.setMinimumWidth(80)
         label.setText("text")
         palette = QPalette()
         palette.setColor(QPalette.Window, value)
@@ -1584,7 +1587,8 @@ class infoSelectionGroup(groupQWidgets):
 
         label = self.findChild(QLabel, "labelValue_CurrentCode")
         label.setText(value)
-
+        label.setMinimumWidth(40)
+        label.setMaximumWidth(40)
 
     def setClassValue(self, value:str):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1592,6 +1596,8 @@ class infoSelectionGroup(groupQWidgets):
 
         label = self.findChild(QLabel, "labelValue_CurrentClass")
         label.setText(value)
+        label.setMinimumWidth(150)
+        label.setMaximumWidth(150)
 
 
     def setVisibilityVintage(self, visibility=False):

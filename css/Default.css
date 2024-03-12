@@ -99,8 +99,7 @@ QLabel[objectName="label_year1_class"] {
 QLabel[objectName="label_nomenclature"],
 QLabel[objectName="label_selection"],
 QLabel[objectName="label_vintage"],
-QLabel[objectName^="labelSeparator_"],
-QLabel[objectName^="label_opacity_"] {
+QLabel[objectName^="labelSeparator_"] {
     background-color: none;
     border: none;
     color: none
@@ -110,6 +109,10 @@ QLabel[objectName="labelValue_CurrentColor"] {
     background-color: none;
     color: none;
     border-radius: none;
+}
+
+QLabel[objectName="labelValue_CurrentVintage"] {
+    color:#1CC88A;
 }
 
 QGroupBox[objectName="infoSelectionGroup"],
