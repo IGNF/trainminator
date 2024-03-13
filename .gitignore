@@ -39,6 +39,7 @@ MANIFEST
 .idea
 .idea/*
 .idea*
+.idea/workspace.xml
 
 # Installer logs
 pip-log.txt

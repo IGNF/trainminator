@@ -294,7 +294,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
 
         if self.layer.hasSpatialIndex() != QgsFeatureSource.SpatialIndexPresent:
-            prov=self.layer.dataProvider()
+            prov =self.layer.dataProvider()
             prov.createSpatialIndex()
 
         if not self.selectionLayer :
@@ -322,7 +322,9 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         pt=self.toMapCoordinates(e.pos())
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         self.showSelected(self.selectionRubberBand, self.getPredicate())
-
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(False)
 
     def endCapturing(self):
         """
@@ -589,7 +591,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.selectionLayer=None
         self.setCapture(False)
 
-    
+
     def getLayers(self):
         """
             returns layers of the vintage
@@ -617,7 +619,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
+
         prov=self.layer.dataProvider()
 
         attrs = {}
@@ -661,6 +663,12 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             self.removeCurrentClass()
         self.resetAll()
         self.layer.reload()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(True)
+
+
+
 
 # END About Class ############################
 
@@ -801,9 +809,7 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         self.setCapture(False)
         self.dashRubberBand.reset(QgsWkbTypes.LineGeometry)
         self.unLockAtEndCapture()
-        self.enable_selecting_tool_group()
-        self.enable_slider_group()
-        self.enable_fill_pyramid()
+
 
 
 # End About CAPTURE   ############################
@@ -976,6 +982,9 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
             self.showSelected(self.selectionRubberBand, self.getPredicate())
         self.disable_selecting_tool_group()
         self.disable_slider_group()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(False)
 # End About CAPTURE   ############################
 
 

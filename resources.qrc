@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/plugins/trainminator2" >
-        <file>icon.png</file>
+        <file>icons/trainminator_32x32.png</file>
     </qresource>
 </RCC>

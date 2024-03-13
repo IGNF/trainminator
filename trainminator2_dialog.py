@@ -40,7 +40,8 @@ from .TnT_WidgetsGroup import( menu_widget,
                                TnTLayerTreeWidget,
                                sliderGroup,
                                mergeToolsGroup,
-                               selectingToolsGroup
+                               selectingToolsGroup,
+                               startStopToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -361,16 +362,18 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         self.initCentralWidget()
         self.setUpMenus()
-
         self.setUpLayerTreeView_dockWidget(QtCore.Qt.DockWidgetArea(1))
         self.setUpNomenclature_dockWidget(QtCore.Qt.DockWidgetArea(2))
 
     def initCentralWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
         centralWidget = TraiNminaTor2Widget_Master(parent=self)
         self.setCentralWidget(centralWidget)
+
+    def get_start_stop_group(self):
+        start_stop_group = self.findChild(startStopToolsGroup, name='startStopToolsGroup')
+        return start_stop_group
 
     def initLayerTreeView_dockWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
