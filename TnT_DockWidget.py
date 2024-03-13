@@ -105,7 +105,7 @@ class TraiNminaTor2_DockWidget( QDockWidget ):
 class TnTLayerTree_DockWidget( TraiNminaTor2_DockWidget ): 
     
     def __init__( self,
-                  title="TnTLayerTree_DockWidget",
+                  title="Couches",
                   parent=None,
                   objectName="TnTLayerTree_DockWidget"
                  ):
@@ -204,7 +204,7 @@ class TnTLayerTree_DockWidget( TraiNminaTor2_DockWidget ):
 class TnTLayerTree_DockWidget_Master( TnTLayerTree_DockWidget ): 
     
     def __init__( self,
-                  title="TnTLayerTree_DockWidget_Master",
+                  title="Couches",
                   parent=None,
                   objectName="TnTLayerTree_DockWidget_Master"
                  ):
@@ -255,7 +255,7 @@ class TnTLayerTree_DockWidget_Master( TnTLayerTree_DockWidget ):
     
 class TnTNomenclature_DockWidget( TraiNminaTor2_DockWidget ):
     def __init__( self,
-                  title="TnTNomenclature_DockWidget",
+                  title="Nomenclature",
                   parent=None,
                   objectName="TnTNomenclature_DockWidget"
                  ):
@@ -358,7 +358,7 @@ class TnTNomenclature_DockWidget( TraiNminaTor2_DockWidget ):
 
 class TnTNomenclature_DockWidget_Master( TnTNomenclature_DockWidget ):
     def __init__( self,
-                  title="nomenclature_dockWidget_Master",
+                  title="Nomenclature",
                   parent=None,
                   objectName="nomenclature_dockWidget_Master"
                 ):
