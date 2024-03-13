@@ -371,15 +371,18 @@ class startStopToolsGroup(groupQPushButton):
         masterWindow = self.getMasterWindow()
         
         master_displayLabels = masterWindow.findChild(displayLabelsGroup, "displayLabels_Group")
-        differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
+        if masterWindow.projectManager.isDifferential:
+            differ_displayLabels = masterWindow.associatedWindow.findChild(displayLabelsGroup, "displayLabels_Group")
 
         master_displayLabels.displayShortcut.setEnabled(True)
-        differ_displayLabels.displayShortcut.setEnabled(True)
+        if masterWindow.projectManager.isDifferential:
+            differ_displayLabels.displayShortcut.setEnabled(True)
         
         mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
         for canvas in mapCanvas_list:
             master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
-            differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
+            if masterWindow.projectManager.isDifferential:
+                differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -737,19 +740,8 @@ class displayToolsGroup(groupQPushButton):
                                       toolTip="Show only cuurent class.",
                                       keySequence=None
                                       )
-        button1.setEnabled(False)
+        button1.setEnabled(True)
         layout.addWidget(button1)
-
-        button2 = self.setQPushButton(QPushButton(self),
-                                      checkable=True,
-                                      text="Show Codes",
-                                      objectName="show_Codes",
-                                      accessibleName="show_Codes",
-                                      toolTip="Show segment code.",
-                                      keySequence=None
-                                      )
-        button2.setEnabled(False)
-        layout.addWidget(button2)
 
         button3 = self.setQPushButton(QPushButton(self),
                                       checkable=False,
@@ -768,9 +760,6 @@ class displayToolsGroup(groupQPushButton):
         showCurrent_pushButton = self.findChild(QPushButton, "show_Current")
         showCurrent_pushButton.clicked.connect(self.showCurrentClass)
 
-        showCodes_pushButton = self.findChild(QPushButton, "show_Codes")
-        showCodes_pushButton.clicked.connect(self.showCodes)
-
         showContext_pushButton = self.findChild(QPushButton, "show_Context")
         showContext_pushButton.pressed.connect(self.showContext)
         showContext_pushButton.released.connect(self.showContext)
@@ -787,25 +776,8 @@ class displayToolsGroup(groupQPushButton):
                               )
         showCurrentClass = sender.isChecked()
 
-        mainWindow = self.getMainWindow()
-        mainWindow.showCurrentClass(showCurrentClass=showCurrentClass)
-
-
-    def showCodes(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        pass
-
-        # sender = self.sender()
-        # self.toggleTextButton(sender,
-        #                       "Show Codes",
-        #                       "Hide Codes"
-        #                       )
-        # showCodes = sender.isChecked()
-
-        # mainWindow = self.getMainWindow()
-        # mainWindow.showCodes(showCodes=showCodes)
+        masterWindow = self.getMasterWindow()
+        masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
 
     def showContext(self):
@@ -815,9 +787,8 @@ class displayToolsGroup(groupQPushButton):
         sender = self.sender()
 
         mainWindow = self.getMainWindow()
-        qLabel = mainWindow.findChild(QLabel, "labelValue_CurrentVintage")
-        if qLabel:
-            vintage = qLabel.text()
+        vintage = mainWindow.getVintage()
+        if vintage:
             keepGroup = f"CONTEXT_{vintage}"
         else:
             keepGroup = "CONTEXT"
@@ -827,7 +798,12 @@ class displayToolsGroup(groupQPushButton):
         mainWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
         associatedWindow = mainWindow.associatedWindow
-        associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+        vintage = associatedWindow.getVintage()
+        if vintage:
+            keepGroup = f"CONTEXT_{vintage}"
+        else:
+            keepGroup = "CONTEXT"
+        associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -896,96 +872,6 @@ class displayLabelsGroup(groupQPushButton):
         self.setEnabled(False)
         self.displayShortcut.setEnabled(False)
 
-    
-class attributSelectingToolsGroup(groupQPushButton):
-    def __init__( self,
-                  parent = None,
-                  objectName = "attributSelectingToolsGroup",
-                  mutually_exclusif = True
-                 ):
-        super().__init__( parent = parent,
-                          objectName = objectName,
-                          mutually_exclusif = mutually_exclusif
-                         )
-        # self.setTitle("Filtering")
-        self.setTitle("attributSelectingToolsGroup")
-        self.setConnections()
-
-    def setupLayout(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layout=QVBoxLayout(self)
-        self.setLayout(layout)
-
-        self.layout().setContentsMargins(4, 2, 4, 2)
-        self.layout().setSpacing(4)
-
-    def setupUi(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
-        layout = self.layout()
-
-        button1 = self.setQPushButton(QPushButton(self),
-                                      checkable=True,
-                                      text="Only Unlabelled",
-                                      objectName="only_Unlabelled",
-                                      accessibleName="only_Unlabelled",
-                                      toolTip="",
-                                      keySequence=None
-                                      )
-        button1.setEnabled(False)
-        layout.addWidget(button1)
-
-        button2 = self.setQPushButton(QPushButton(self),
-                                      checkable=True,
-                                      text="All Entities",
-                                      objectName="all_Entities",
-                                      accessibleName="all_Entities",
-                                      toolTip="",
-                                      keySequence=None
-                                      )
-        button2.setEnabled(False)
-        layout.addWidget(button2)
-
-    def setConnections(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        only_Unlabelled_pushButton = self.findChild(
-            QPushButton, "only_Unlabelled"
-        )
-
-        only_Unlabelled_pushButton.clicked.connect(self.onlyUnlabelled)
-
-        all_Entities_pushButton = self.findChild(QPushButton, "all_Entities")
-        all_Entities_pushButton.clicked.connect(self.allEntities)
-
-    def onlyUnlabelled(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        pass
-
-    def allEntities(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        pass
-
-    def start(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        self.setEnabled(True)
-
-
-    def stop(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        self.setEnabled(False)
 
 class mergeToolsGroup(groupQPushButton):
 
@@ -1197,9 +1083,6 @@ class toolsGroup_Master(toolsGroup_Differential):
         selectingTools_Group = self.setupSelectingToolsGroup( parent=self )
         layout.addWidget(selectingTools_Group)
 
-        attributSelecting_Group = attributSelectingToolsGroup( parent=self )
-        layout.addWidget(attributSelecting_Group)
-
         displayTools_Group = displayToolsGroup( parent=self )
         layout.addWidget(displayTools_Group)
 
@@ -1221,7 +1104,6 @@ class toolsGroup_Master(toolsGroup_Differential):
 
         return [ taskToolsGroup,
                  selectingToolsGroup,
-                 attributSelectingToolsGroup,
                  displayToolsGroup,
                  displayLabelsGroup
                ]
@@ -1273,27 +1155,27 @@ class viewsManagerGroup(groupQPushButton):
         layout.addWidget(button1)
 
         button2 = self.setQPushButton( QPushButton(self),
-                                      checkable=True,
-                                      checked=True,
-                                      enabled=True,
-                                      text="Synchro Views",
-                                      objectName="synchro_Views",
-                                      accessibleName="synchro_Views",
-                                      toolTip="",
-                                      keySequence=None
+                                    checkable=True,
+                                    checked=True,
+                                    enabled=True,
+                                    text="Synchro Views",
+                                    objectName="synchro_Views",
+                                    accessibleName="synchro_Views",
+                                    toolTip="",
+                                    keySequence=None
                                     )
         layout.addWidget(button2)
 
         button3 = self.setQPushButton( QPushButton(self),
-				              checkable=True,
-                              checked=False,
-                              enabled=False,
-				              text="Synchro Levels",
-				              objectName="synchro_Levels",
-				              accessibleName="synchro_Levels",
-				              toolTip="",
-				              keySequence=None
-				              )
+                            checkable=True,
+                            checked=False,
+                            enabled=False,
+                            text="Synchro Levels",
+                            objectName="synchro_Levels",
+                            accessibleName="synchro_Levels",
+                            toolTip="",
+                            keySequence=None
+                            )
         layout.addWidget(button3)
 
     def setConnections(self):
@@ -1415,13 +1297,6 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         labelingMode_Button = self.findChild(QLabel, "labeling_Mode")
         labelingMode_Button.setText("Standard labeling mode")
         self.changeVisiblePushButton("add_View")
-        
-        synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
-        synchroViews_Button.setEnabled(True)
-
-        synchroLevels_Button = self.findChild(QPushButton, "synchro_Levels")
-        synchroLevels_Button.setEnabled(True)
-
 
     def differentialMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1856,7 +1731,10 @@ class sliderGroup(groupQWidgets):
             nomenclatureWidget = layerTreeWidget.getTnTnomenclatureWidget()
             associationTable = nomenclatureWidget.getAssociationTable()
             vintage = layerTreeWidget.getVintage()
-            fieldName=f"code_{vintage}"
+            if vintage:
+                fieldName=f"code_{vintage}"
+            else:
+                fieldName="code"
             if newIndex == len(layers_list)-1:
                 # Display yellow outline
                 renderer = layerTreeWidget.createFillSymbolLastLayer(
@@ -2195,6 +2073,8 @@ class TnTnomenclatureWidget( groupQWidgets ):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         item = self.getSelectedItems()
+        if item is None:
+            return None
         colorValue = item.background(0).color().value()
         codeValue = item.text(1)
         classValue =item.text(2)
@@ -2318,6 +2198,13 @@ class TnTnomenclatureWidget( groupQWidgets ):
         if item :
             dockWidgetParent = self.getDockWidgetParent()
             dockWidgetParent.itemSelectionChanged(item)
+            masterWindow = self.getMasterWindow()
+            showCurrent_pushButton = masterWindow.findChild(QPushButton, "show_Current")
+            if showCurrent_pushButton is not None:
+                showCurrentClass = showCurrent_pushButton.isChecked()
+                masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
+                if masterWindow.projectManager.isDifferential:
+                    masterWindow.associatedWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
 
     def lockGroupByType(self, groupsTypeList=None) :
@@ -2858,7 +2745,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         layerTreeGroup.setItemVisibilityChecked(False)
         
 
-    def activateDisplayingRule(self, group=None, rukeKey:str = None):
+    def activateDisplayingRule(self, group=None, ruleKey:str = None):
         """
             for each mapLayer in group,
             If rukeKey not None:
@@ -2870,18 +2757,19 @@ class TnTLayerTreeWidget(groupQWidgets):
         print(f"line:{lineno()},{self.__class__.__name__}->" +
               f"{inspect.currentframe().f_code.co_name}()")
 
-        activateAll = (lambda: False, lambda: True)[rukeKey == None]()
-        for layerTreeLayer in group.findLayers():
-            mapLayer = layerTreeLayer.layer()
-            rootRule = mapLayer.renderer().rootRule().children()[0]
 
-            for rule in rootRule.children():
-                rule.setActive(activateAll)
+        activateAll = (lambda: False, lambda: True)[ruleKey == None]()
+        listLayers=group.findLayers()
+        tlayer = listLayers[-1]
+        children  = tlayer.layer().renderer().rootRule().children()[0].children()
+        for rule in children:
+            rule.setActive(activateAll)
 
-            if rukeKey:
-                rule = rootRule.findRuleByKey(rukeKey)
+            if rule.ruleKey() == ruleKey:
                 rule.setActive(True)
 
+        for layerTreeLayer in group.findLayers():
+            mapLayer = layerTreeLayer.layer()
             mapLayer.triggerRepaint()
 
 
@@ -2934,8 +2822,14 @@ class TnTLayerTreeWidget(groupQWidgets):
                 otherVintage = vintage
 
         if otherVintage is not None:
-            currentFieldCode = "code_{}".format(currentVintage)
-            otherFieldCode = "code_{}".format(otherVintage)
+            if currentVintage:  
+                currentFieldCode = "code_{}".format(currentVintage)
+            else:
+                currentFieldCode = "code"
+            if otherVintage:
+                otherFieldCode = "code_{}".format(otherVintage)
+            else:
+                otherFieldCode = "code"
             symbol_lyr_line = QgsLinePatternFillSymbolLayer()
             symbol_lyr_line.setColor(QColor("red"))
             symbol_lyr_line.setLineWidth(0.5)
@@ -2995,34 +2889,26 @@ class TnTLayerTreeWidget(groupQWidgets):
 
         root = self.layerTreeRoot()     
         vintage = self.getVintage()
-        group = root.findGroup(f"LABELED_DATA_{vintage}")
-        
-        print(f"*********group={group}")
-        print(f"*********group.name()={group.name()}")
-
-        if showCurrentClass:
-            self.activateDisplayingRule(group=group, rukeKey="code_2019_10")
+        if vintage:
+            fieldName = f"code_{vintage}"
+            group = root.findGroup(f"LABELED_DATA_{vintage}")
         else:
-            self.activateDisplayingRule(group=group)
+            fieldName = "code"
+            group = root.findGroup(f"LABELED_DATA")
+        
 
+        nomenclatureWidget = self.getTnTnomenclatureWidget()
+        
+        selectedValues = nomenclatureWidget.getSelectedValues()
+        if selectedValues is not None and group is not None:
+            key = selectedValues[1]
+            
+            ruleKey = f"{fieldName}_{key}"
 
-    def showCodes(self, showCodes:bool = False):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        pass
-        
-        # root = self.layerTreeRoot()   
-        # vintage = self.getVintage()
-        # group = root.findGroup(f"LABELED_DATA_{vintage}")
-        
-        # print(f"*********group={group}")
-        # print(f"*********group.name()={group.name()}")
-        
-        # for layerTreeLayer in group.findLayers():
-        #     mapLayer = layerTreeLayer.layer()
-        #     mapLayer.setLabelsEnabled(showCodes)
-        #     mapLayer.triggerRepaint()
+            if showCurrentClass:
+                self.activateDisplayingRule(group=group, ruleKey=ruleKey)
+            else:
+                self.activateDisplayingRule(group=group)
             
 
     def showContext(self,
@@ -3107,7 +2993,10 @@ class TnTLayerTreeWidget(groupQWidgets):
             nodeName = node.name()
             
             if nodeName.startswith("LABELED_DATA"):
-                groupName = f"LABELED_DATA_{vintage}"
+                if vintage:
+                    groupName = f"LABELED_DATA_{vintage}"
+                else:
+                    groupName = "LABELED_DATA"
                 tLayer.setItemVisibilityChecked(False)
             else :
                 groupName = node.name()
@@ -3164,9 +3053,10 @@ class TnTLayerTreeWidget(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         vintage = self.getVintage()
-        oldName = "LABELED_DATA"
-        newName = f"{oldName}_{vintage}"  
-        self.renameGroup(oldName, newName)
+        if vintage:
+            oldName = "LABELED_DATA"
+            newName = f"{oldName}_{vintage}"  
+            self.renameGroup(oldName, newName)
         
         root = self.layerTreeRoot()
         
@@ -3186,11 +3076,12 @@ class TnTLayerTreeWidget(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
  
         vintage = self.getVintage()
-        newName = "LABELED_DATA"
-        oldName = f"{newName}_{vintage}"
+        if vintage: 
+            newName = "LABELED_DATA"
+            oldName = f"{newName}_{vintage}"
 
-        self.removeAllChildren(oldName)
-        self.renameGroup(oldName, newName)
+            self.removeAllChildren(oldName)
+            self.renameGroup(oldName, newName)
          
         root = self.layerTreeRoot()
         
@@ -3264,31 +3155,47 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
         vintage = self.getVintage()
 
         oldName = "LABELED_DATA"
-        newName = f"{oldName}_{vintage}"
-        self.renameGroup(oldName, newName)
+        if vintage:
+            newName = f"{oldName}_{vintage}"
+            self.renameGroup(oldName, newName)
+        else:
+            newName = oldName
 
         root = self.layerTreeRoot()
         group = root.findGroup(newName)
 
+        if vintage:
+            fieldName = f"code_{vintage}"
+        else:
+            fieldName = "code"
+
         self.createFillSymbolFromList(
             listLayers=group.findLayers(),
             associationTable=associationTable,
-            fieldName=f"code_{vintage}"
+            fieldName=fieldName
         )
 
+        
         masterWindow = self.getMasterWindow()
-        layerTreeWidget = masterWindow.associatedWindow.findChild(
-            TnTLayerTreeWidget
-        )
-        vintage = masterWindow.associatedWindow.getVintage()
-        newName = f"{oldName}_{vintage}"
-        root = layerTreeWidget.layerTreeRoot()
-        group = root.findGroup(newName)
-        layerTreeWidget.createFillSymbolFromList(
-            listLayers=group.findLayers(),
-            associationTable=associationTable,
-            fieldName=f"code_{vintage}"
-        )
+        if masterWindow.projectManager.isDifferential:
+            layerTreeWidget = masterWindow.associatedWindow.findChild(
+                TnTLayerTreeWidget
+            )
+            vintage = masterWindow.associatedWindow.getVintage()
+            if vintage:
+                fieldName = f"code_{vintage}"
+                newName = f"{oldName}_{vintage}"
+            else:
+                fieldName = "code"
+                newName = oldName
+            root = layerTreeWidget.layerTreeRoot()
+            group = root.findGroup(newName)
+            
+            layerTreeWidget.createFillSymbolFromList(
+                listLayers=group.findLayers(),
+                associationTable=associationTable,
+                fieldName=fieldName
+            )
 
          
         group = root.findGroup("FINAL_DATA")
