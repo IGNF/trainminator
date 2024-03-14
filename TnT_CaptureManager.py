@@ -368,7 +368,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         master_window = self.parent.getMasterWindow()
         start_stop_group = master_window.get_start_stop_group()
         start_stop_group.setEnabled(True)
-        
+
 
 
     def lockAtStartCapture(self):

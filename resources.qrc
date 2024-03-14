@@ -2,4 +2,7 @@
     <qresource prefix="/plugins/trainminator2" >
         <file>icons/trainminator_32x32.png</file>
     </qresource>
+    <qresource prefix="/plugins/trainminator2" >
+        <file>icon.png</file>
+    </qresource>
 </RCC>
