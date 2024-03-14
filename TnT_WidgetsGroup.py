@@ -297,6 +297,7 @@ class groupQPushButton(groupQWidgets):
         pushButton.setText(t)
 
 class startStopToolsGroup(groupQPushButton):
+
     def __init__( self,
                   parent = None,
                   objectName = "startStopToolsGroup",
@@ -308,6 +309,7 @@ class startStopToolsGroup(groupQPushButton):
                         )
         self.setTitle("startStopToolsGroup")
         self.setConnections()
+        self.on_start_mode: bool = False
 
     def setupLayout(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -345,12 +347,15 @@ class startStopToolsGroup(groupQPushButton):
         start_pushButton.clicked.connect(self.activateSynchroLevels)
         start_pushButton.clicked.connect(self.activateDisplayLabelsShortcut)
 
+
+
     def startAndStop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         sender = self.sender()
         t = sender.text()
+        self.on_start_mode = t == "Start"
         self.switchTextButton(sender, "Start", "Stop")
         self.changeBackGroundColor(sender, "#1CC88A", '#E74A3B')
         # Execute appropriate method.

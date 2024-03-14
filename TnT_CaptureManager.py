@@ -700,17 +700,21 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        if e.type()==QEvent.MouseButtonPress:
-            if e.button() == Qt.LeftButton :
-                if not self.getCapture() :
-                    self.startCapturing(e)
-                else :
-                    self.capturing(e)
-            elif e.button() == Qt.RightButton and self.getCapture():
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        on_start_mode: bool = start_stop_group.on_start_mode
+        if on_start_mode:
+            if e.type() == QEvent.MouseButtonPress:
+                if e.button() == Qt.LeftButton :
+                    if not self.getCapture() :
 
-                self.endCapturing()
-                self.processUserInput()
+                        self.startCapturing(e)
+                    else :
+                        self.capturing(e)
+                elif e.button() == Qt.RightButton and self.getCapture():
+
+                    self.endCapturing()
+                    self.processUserInput()
                 
 
 # END About Event ##########################
@@ -853,18 +857,21 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        if e.type()==QEvent.MouseButtonPress:
-            if e.button() == Qt.LeftButton:
-                if not self.getCapture():
-                    self.startCapturing(e)
-                else :
-                    if self.pendingCapture:
-                        self.pendingCapture=False
-                    self.capturing(e)
-            elif (e.button() == Qt.RightButton and self.getCapture()) :
-                self.endCapturing()
-                self.processUserInput()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        on_start_mode: bool = start_stop_group.on_start_mode
+        if on_start_mode:
+            if e.type() == QEvent.MouseButtonPress:
+                if e.button() == Qt.LeftButton:
+                    if not self.getCapture():
+                        self.startCapturing(e)
+                    else :
+                        if self.pendingCapture:
+                            self.pendingCapture=False
+                        self.capturing(e)
+                elif (e.button() == Qt.RightButton and self.getCapture()) :
+                    self.endCapturing()
+                    self.processUserInput()
 
     def canvasMoveEvent(self, e):
         """
