@@ -31,7 +31,7 @@ from PyQt5.QtCore import ( Qt, QEvent )
 
 from PyQt5.QtWidgets import ( QSizePolicy, QVBoxLayout, QHBoxLayout,
                               QGroupBox, QMainWindow, QTreeWidgetItem,
-                              QTreeWidget
+                              QTreeWidget, QPushButton
                             )
 
 from .TnT_WidgetsGroup import ( toolsGroup_Base,
@@ -43,7 +43,6 @@ from .TnT_WidgetsGroup import ( toolsGroup_Base,
                                 sliderGroup,
                                 startStopToolsGroup,
                                 selectingToolsGroup,
-                                attributSelectingToolsGroup,
                                 displayToolsGroup,
                                 displayLabelsGroup,
                                 mergeToolsGroup,
@@ -339,6 +338,15 @@ class TraiNminaTor2Widget_Base(QGroupBox):
         # here unlock viewsManagerGroup
         self.unlockGroupByType(groupsTypeList=[viewsManagerGroup])
 
+        group = self.findChild(viewsManagerGroup)
+
+        layout = group.layout()
+        synchro_Views_pushButton = group.findChild(QPushButton, "synchro_Views")
+        layout.removeWidget(synchro_Views_pushButton)
+
+        synchro_Levels_pushButton = group.findChild(QPushButton, "synchro_Levels")
+        layout.removeWidget(synchro_Levels_pushButton)
+
 
     def differentialMode(self):
         """ Update viewsManagerGroup by calling differentialMode method """
@@ -369,10 +377,20 @@ class TraiNminaTor2Widget_Base(QGroupBox):
             masterWindow = self.getMasterWindow()
 
             showContext = evt_Type==QEvent.KeyPress
-            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+            vintage = masterWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            masterWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
             associatedWindow = masterWindow.associatedWindow
-            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            vintage = associatedWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
         return super().event(event)
 
 
@@ -497,6 +515,12 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         super().standardMode()
+        mainWindow = self.getMainWindow()
+        layerTreeWidget = mainWindow.getTnTLayerTreeWidget()
+        root = layerTreeWidget.layerTreeRoot()
+
+        canvas = self.findChild(QgsMapCanvas, "mapCanvas")
+        self.bridge = QgsLayerTreeMapCanvasBridge(root, canvas)
 
     def differentialMode(self):
         """ Update viewsManagerGroup by calling differentialMode method """
@@ -553,7 +577,6 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
                               mergeToolsGroup,
                               taskToolsGroup,
                               selectingToolsGroup,
-                              attributSelectingToolsGroup,
                               displayToolsGroup,
                               displayLabelsGroup
                              ]
@@ -603,6 +626,12 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
         super().standardMode()
         viewsManager_Group = self.findChild(viewsManagerGroup_Master)
         viewsManager_Group.standardMode()
+
+
+        mergeTools_Group = self.findChild(mergeToolsGroup)
+        mergeTools_Group.setEnabled(True)
+
+
 
     def differentialMode(self):
         """ Update viewsManagerGroup by calling differentialMode method """

@@ -732,19 +732,33 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl
@@ -912,19 +926,33 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl
@@ -1013,19 +1041,33 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl
