@@ -502,15 +502,12 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
                                           itemSelected = itemSelected
                                                 )
 
-
     def start_SliderGroup(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         slider_Group = self.findChild(sliderGroup)
         slider_Group.start()
-
-
 
     def standardMode(self):
         """ nothing to do pass """
@@ -525,16 +522,13 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
         canvas = self.findChild(QgsMapCanvas, "mapCanvas")
         self.bridge = QgsLayerTreeMapCanvasBridge(root, canvas)
 
-
     def differentialMode(self):
         """ Update viewsManagerGroup by calling differentialMode method """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         super().differentialMode()
-        
         self.initLayerTreeMapCanvasBridge()
-
         infoSelection_Group = self.findChild(infoSelectionGroup)
         infoSelection_Group.differentialMode()
 
@@ -629,28 +623,27 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
         """ Update viewsManagerGroup by calling standardMode method """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
         super().standardMode()
         viewsManager_Group = self.findChild(viewsManagerGroup_Master)
         viewsManager_Group.standardMode()
 
+
         mergeTools_Group = self.findChild(mergeToolsGroup)
         mergeTools_Group.setEnabled(True)
+
 
 
     def differentialMode(self):
         """ Update viewsManagerGroup by calling differentialMode method """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
         super().differentialMode()
         viewsManager_Group = self.findChild(viewsManagerGroup_Master)
         viewsManager_Group.differentialMode()
         
         #temporaire pour test
-        mergeTools_Group = self.findChild(mergeToolsGroup)
-        mergeTools_Group.setEnabled(True)
-
+        # mergeTools_Group = self.findChild(mergeToolsGroup)
+        # mergeTools_Group.setEnabled(True)
 
     def currentNomenclatureChanged( self,
                                     nomenclatureName:str=None,

@@ -8,8 +8,6 @@ import csv
 import inspect
 import sys
 
-
-
 from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsProject, QgsLayerTreeNode, QgsLayerTreeLayer,
                        QgsWkbTypes, QgsRuleBasedRenderer, QgsVectorFileWriter,
@@ -19,15 +17,12 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsLinePatternFillSymbolLayer,
                        QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
-
 from qgis.gui import ( QgsLayerTreeView )
-
 from PyQt5 import QtCore
 from PyQt5.QtCore    import( Qt, QVariant )
 from PyQt5.QtGui     import( QColor, QBrush, QPalette,
                              QFont, QKeySequence
                            )
-
 from PyQt5.QtWidgets import( QSizePolicy, QPushButton, QComboBox,
                              QVBoxLayout, QHBoxLayout, QSpacerItem, QGroupBox,
                              QDockWidget, QMenu, QMenuBar,
@@ -43,8 +38,9 @@ from .TnT_CaptureManager import ( TnTmapToolEmitPoint,
                                 )
 from .TnT_ProjectManager import( TnTLayersManager )
 from .TnT_SavingLabeledData import ( TnTSavingLabeledData )
+from .debug.logger import get_logger
 
-
+logger = get_logger()
 def lineno():
     """Returns the current line number in Python source code"""
     return inspect.currentframe().f_back.f_lineno
@@ -301,6 +297,7 @@ class groupQPushButton(groupQWidgets):
         pushButton.setText(t)
 
 class startStopToolsGroup(groupQPushButton):
+
     def __init__( self,
                   parent = None,
                   objectName = "startStopToolsGroup",
@@ -312,6 +309,7 @@ class startStopToolsGroup(groupQPushButton):
                         )
         self.setTitle("startStopToolsGroup")
         self.setConnections()
+        self.on_start_mode: bool = False
 
     def setupLayout(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -349,12 +347,15 @@ class startStopToolsGroup(groupQPushButton):
         start_pushButton.clicked.connect(self.activateSynchroLevels)
         start_pushButton.clicked.connect(self.activateDisplayLabelsShortcut)
 
+
+
     def startAndStop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         sender = self.sender()
         t = sender.text()
+        self.on_start_mode = t == "Start"
         self.switchTextButton(sender, "Start", "Stop")
         self.changeBackGroundColor(sender, "#1CC88A", '#E74A3B')
         # Execute appropriate method.
@@ -381,6 +382,7 @@ class startStopToolsGroup(groupQPushButton):
         mapCanvas_list = masterWindow.findChildren(mapCanvas, "mapCanvas")
         for canvas in mapCanvas_list:
             master_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
+
             if masterWindow.projectManager.isDifferential:
                 differ_displayLabels.displayShortcut.activated.connect(canvas.setDisplayMode)
 
@@ -393,7 +395,15 @@ class startStopToolsGroup(groupQPushButton):
 
         masterWindow=self.getMasterWindow()
         masterWindow.start()
-
+        # NOTE ICI on gère issue 1, garde fou nomenclature après start
+        nomenclatureWidget = masterWindow.findChild(
+            TnTnomenclatureWidget_Master,
+            "TnTnomenclatureWidget_Master"
+        )
+        nomenclatureWidget.disable_nomenclature()
+        menu_nomenclature_widget = masterWindow.findChild(menu_widget,
+                                                          "menu_Nomenclature")
+        menu_nomenclature_widget.disable_menu()
     def stop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -403,6 +413,16 @@ class startStopToolsGroup(groupQPushButton):
 
         masterWindow=self.getMasterWindow()
         masterWindow.stop()
+        # NOTE ICI on gère issue 1, garde fou nomenclature après stop, accpeter le changement
+        # NOTE de nomenclature
+        nomenclatureWidget = masterWindow.findChild(
+            TnTnomenclatureWidget_Master,
+            "TnTnomenclatureWidget_Master"
+        )
+        nomenclatureWidget.enable_nomenclature()
+        menu_nomenclature_widget = masterWindow.findChild(menu_widget,
+                                                          "menu_Nomenclature")
+        menu_nomenclature_widget.enable_menu()
 
 
 class taskToolsGroup(groupQPushButton):
@@ -700,7 +720,11 @@ class selectingToolsGroup(groupQPushButton):
 
         self.setEnabled(False)
 
+    def enable_tool(self):
+        self.setEnabled(True)
 
+    def disable_tool(self):
+        self.setEnabled(False)
 class displayToolsGroup(groupQPushButton):
     def __init__( self,
                   parent = None,
@@ -1074,7 +1098,8 @@ class toolsGroup_Master(toolsGroup_Differential):
         startStopTools_Group = startStopToolsGroup( parent=self )
         layout.addWidget( startStopTools_Group )
 
-        mergeTools_Group = mergeToolsGroup( parent=self )
+        mergeTools_Group = mergeToolsGroup( parent=self)
+        # mergeTools_Group.setEnabled(False)
         layout.addWidget( mergeTools_Group )
 
         taskTools_Group = taskToolsGroup ( parent=self )
@@ -1107,6 +1132,7 @@ class toolsGroup_Master(toolsGroup_Differential):
                  displayToolsGroup,
                  displayLabelsGroup
                ]
+
 
     def getListGroupWhenCurrentNomenclatureChanged(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1878,6 +1904,11 @@ class menu_widget(QMenu):
         super().setObjectName(objectName)
         super().setAccessibleName(objectName)
 
+    def disable_menu(self):
+        self.setEnabled(False)
+
+    def enable_menu(self):
+        self.setEnabled(True)
 
     def createAction( self,
                       text = "no_text",
@@ -2356,14 +2387,36 @@ class TnTnomenclatureWidget_Master(TnTnomenclatureWidget):
             key = (os.path.basename (nomenclatureFile ).split('.'))[0]
             value = nomenclatureFile
             self.nomenclaturesDict[key]=value
-
+        # NOTE code pour activer le widget nomenclature et le remplir
         comboBox = self.getComboBox()
         comboBox.setEnabled(True)
         comboBox.clear()
+        
 
         keys = self.nomenclaturesDict.keys()
         for key in keys :
             comboBox.addItem(key)
+
+    def disable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+
+    def enable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(True)
+
+    def clear_and_disable_nomenclature(self):
+        # NOTE code pour désactiver le widget nomenclature and supprimer le contenu
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+        comboBox.clear()
+    def clear_nomenclature(self):
+        # NOTE code pour supprimer le contenu de nomenclature
+        comboBox = self.getComboBox()
+        comboBox.setEnabled(False)
+        comboBox.clear()
 
     def detectDelimiter(self, header):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -3053,11 +3106,12 @@ class TnTLayerTreeWidget(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         vintage = self.getVintage()
+
         if vintage:
             oldName = "LABELED_DATA"
             newName = f"{oldName}_{vintage}"  
             self.renameGroup(oldName, newName)
-        
+
         root = self.layerTreeRoot()
         
         group = root.findGroup("FINAL_DATA")
@@ -3151,6 +3205,7 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
             associationTable=associationTable,
             nomenclatureName=nomenclatureName
         )
+        logger(f'hierarchical layers loaded! in {str(self)}')
 
         vintage = self.getVintage()
 

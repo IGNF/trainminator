@@ -239,6 +239,7 @@ class mapCanvas(QgsMapCanvas):
                     
         masterWindow = self.getMasterWindow()
         labels_year0 = masterWindow.findChildren(QLabel, "label_year0_class")
+
         year0 = masterWindow.getVintage()
         if year0 is not None:
             att0 = "class_" + str(year0)
@@ -249,13 +250,16 @@ class mapCanvas(QgsMapCanvas):
             labels_year1 = masterWindow.findChildren(QLabel, "label_year1_class")
             year1 = masterWindow.associatedWindow.getVintage()
             att1 = "class_" + str(year1)
+
         
         if id != -1:
             for label in labels_year0:
                 label.setText(f"Classe {year0} : {feats[id].attribute(att0)}")
+
             if masterWindow.projectManager.isDifferential:
                 for label in labels_year1:
                     label.setText(f"Classe {year1} : {feats[id].attribute(att1)}")
+
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+

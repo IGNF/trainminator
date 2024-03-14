@@ -39,7 +39,9 @@ from .TnT_WidgetsGroup import( menu_widget,
                                TnTnomenclatureWidget_Master,
                                TnTLayerTreeWidget,
                                sliderGroup,
-                               selectingToolsGroup
+                               mergeToolsGroup,
+                               selectingToolsGroup,
+                               startStopToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -47,12 +49,13 @@ from .TnT_DockWidget import( TnTLayerTree_DockWidget,
                              TnTNomenclature_DockWidget,
                              TnTNomenclature_DockWidget_Master
                            )
-
 from .trainminator2_Widget import( TraiNminaTor2Widget_Base,
                                    TraiNminaTor2Widget_Differential,
                                    TraiNminaTor2Widget_Master
                                  )
 from .TnT_ProjectManager import TnTProjectManager
+from .debug.logger import get_logger
+logger = get_logger()
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -180,7 +183,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         self.centralWidget().start_SliderGroup()
-        
+
             
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -352,16 +355,18 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         self.initCentralWidget()
         self.setUpMenus()
-
         self.setUpLayerTreeView_dockWidget(QtCore.Qt.DockWidgetArea(1))
         self.setUpNomenclature_dockWidget(QtCore.Qt.DockWidgetArea(2))
 
     def initCentralWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
         centralWidget = TraiNminaTor2Widget_Master(parent=self)
         self.setCentralWidget(centralWidget)
+
+    def get_start_stop_group(self):
+        start_stop_group = self.findChild(startStopToolsGroup, name='startStopToolsGroup')
+        return start_stop_group
 
     def initLayerTreeView_dockWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -384,7 +389,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
     
         projectManager = self.projectManager
         return projectManager.getVintages()
-        
+
+    def get_merge_tools_group(self):
+        return self.findChild(mergeToolsGroup, "mergeToolsGroup")
 
     def standardMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -570,10 +577,14 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         #Keep only files (reject filterName)
         nomenclatureFiles = nomenclatures[0]
         if nomenclatureFiles:
+            """
+            On fixe la nomenclature ici
+            """
             nomenclatureWidget = self.findChild(
                 TnTnomenclatureWidget_Master,
                 "TnTnomenclatureWidget_Master"
             )
+            logger('set nomenclature')
             nomenclatureWidget.setNomenclaturesDict(nomenclatureFiles)
             #user chose nomenclature, unlock group
 

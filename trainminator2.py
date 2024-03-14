@@ -25,6 +25,11 @@ from qgis.PyQt.QtCore import ( QSettings, QTranslator,
                                 QFile, QCoreApplication)
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsMessageLog, Qgis
+
+from .debug.logger import get_logger
+
+logger = get_logger()
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -164,7 +169,7 @@ class TraiNminaTor2:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/trainminator2/icon.png'
+        icon_path = ':/plugins/trainminator2/icons/trainminator_32x32.png'
         self.add_action(
             icon_path,
             text=self.tr(u'TraiNminaTor2'),
@@ -190,6 +195,7 @@ class TraiNminaTor2:
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
+            logger("first run", Qgis.Info)
             self.first_start = False
             #self.dlg = TraiNminaTor2Dialog_Base()
             # self.dlg = TraiNminaTor2Dialog_Differential()
@@ -197,11 +203,11 @@ class TraiNminaTor2:
             #self.dlg = TraiNminaTor2Dialog_Base()
             #self.dlg = TraiNminaTor2Dialog_Differential()
             self.dlg = TraiNminaTor2Dialog_Master()
-            
-            
+
             
             #self.dlg = MainWindow_two()
-           
+        else:
+            logger("first run", Qgis.Info)
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop

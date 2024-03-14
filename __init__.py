@@ -22,7 +22,8 @@
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
-
+__name__ = 'TraiNminaTor2'
+NAME = __name__
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
