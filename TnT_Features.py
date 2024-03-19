@@ -1,8 +1,10 @@
+from copy import deepcopy
 
 from qgis.core  import (QgsVectorLayer, QgsSpatialIndex, QgsFeature, NULL, QgsVectorDataProvider, Qgis)
 from typing import List
 from qgis.PyQt.QtWidgets import QProgressBar
 from qgis.utils import iface
+
 
 class TnTFeatures:
 
@@ -24,23 +26,6 @@ class TnTFeatures:
     def changeAttrs(self, attrs):
         for k in attrs.keys():
             self.attrs[k]=attrs[k]
-
-
-    def changeAttribute_save(self, attrs):
-        # Change attributes of the feature
-        key = list(attrs.keys())[1]
-        attributesBeforeChange = self.getAttributes()[key]
-        prov = self.layer.dataProvider()
-        caps = prov.capabilities()
-        if caps and QgsVectorDataProvider.ChangeAttributeValues:
-            prov.changeAttributeValues({self.feature.id() : attrs})
-            self.changeAttrs(attrs)
-        
-        # Iterate on children
-        for child in self.children:
-            childAttributes = child.getAttributes()
-            if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange:
-                child.changeAttribute(attrs)
 
 
     def changeAttribute(self, attrs):
@@ -198,17 +183,18 @@ class TnTFeaturesLevel:
         return None
 
 
-        
+
 
 
 
 class TnTFeaturesManager:
+    """Factory Class to manage Hierarchical Vector Layers with class `TnTFeatureLayers`
 
+    """
     def __init__(self, layers) -> None:
         self.layers = layers
         self.tntFeaturesLevel:List[TnTFeaturesLevel] = []
         self.createTnTFeaturesLevel()
-        
     def createTnTFeaturesLevel(self):
         progressMessageBar = iface.messageBar().createMessage("Loading...")
         progress = QProgressBar()

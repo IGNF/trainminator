@@ -239,18 +239,27 @@ class mapCanvas(QgsMapCanvas):
                     
         masterWindow = self.getMasterWindow()
         labels_year0 = masterWindow.findChildren(QLabel, "label_year0_class")
-        labels_year1 = masterWindow.findChildren(QLabel, "label_year1_class")
 
         year0 = masterWindow.getVintage()
-        year1 = masterWindow.associatedWindow.getVintage()
-        att0 = "class_" + str(year0)
-        att1 = "class_" + str(year1)
+        if year0 is not None:
+            att0 = "class_" + str(year0)
+        else:
+            att0 = "class"
+
+        if masterWindow.projectManager.isDifferential:
+            labels_year1 = masterWindow.findChildren(QLabel, "label_year1_class")
+            year1 = masterWindow.associatedWindow.getVintage()
+            att1 = "class_" + str(year1)
+
         
         if id != -1:
             for label in labels_year0:
                 label.setText(f"Classe {year0} : {feats[id].attribute(att0)}")
-            for label in labels_year1:
-                label.setText(f"Classe {year1} : {feats[id].attribute(att1)}")
+
+            if masterWindow.projectManager.isDifferential:
+                for label in labels_year1:
+                    label.setText(f"Classe {year1} : {feats[id].attribute(att1)}")
+
 
     def leaveEvent(self, event:QEvent):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -280,10 +289,20 @@ class mapCanvas(QgsMapCanvas):
             masterWindow = self.getMasterWindow()
 
             showContext = evt_Type==QEvent.KeyPress
-            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+            vintage = masterWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            masterWindow.showContext(showContext=showContext, keepGroup=keepGroup)
 
             associatedWindow = masterWindow.associatedWindow
-            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            vintage = associatedWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
             return True
     
         return QgsMapCanvas.event(self, event)

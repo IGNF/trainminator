@@ -90,12 +90,23 @@ class TraiNminaTor2_DockWidget( QDockWidget ):
         if (evt_Type==QEvent.KeyRelease or evt_Type==QEvent.ShortcutOverride) and event.key()==Qt.Key_W:
             masterWindow = self.getMasterWindow()
 
-
             showContext = evt_Type!=QEvent.KeyRelease
-            masterWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{masterWindow.getVintage()}")
+            vintage = masterWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            masterWindow.showContext(showContext=showContext, keepGroup=keepGroup)
+
+            
 
             associatedWindow = masterWindow.associatedWindow
-            associatedWindow.showContext(showContext=showContext, keepGroup=f"CONTEXT_{associatedWindow.getVintage()}")
+            vintage = associatedWindow.getVintage()
+            if vintage:
+                keepGroup = f"CONTEXT_{vintage}"
+            else:
+                keepGroup = "CONTEXT"
+            associatedWindow.showContext(showContext=showContext, keepGroup=keepGroup)
             return True
         
         return super().event(event)
@@ -172,14 +183,6 @@ class TnTLayerTree_DockWidget( TraiNminaTor2_DockWidget ):
         
         layerTreeWidget = self.findChild(TnTLayerTreeWidget)
         layerTreeWidget.showCurrentClass(showCurrentClass=showCurrentClass)
-        
-        
-    def showCodes(self, showCodes:bool=False, wantedGroupName:str="LABELED_DATA"):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeWidget = self.findChild(TnTLayerTreeWidget)
-        layerTreeWidget.showCodes(showCodes=showCodes, wantedGroupName=wantedGroupName)
         
         
     def showContext(self, showContext:bool=False, keepGroup:str="CONTEXT" ):

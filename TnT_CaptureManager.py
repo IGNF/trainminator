@@ -33,6 +33,7 @@ TODO: gestion d'une stack undo/redo
 import inspect
 
 from qgis import processing
+from qgis._core import QgsMapLayer
 from qgis.core import (QgsProject, QgsVectorLayer, QgsFeature,
                        QgsGeometry, QgsProcessingFeatureSourceDefinition,
                        QgsVectorDataProvider, QgsWkbTypes,QgsFeatureSource)
@@ -45,7 +46,6 @@ from PyQt5.QtGui import QColor, QKeyEvent
 
 from .TnT_Features import TnTFeaturesManager
 from .TnT_MapCanvas import mapCanvas
-
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -240,6 +240,43 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         self.setCapture(not self.getCapture())
 
+    def get_master_windows(self):
+        master_window = self.parent.getMasterWindow()
+        associated_window = master_window.associatedWindow
+        return master_window, associated_window
+
+    def disable_selecting_tool_group(self):
+        # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie
+
+        master_window, associated_window = self.get_master_windows()
+        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup.disable_tool()
+        associatedSelectingToolGroup.disable_tool()
+
+    def enable_selecting_tool_group(self):
+        # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie, réactivation
+        master_window, associated_window = self.get_master_windows()
+        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
+        masterSelectingToolGroup.enable_tool()
+        associatedSelectingToolGroup.enable_tool()
+
+    def enable_slider_group(self):
+        # NOTE résolution issue 1 freeze le changement de slider pendant changement de géométrie, réactivation
+        master_window, associated_window = self.get_master_windows()
+        associated_slider_group= associated_window.getSliderGroup()
+        master_slider_group = master_window.getSliderGroup()
+        master_slider_group.setEnabled(True)
+        associated_slider_group.setEnabled(True)
+
+    def disable_slider_group(self):
+        # NOTE résolution issue 1 freeze le changement de slider pendant saisie de géométrie
+        master_window, associated_window = self.get_master_windows()
+        associated_slider_group = associated_window.getSliderGroup()
+        master_slider_group = master_window.getSliderGroup()
+        master_slider_group.setEnabled(False)
+        associated_slider_group.setEnabled(False)
 
     def startCapturing(self, e):
         """
@@ -258,7 +295,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
 
         if self.layer.hasSpatialIndex() != QgsFeatureSource.SpatialIndexPresent:
-            prov=self.layer.dataProvider()
+            prov =self.layer.dataProvider()
             prov.createSpatialIndex()
 
         if not self.selectionLayer :
@@ -266,8 +303,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
 
         self.setCapture(True)
+        # NOTE: résolution issue freeze sélection géométrie
+        self.disable_selecting_tool_group()
+        self.disable_slider_group()
         self.capturing(e)
-
+    def enable_fill_pyramid(self):
+        main_window = self.parent.getMasterWindow()
+        merge_tool_group = main_window.get_merge_tools_group()
+        merge_tool_group.setEnabled(True)
 
     def capturing(self, e):
         """
@@ -280,7 +323,9 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         pt=self.toMapCoordinates(e.pos())
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         self.showSelected(self.selectionRubberBand, self.getPredicate())
-
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(False)
 
     def endCapturing(self):
         """
@@ -297,6 +342,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         masterWindow = self.parent.getMasterWindow()
         associatedWindow = masterWindow.associatedWindow
         masterSelectingToolGroup = masterWindow.getSelectingToolGroupWidget()
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
 
         if masterSelectingToolGroup == parentSelectingToolGroup:
             associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
@@ -304,18 +350,27 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         else:
             masterCanvas = masterWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
             masterCanvas.refresh()
-        
-
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
+        self.enable_fill_pyramid()
     def abortCapturing(self):
         """
             returns none:
         """
        # print(f"line:{lineno()},{self.__class__.__name__}->"+
        #       f"{inspect.currentframe().f_code.co_name}()")
-       
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+
         self.resetAll()
         self.layer.reload()
         self.unLockAtEndCapture()
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(True)
+
+
 
     def lockAtStartCapture(self):
         """
@@ -333,7 +388,9 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+        self.enable_selecting_tool_group()
+        self.enable_slider_group()
         #self.comm.unLockAssociatedButton.emit()
 
  # END About CAPTURE ############################
@@ -476,7 +533,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             attrs[key]=None
 
         masterWindow = self.parent.getMasterWindow()
-        tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
+        tntFeaturesManager: TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
         tntFeaturesLevel = tntFeaturesManager.getTnTFeaturesLevel(self.layer)
 
         parents = []
@@ -539,7 +596,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.selectionLayer=None
         self.setCapture(False)
 
-    
+
     def getLayers(self):
         """
             returns layers of the vintage
@@ -567,7 +624,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
+
         prov=self.layer.dataProvider()
 
         attrs = {}
@@ -611,6 +668,12 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             self.removeCurrentClass()
         self.resetAll()
         self.layer.reload()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(True)
+
+
+
 
 # END About Class ############################
 
@@ -627,6 +690,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             self.unStack()
         elif e.key()==Qt.Key_Escape:
             self.abortCapturing()
+
         else :
             pass
 
@@ -644,19 +708,24 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             associatedWindow = self.parent.getMasterWindow()
         associatedCanvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
         
-        if e.type()==QEvent.MouseButtonPress:
-            self.canvas.setStyleSheet("border-width:5px; border-color:orange;")
-            associatedCanvas.setStyleSheet("border-width:5px; border-color:grey;")
-            if e.button() == Qt.LeftButton :
-                if not self.getCapture() :
-                    self.startCapturing(e)
-                else :
-                    self.capturing(e)
-            elif e.button() == Qt.RightButton and self.getCapture():
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        on_start_mode: bool = start_stop_group.on_start_mode
+        
+        if on_start_mode:
+            if e.type() == QEvent.MouseButtonPress:
+                self.canvas.setStyleSheet("border-width:5px; border-color:orange;")
+                associatedCanvas.setStyleSheet("border-width:5px; border-color:grey;")
+                if e.button() == Qt.LeftButton :
+                    if not self.getCapture() :
 
-                self.endCapturing()
-                self.processUserInput()
-                
+                        self.startCapturing(e)
+                    else :
+                        self.capturing(e)
+                elif e.button() == Qt.RightButton and self.getCapture():
+
+                    self.endCapturing()
+                    self.processUserInput()              
 
 # END About Event ##########################
 
@@ -673,19 +742,33 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl
@@ -754,10 +837,12 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         """
       # print(f"line:{lineno()},{self.__class__.__name__}->"+
       #       f"{inspect.currentframe().f_code.co_name}()")
-      
+        # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
+
         self.setCapture(False)
         self.dashRubberBand.reset(QgsWkbTypes.LineGeometry)
         self.unLockAtEndCapture()
+
 
 
 # End About CAPTURE   ############################
@@ -796,18 +881,21 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         """
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        if e.type()==QEvent.MouseButtonPress:
-            if e.button() == Qt.LeftButton:
-                if not self.getCapture():
-                    self.startCapturing(e)
-                else :
-                    if self.pendingCapture:
-                        self.pendingCapture=False
-                    self.capturing(e)
-            elif (e.button() == Qt.RightButton and self.getCapture()) :
-                self.endCapturing()
-                self.processUserInput()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        on_start_mode: bool = start_stop_group.on_start_mode
+        if on_start_mode:
+            if e.type() == QEvent.MouseButtonPress:
+                if e.button() == Qt.LeftButton:
+                    if not self.getCapture():
+                        self.startCapturing(e)
+                    else :
+                        if self.pendingCapture:
+                            self.pendingCapture=False
+                        self.capturing(e)
+                elif (e.button() == Qt.RightButton and self.getCapture()) :
+                    self.endCapturing()
+                    self.processUserInput()
 
     def canvasMoveEvent(self, e):
         """
@@ -848,19 +936,33 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl
@@ -928,7 +1030,11 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
         self.addPoint2RubberBand(self.getListRubberBand(), pt)
         if self.rbPoint.numberOfVertices()>2:
             self.showSelected(self.selectionRubberBand, self.getPredicate())
-
+        self.disable_selecting_tool_group()
+        self.disable_slider_group()
+        master_window = self.parent.getMasterWindow()
+        start_stop_group = master_window.get_start_stop_group()
+        start_stop_group.setEnabled(False)
 # End About CAPTURE   ############################
 
 
@@ -945,19 +1051,33 @@ class TnTmapToolEmitPolygon(TnTmapToolEmitPline):
         
         masterWindow = self.parent.getMasterWindow()
         vintage = masterWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
         layerTreeWidget = masterWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
 
         associatedWindow = masterWindow.associatedWindow
         vintage = associatedWindow.getVintage()
+
+        if vintage:
+            groupName = f"LABELED_DATA_{vintage}"
+        else:
+            groupName = "LABELED_DATA"
+
         layerTreeWidget = associatedWindow.getTnTLayerTreeWidget()
         root = layerTreeWidget.layerTreeRoot()
     
         for g in root.children():
-            if g.name() == f"LABELED_DATA_{vintage}":
+
+            if g.name() == groupName:
+
                 g.setItemVisibilityChecked(True)
         
         return vl

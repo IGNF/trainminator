@@ -7,6 +7,7 @@ Created on Wed Jun 21 17:19:09 2023
 import os
 import inspect
 import re
+from copy import deepcopy
 
 from qgis.utils import iface
 from qgis.core  import (QgsProject, QgsVectorLayer, QgsLayerTreeLayer,
@@ -339,7 +340,8 @@ class TnTLayersManager():
         self.parent = parent
         self.isDifferential = parent.isDifferential
         self.vintages = parent.getVintages()
-
+        self._layers_created: bool = False
+        self._cached_layers = None
         self.dictCodeRuleKey = {}
 
         self.styleSheet_segmentedData = { "color":"",
@@ -505,7 +507,7 @@ class TnTLayersManager():
 
         group_Name = "LABELED_DATA"
         AbsolutePath_DataLabeled = f"{self.absolutePath}/{group_Name}/{nomenclatureName.upper()}"
-    
+
         labeled_Group = self.layerTreeRoot.findGroup(group_Name)
 
         segmented_Group = self.layerTreeRoot.findGroup("SEGMENTED_DATA")
@@ -517,7 +519,7 @@ class TnTLayersManager():
 
         index = 1
         # progress.setValue(0)
-        layers = []        
+        layers = []
         for dataSegmented in listDataSegmented:
 
             filedata_name = os.path.split(
@@ -542,8 +544,8 @@ class TnTLayersManager():
                 vlayer_DataLabeled =self.createDataLabeled(
                                       fullPathName=FullPathName_DataLabeled,
                                       layer_Source=dataSegmented)
-                                     
-              
+
+
             if vlayer_DataLabeled:
 
                 QgsProject.instance().addMapLayer(vlayer_DataLabeled, False)
@@ -563,6 +565,7 @@ class TnTLayersManager():
                 index += 1
 
         self.tntFeaturesManager = TnTFeaturesManager(layers)
+        # self._layers_created = True
 
         # progress.setLabelText("Loading data Done.")
         # progress.setValue(progress.maximum())

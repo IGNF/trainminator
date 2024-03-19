@@ -194,8 +194,11 @@ class TnTSavingLabeledData:
         # get most segmented layer
         masterMostSegmentedLayer = self.getMostSegmentedLayer()
 
-        # Check that each feature labelised in a vintage is labelised in the other vintage
-        error = self.checkCompletion(masterMostSegmentedLayer)
+        if self.masterWindow.projectManager.isDifferential:
+            # Check that each feature labelised in a vintage is labelised in the other vintage
+            error = self.checkCompletion(masterMostSegmentedLayer)
+        else:
+            error = False
         
         # get nomenclature name : final layer will be saved in "FINAL_DATA/[nomenclature_name]"
         nomenclatureWidget = self.masterWindow.getTnTnomenclatureWidget()

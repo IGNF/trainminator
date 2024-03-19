@@ -32,14 +32,16 @@ from PyQt5.QtCore import( Qt, QEvent )
 from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import( QFileDialog, QMenuBar, QMainWindow,
-                             QTreeWidget)
+                             QTreeWidget, QLabel)
 
 from .TnT_WidgetsGroup import( menu_widget, 
                                TnTnomenclatureWidget,
                                TnTnomenclatureWidget_Master,
                                TnTLayerTreeWidget,
                                sliderGroup,
-                               selectingToolsGroup
+                               mergeToolsGroup,
+                               selectingToolsGroup,
+                               startStopToolsGroup
                              )
 
 from .TnT_DockWidget import( TnTLayerTree_DockWidget,
@@ -47,12 +49,13 @@ from .TnT_DockWidget import( TnTLayerTree_DockWidget,
                              TnTNomenclature_DockWidget,
                              TnTNomenclature_DockWidget_Master
                            )
-
 from .trainminator2_Widget import( TraiNminaTor2Widget_Base,
                                    TraiNminaTor2Widget_Differential,
                                    TraiNminaTor2Widget_Master
                                  )
 from .TnT_ProjectManager import TnTProjectManager
+from .debug.logger import get_logger
+logger = get_logger()
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -180,7 +183,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         self.centralWidget().start_SliderGroup()
-        
+
             
     def start(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -201,21 +204,6 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         # layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
         # layerTreeView_dock.stop()
         pass
-    
-    def showCurrentClass(self, showCurrentClass:bool=False):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
-        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
-        
-        
-    def showCodes(self, showCodes:bool=False, wantedGroupName:str="LABELED_DATA"):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
-        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
-        layerTreeView_dock.showCodes(showCodes=showCodes, wantedGroupName=wantedGroupName)
     
 
     def showContext(self, showContext:bool=False, keepGroup:str="CONTEXT"):
@@ -317,6 +305,14 @@ class TraiNminaTor2Dialog_Differential(TraiNminaTor2Dialog_Base):
         layerTreeView_dock.stop(tntlayers_Manager=tntlayers_Manager)
         
         self.centralWidget().stop()
+
+    
+    def showCurrentClass(self, showCurrentClass:bool=False):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
    
         
     def currentNomenclatureChanged(self,
@@ -359,16 +355,18 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         self.initCentralWidget()
         self.setUpMenus()
-
         self.setUpLayerTreeView_dockWidget(QtCore.Qt.DockWidgetArea(1))
         self.setUpNomenclature_dockWidget(QtCore.Qt.DockWidgetArea(2))
 
     def initCentralWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
-
         centralWidget = TraiNminaTor2Widget_Master(parent=self)
         self.setCentralWidget(centralWidget)
+
+    def get_start_stop_group(self):
+        start_stop_group = self.findChild(startStopToolsGroup, name='startStopToolsGroup')
+        return start_stop_group
 
     def initLayerTreeView_dockWidget(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -391,7 +389,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
     
         projectManager = self.projectManager
         return projectManager.getVintages()
-        
+
+    def get_merge_tools_group(self):
+        return self.findChild(mergeToolsGroup, "mergeToolsGroup")
 
     def standardMode(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -409,6 +409,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
             self.associatedWindow = TraiNminaTor2Dialog_Base(self)
 
         self.centralWidget().standardMode()
+
+        labels_year1 = self.findChildren(QLabel, "label_year1_class")[0]
+        labels_year1.hide()
         # do not show it. the user decides if he wants to see it or not.
 
     def differentialMode(self):
@@ -456,10 +459,12 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         self.centralWidget().currentNomenclatureChanged(
             nomenclatureName=nomenclatureName
         )
-        self.associatedWindow.currentNomenclatureChanged(
-            nomenclatureName=nomenclatureName,
-            treeWidgetSrc=treeWidgetSrc
-        )
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.currentNomenclatureChanged(
+                nomenclatureName=nomenclatureName,
+                treeWidgetSrc=treeWidgetSrc
+            )
         
         
     def start(self):
@@ -475,7 +480,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         self.centralWidget().start()
         
         self.start_SliderGroup()
-        self.associatedWindow.start_SliderGroup()
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.start_SliderGroup()
         
     
     def stop(self):
@@ -488,6 +495,16 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         self.associatedWindow.stop()
         self.centralWidget().stop()
+
+    def showCurrentClass(self, showCurrentClass:bool=False):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
+
+        if self.projectManager.isDifferential:
+            self.associatedWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
         
     def setUpMenus(self):
@@ -560,10 +577,14 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         #Keep only files (reject filterName)
         nomenclatureFiles = nomenclatures[0]
         if nomenclatureFiles:
+            """
+            On fixe la nomenclature ici
+            """
             nomenclatureWidget = self.findChild(
                 TnTnomenclatureWidget_Master,
                 "TnTnomenclatureWidget_Master"
             )
+            logger('set nomenclature')
             nomenclatureWidget.setNomenclaturesDict(nomenclatureFiles)
             #user chose nomenclature, unlock group
 
