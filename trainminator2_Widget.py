@@ -406,7 +406,7 @@ class TraiNminaTor2Widget_Differential(TraiNminaTor2Widget_Base):
                           objectName = objectName
                          )
 
-        self.setTitle("TraiNminaTor2Widget_Differential")
+        self.setTitle("TrainMinator")
 
      # def setUpViewsManagerGroup(self):
      #     "Already implement in mother class."
@@ -562,7 +562,7 @@ class TraiNminaTor2Widget_Master(TraiNminaTor2Widget_Differential):
         super().__init__( parent = parent,
                           objectName = objectName
                          )
-        self.setTitle("TraiNminaTor2Widget_Master")
+        self.setTitle("TrainMinator")
 
     # def setUpViewsManagerGroup(self):
     #     "Already implement in mother class."

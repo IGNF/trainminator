@@ -307,7 +307,7 @@ class startStopToolsGroup(groupQPushButton):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                         )
-        self.setTitle("startStopToolsGroup")
+        self.setTitle("")
         self.setConnections()
         self.on_start_mode: bool = False
 
@@ -436,7 +436,7 @@ class taskToolsGroup(groupQPushButton):
                           mutually_exclusif = mutually_exclusif
                         )
        
-        self.setTitle("taskToolsGroup")
+        self.setTitle("Type d'annotation")
         self.setConnections()
 
 
@@ -537,8 +537,7 @@ class selectingToolsGroup(groupQPushButton):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                         )
-        # self.setTitle("Selecting")
-        self.setTitle("selectingToolsGroup")
+        self.setTitle("Outils de sélection")
         self.setConnections()
 
     def setupLayout(self):
@@ -735,8 +734,7 @@ class displayToolsGroup(groupQPushButton):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                         )
-        # self.setTitle("Display")
-        self.setTitle("displayToolsGroup")
+        self.setTitle("Affichage informations")
 
         self.setConnections()
 
@@ -852,7 +850,7 @@ class displayLabelsGroup(groupQPushButton):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle("displayLabels_Group")
+        self.setTitle("Labels sous le curseur")
         self.displayShortcut = QShortcut(QKeySequence(Qt.Key_I),self)
         self.displayShortcut.setEnabled(False)
 
@@ -895,7 +893,7 @@ class displayLabelsGroup(groupQPushButton):
     def stop(self):
         self.setEnabled(False)
         self.displayShortcut.setEnabled(False)
-
+ 
 
 class mergeToolsGroup(groupQPushButton):
 
@@ -908,8 +906,7 @@ class mergeToolsGroup(groupQPushButton):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                          )
-        # self.setTitle("Merging")
-        self.setTitle("mergeToolsGroup")
+        self.setTitle("")
 
         self.setConnections()
         self.mergingLabeledData = None
@@ -973,7 +970,7 @@ class toolsGroup_Base(groupQWidgets):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle("toolsGroup_Base")
+        self.setTitle("Outils d'annotation")
 
 
     def setupLayout(self):
@@ -1040,7 +1037,7 @@ class toolsGroup_Differential(toolsGroup_Base):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle("toolsGroup_Differential")
+        self.setTitle("Outils d'annotation")
 
 
     def setupUi(self):
@@ -1089,7 +1086,7 @@ class toolsGroup_Master(toolsGroup_Differential):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle("toolsGroup_Master")
+        self.setTitle("Outils d'annotation")
 
     def setupUi(self):
 
@@ -1152,7 +1149,7 @@ class viewsManagerGroup(groupQPushButton):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                         )
-        self.setTitle("viewsManagerGroup")
+        self.setTitle("Outils de visualisation")
         self.setConnections()
 
     def setupUi(self):
@@ -1282,7 +1279,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
                           objectName = objectName,
                           mutually_exclusif = mutually_exclusif
                          )
-        self.setTitle("viewsManagerGroup_Master")
+        self.setTitle("Outils de visualisation")
         self.setConnections()
 
     def setupUi(self):
@@ -1293,7 +1290,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         layout = self.layout()
 
         label = QLabel(self)
-        label.setText("Standard labeling mode")
+        label.setText("Annotation mono date")
         label.setObjectName("labeling_Mode")
         label.setAccessibleName("labeling_Mode")
         layout.addWidget(label)
@@ -1321,7 +1318,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         labelingMode_Button = self.findChild(QLabel, "labeling_Mode")
-        labelingMode_Button.setText("Standard labeling mode")
+        labelingMode_Button.setText("Annotation mono date")
         self.changeVisiblePushButton("add_View")
 
     def differentialMode(self):
@@ -1329,7 +1326,7 @@ class viewsManagerGroup_Master(viewsManagerGroup):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         labelingMode_Button = self.findChild(QLabel, "labeling_Mode")
-        labelingMode_Button.setText("Differential labeling mode.")
+        labelingMode_Button.setText("Annotation bi dates")
         self.changeVisiblePushButton("add_View")
         
         synchroViews_Button = self.findChild(QPushButton, "synchro_Views")
@@ -1387,7 +1384,7 @@ class infoSelectionGroup(groupQWidgets):
         super().__init__( parent=parent,
                           objectName=objectName
                         )
-        self.setTitle("infoSelectionGroup")
+        self.setTitle("")
 
     def setupUi(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1396,7 +1393,13 @@ class infoSelectionGroup(groupQWidgets):
         layout = self.layout()
         self.layout().setSpacing(1)
 
-        self.setPairLabelValues("NOMENCLATURE", ["CurrentNomenclature"])
+        self.setPairLabelValues( "SELECTION",
+                                 ["CurrentColor",
+                                  "CurrentCode",
+                                  "CurrentClass"]
+                               )
+        
+
 
         spacerItem = QSpacerItem( 40,
                                   20,
@@ -1414,11 +1417,7 @@ class infoSelectionGroup(groupQWidgets):
                                   )
         layout.addItem(spacerItem)
 
-        self.setPairLabelValues( "SELECTION",
-                                 ["CurrentColor",
-                                  "CurrentCode",
-                                  "CurrentClass"]
-                               )
+        self.setPairLabelValues("NOMENCLATURE", ["CurrentNomenclature"])
 
     def setPairLabelValues( self,
                             textLabel="no text",
@@ -1471,6 +1470,7 @@ class infoSelectionGroup(groupQWidgets):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         label = self.findChild(QLabel, "labelValue_CurrentColor")
+        label.setMinimumWidth(80)
         label.setText("text")
         palette = QPalette()
         palette.setColor(QPalette.Window, value)
@@ -1485,7 +1485,8 @@ class infoSelectionGroup(groupQWidgets):
 
         label = self.findChild(QLabel, "labelValue_CurrentCode")
         label.setText(value)
-
+        label.setMinimumWidth(40)
+        label.setMaximumWidth(40)
 
     def setClassValue(self, value:str):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -1493,6 +1494,8 @@ class infoSelectionGroup(groupQWidgets):
 
         label = self.findChild(QLabel, "labelValue_CurrentClass")
         label.setText(value)
+        label.setMinimumWidth(150)
+        label.setMaximumWidth(150)
 
 
     def setVisibilityVintage(self, visibility=False):
@@ -1569,7 +1572,7 @@ class sliderGroup(groupQWidgets):
         super().__init__( parent=parent,
                           objectName=objectName,
                         )
-        self.setTitle("sliderGroup")
+        self.setTitle("")
 
         self.synchroMode = False
         self.setConnections()
@@ -1941,6 +1944,8 @@ class TnTnomenclatureWidget( groupQWidgets ):
                           objectName = objectName,
                         )
 
+        self.setTitle("")
+
         self.defaultHeader = []
         self.setDefaultHeader()
         
@@ -2293,6 +2298,9 @@ class TnTnomenclatureWidget_Master(TnTnomenclatureWidget):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
+        
+        self.setTitle("")
+
         self.nomenclaturesDict = {}
         # self.associationTable = {}
 
@@ -2625,7 +2633,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         super().__init__( parent = parent,
                           objectName = objectName
                         )
-        self.setTitle(self.objectName())
+        self.setTitle("")
 
         self.root = None
         self.model = None
@@ -3168,6 +3176,7 @@ class TnTLayerTreeWidget_Master(TnTLayerTreeWidget):
         super().__init__( parent= parent,
                           objectName = objectName
                         )
+        self.setTitle("")
 
     def setLayerTreeRoot(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
