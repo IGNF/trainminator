@@ -22,10 +22,10 @@
  ***************************************************************************/
 """
 from qgis.PyQt.QtCore import ( QSettings, QTranslator, 
-                                QFile, QCoreApplication)
+                                QCoreApplication)
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsMessageLog, Qgis
+from qgis.core import Qgis
 
 from .debug.logger import get_logger
 
@@ -35,9 +35,7 @@ logger = get_logger()
 from .resources import *
 # Import the code for the dialog
 
-from .trainminator2_dialog import( TraiNminaTor2Dialog_Base,
-                                    TraiNminaTor2Dialog_Differential,
-                                    TraiNminaTor2Dialog_Master )
+from .trainminator2_dialog import(TraiNminaTor2Dialog_Master )
 
 import os.path
 
@@ -194,26 +192,17 @@ class TraiNminaTor2:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
+
+        if not self.first_start:
+            self.dlg = None
+            self.first_start = True
+
         if self.first_start == True:
             logger("first run", Qgis.Info)
             self.first_start = False
-            #self.dlg = TraiNminaTor2Dialog_Base()
-            # self.dlg = TraiNminaTor2Dialog_Differential()
-             
-            #self.dlg = TraiNminaTor2Dialog_Base()
-            #self.dlg = TraiNminaTor2Dialog_Differential()
             self.dlg = TraiNminaTor2Dialog_Master()
 
-            
-            #self.dlg = MainWindow_two()
         else:
             logger("first run", Qgis.Info)
         # show the dialog
         self.dlg.show()
-        # Run the dialog event loop
-        #result = self.dlg.exec_()
-        # See if OK was pressed
-        # if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            # pass
