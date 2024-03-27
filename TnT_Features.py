@@ -30,7 +30,10 @@ class TnTFeatures:
 
     def changeAttribute(self, attrs):
         # Change attributes of the feature
-        key = list(attrs.keys())[1]
+        if self.layer.name()=="patches":
+            key = list(attrs.keys())[0]
+        else:
+            key = list(attrs.keys())[1]
         attributesBeforeChange = self.getAttributes()[key]
 
 
@@ -84,7 +87,10 @@ class TnTFeatures:
             self.changeAttrs(attrs)
         
         # Iterate on children
-        key = list(attrs.keys())[1]
+        if self.layer.name()=="patches":
+            key = list(attrs.keys())[0]
+        else:
+            key = list(attrs.keys())[1]
         for child in self.children:
             childAttributes = child.getAttributes()
             if str(childAttributes[key]) == classId:
@@ -195,6 +201,7 @@ class TnTFeaturesManager:
         self.layers = layers
         self.tntFeaturesLevel:List[TnTFeaturesLevel] = []
         self.createTnTFeaturesLevel()
+        
     def createTnTFeaturesLevel(self):
         progressMessageBar = iface.messageBar().createMessage("Loading...")
         progress = QProgressBar()
@@ -208,7 +215,7 @@ class TnTFeaturesManager:
             compte += 1
             progress.setValue(compte)
 
-        for i in range(1, len(self.tntFeaturesLevel)):
+        for i in range(2, len(self.tntFeaturesLevel)): # children for patches layer are not computed
             tntFeaturesLevel_i = self.tntFeaturesLevel[i]
             tntFeaturesLevel_i1 = self.tntFeaturesLevel[i-1]
             tntFeaturesLevel_i1.searchChildren(tntFeaturesLevel_i)

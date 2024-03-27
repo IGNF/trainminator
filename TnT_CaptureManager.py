@@ -501,7 +501,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
 
     def getAttributeValues( self,
                             provider=None,
-                            attributs:dict=None
+                            attributs:dict=None,
+                            remove=False
                           ):
         """
             returns none:
@@ -513,7 +514,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         
         for key in fieldsAndValues.keys():
             index = provider.fieldNameIndex(key)
-            attributs[index]=fieldsAndValues[key]
+            if index != -1:
+                attributs[index]=fieldsAndValues[key]
+        if len(attributs.keys()) == 0:#patches layer
+            index = provider.fieldNameIndex("done")
+            if remove:
+                attributs[index]=0
+            else:
+                attributs[index]=1
         return attributs
 
 
@@ -527,7 +535,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         prov=self.layer.dataProvider()
 
         attrs = {}
-        attrs = self.getAttributeValues(provider=prov, attributs=attrs)
+        attrs = self.getAttributeValues(provider=prov, attributs=attrs, remove=True)
 
         for key in attrs.keys():
             attrs[key]=None
@@ -558,13 +566,17 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         prov=self.layer.dataProvider()
 
         attrs = {}
-        attrs = self.getAttributeValues(provider=prov, attributs=attrs)
+        attrs = self.getAttributeValues(provider=prov, attributs=attrs, remove=True)
 
-        key = list(attrs.keys())[1]
+        if len(attrs.keys()) == 1:
+            key = list(attrs.keys())[0]
+            for k in attrs.keys():
+                attrs[k]=None
+        else:
+            key = list(attrs.keys())[1]
         codeValue = attrs[key]
 
-        for k in attrs.keys():
-            attrs[k]=None
+        
 
         masterWindow = self.parent.getMasterWindow()
         tntFeaturesManager:TnTFeaturesManager = masterWindow.projectManager.tnTProjectObject.tntFeaturesManager
@@ -573,7 +585,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
-            if str(tntFeature.getAttributes()[key])==codeValue:
+            if str(tntFeature.getAttributes()[key])==codeValue or self.layer.name()=="patches":
                 tntFeature.removeCurrentClass(attrs, codeValue)
                 if tntFeature.parent is not None:
                     parents.append(tntFeature.parent)

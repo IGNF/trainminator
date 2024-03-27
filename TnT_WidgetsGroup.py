@@ -2658,6 +2658,12 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "width_border":"0.20",
                                       "style":"no"
                                       }
+        
+        self.styleSheet_patches = { "color":"",
+                                      "outline_color":"red",
+                                      "width_border":"0.20",
+                                      "style":"no"
+                                      }
 
         self.styleSheet_transparent = { "color":"",
                                       "style":"no",
@@ -2834,6 +2840,36 @@ class TnTLayerTreeWidget(groupQWidgets):
             mapLayer.triggerRepaint()
 
 
+    def createFillSymbolPatchesLayers(self):
+        """
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        symbol = QgsFillSymbol.createSimple(self.styleSheet_transparent)
+        renderer = QgsRuleBasedRenderer(symbol)
+        rootrule = renderer.rootRule().children()[0]
+        
+        
+        expression = "done=1"
+        ruleKey = "done=1"
+        self.styleSheet_patches["outline_color"] = "green"
+        sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
+        sym_n.setOpacity(0.60)
+        rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
+        rule_n.setRuleKey(ruleKey)
+        rootrule.appendChild(rule_n)
+
+        expression = "done IS Null"
+        ruleKey = "done IS Null"
+        self.styleSheet_patches["outline_color"] = "red"
+        sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
+        sym_n.setOpacity(0.60)
+        rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
+        rule_n.setRuleKey(ruleKey)
+        rootrule.appendChild(rule_n)
+        return renderer
+    
     def createFillSymbolLessSegmentedLayers(self):
         """
         """
@@ -2918,7 +2954,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        for i in range(len(listLayers)-1):
+        for i in range(1, len(listLayers)-1):
             
             tlayer = listLayers[i]
             renderer = self.createFillSymbolLessSegmentedLayers()
@@ -2929,6 +2965,10 @@ class TnTLayerTreeWidget(groupQWidgets):
             fieldName=fieldName
         )
         tlayer = listLayers[-1]
+        tlayer.layer().setRenderer(renderer)
+
+        renderer = self.createFillSymbolPatchesLayers()
+        tlayer = listLayers[0]
         tlayer.layer().setRenderer(renderer)
     
     

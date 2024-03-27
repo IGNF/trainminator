@@ -453,19 +453,22 @@ class TnTLayersManager():
         # print(f"creation fullPathName={fullPathName}")
         # print(f"creation data_name={data_name}")
 
-        if self.isDifferential:
-            attributs = {f"color_{self.vintages[0]}": QVariant.Int,
-                         f"code_{self.vintages[0]}": QVariant.Int,
-                         f"class_{self.vintages[0]}": QVariant.String,
-                         f"color_{self.vintages[1]}": QVariant.Int,
-                         f"code_{self.vintages[1]}": QVariant.Int,
-                         f"class_{self.vintages[1]}": QVariant.String,
-                         }
+        if data_name == "patches":
+            attributs = {"done":QVariant.Int}
         else:
-            attributs = {"color": QVariant.Int,
-                         "code": QVariant.Int,
-                         "class": QVariant.String
-                         }
+            if self.isDifferential:
+                attributs = {f"color_{self.vintages[0]}": QVariant.Int,
+                            f"code_{self.vintages[0]}": QVariant.Int,
+                            f"class_{self.vintages[0]}": QVariant.String,
+                            f"color_{self.vintages[1]}": QVariant.Int,
+                            f"code_{self.vintages[1]}": QVariant.Int,
+                            f"class_{self.vintages[1]}": QVariant.String,
+                            }
+            else:
+                attributs = {"color": QVariant.Int,
+                            "code": QVariant.Int,
+                            "class": QVariant.String
+                            }
 
         self.createAttributs(vlayer=vlayer_DataLabeled,
                               attributs=attributs
