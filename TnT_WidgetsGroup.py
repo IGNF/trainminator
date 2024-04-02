@@ -2821,17 +2821,18 @@ class TnTLayerTreeWidget(groupQWidgets):
 
         activateAll = (lambda: False, lambda: True)[ruleKey == None]()
         listLayers=group.findLayers()
-        tlayer = listLayers[-1]
-        children  = tlayer.layer().renderer().rootRule().children()[0].children()
-        for rule in children:
-            rule.setActive(activateAll)
+        if len(listLayers) > 0:
+            tlayer = listLayers[-1]
+            children  = tlayer.layer().renderer().rootRule().children()[0].children()
+            for rule in children:
+                rule.setActive(activateAll)
 
-            if rule.ruleKey() == ruleKey:
-                rule.setActive(True)
+                if rule.ruleKey() == ruleKey:
+                    rule.setActive(True)
 
-        for layerTreeLayer in group.findLayers():
-            mapLayer = layerTreeLayer.layer()
-            mapLayer.triggerRepaint()
+            for layerTreeLayer in group.findLayers():
+                mapLayer = layerTreeLayer.layer()
+                mapLayer.triggerRepaint()
 
 
     def createFillSymbolLessSegmentedLayers(self):

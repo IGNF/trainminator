@@ -30,6 +30,7 @@ from qgis.PyQt.QtCore import( QFile )
 
 from PyQt5.QtCore import( Qt, QEvent )
 from PyQt5 import QtCore
+from PyQt5 import QtGui
 
 from PyQt5.QtWidgets import( QFileDialog, QMenuBar, QMainWindow,
                              QTreeWidget, QLabel)
@@ -333,6 +334,9 @@ class TraiNminaTor2Dialog_Differential(TraiNminaTor2Dialog_Base):
         self.centralWidget().currentNomenclatureChanged(
             nomenclatureName=nomenclatureName
         )
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.parent().close()
 
 class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
@@ -664,3 +668,9 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
         #       f"{inspect.currentframe().f_code.co_name}()")
         
         pass
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.projectManager.project.readProject.disconnect()
+        self.associatedWindow.destroy()
+        self.destroy()
+        QgsProject.instance().clear()
