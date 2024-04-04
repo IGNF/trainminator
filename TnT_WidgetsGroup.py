@@ -775,6 +775,16 @@ class displayToolsGroup(groupQPushButton):
                                       )
         layout.addWidget(button3)
 
+        button4 = self.setQPushButton(QPushButton(self),
+                                      checkable=True,
+                                      text="Disable check patch completion",
+                                      objectName="check_patch_completion",
+                                      accessibleName="check_patch_completion",
+                                      toolTip="Disable check patch completion",
+                                      keySequence=None
+                                      )
+        layout.addWidget(button4)
+
     def setConnections(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -785,6 +795,9 @@ class displayToolsGroup(groupQPushButton):
         showContext_pushButton = self.findChild(QPushButton, "show_Context")
         showContext_pushButton.pressed.connect(self.showContext)
         showContext_pushButton.released.connect(self.showContext)
+
+        showCurrent_pushButton = self.findChild(QPushButton, "check_patch_completion")
+        showCurrent_pushButton.clicked.connect(self.disableCheckPatchCompletion)
 
 
     def showCurrentClass(self, showCurrentClass:bool=False):
@@ -800,6 +813,17 @@ class displayToolsGroup(groupQPushButton):
 
         masterWindow = self.getMasterWindow()
         masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
+
+
+    def disableCheckPatchCompletion(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        sender = self.sender()
+        disableCheckPatchCompletion = sender.isChecked()
+
+        masterWindow = self.getMasterWindow()
+        masterWindow.disableCheckPatchCompletion(disableCheckPatchCompletion=disableCheckPatchCompletion)
 
 
     def showContext(self):
@@ -2672,7 +2696,7 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       }
         
         self.styleSheet_patches = { "color":"grey",
-                                      "outline_color":"grey",
+                                      "outline_color":"yellow",
                                       "width_border":"0.20",
                                       "style":"solid"
                                       }
@@ -2867,7 +2891,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         expression = "done=1"
         ruleKey = "done=1"
         sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
-        sym_n.setOpacity(0.80)
+        sym_n.setOpacity(1.00)
         rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
         rule_n.setRuleKey(ruleKey)
         rootrule.appendChild(rule_n)

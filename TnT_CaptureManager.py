@@ -661,7 +661,10 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
-            done, feature = tntFeature.checkPatches(masterWindow.projectManager.isDifferential)
+            if not masterWindow.checkPatchCompletionDisabled:
+                done, feature = tntFeature.checkPatches(masterWindow.projectManager.isDifferential)
+            else:
+                done = True
             if not done:
                 map_Canvas = masterWindow.findChild(mapCanvas)
                 map_Canvas.setExtent(feature.geometry().boundingBox())

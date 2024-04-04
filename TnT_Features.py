@@ -39,6 +39,8 @@ class TnTFeatures:
         return self.children
 
     def getParent(self, patch_ok=False):
+        if self.parent is None:
+            return None
         if self.parent.layer.name()=="patches":
             if patch_ok:
                 return self.parent
