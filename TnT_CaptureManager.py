@@ -249,34 +249,42 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie
 
         master_window, associated_window = self.get_master_windows()
-        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup.disable_tool()
-        associatedSelectingToolGroup.disable_tool()
+
+        if master_window.projectManager.isDifferential:
+            associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+            associatedSelectingToolGroup.disable_tool()
 
     def enable_selecting_tool_group(self):
         # NOTE résolution issue 1 freeze le changement de géométrie pendant saisie de géométrie, réactivation
         master_window, associated_window = self.get_master_windows()
-        associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup = master_window.getSelectingToolGroupWidget()
         masterSelectingToolGroup.enable_tool()
-        associatedSelectingToolGroup.enable_tool()
+
+        if master_window.projectManager.isDifferential:
+            associatedSelectingToolGroup = associated_window.getSelectingToolGroupWidget()
+            associatedSelectingToolGroup.enable_tool()
 
     def enable_slider_group(self):
         # NOTE résolution issue 1 freeze le changement de slider pendant changement de géométrie, réactivation
         master_window, associated_window = self.get_master_windows()
-        associated_slider_group= associated_window.getSliderGroup()
         master_slider_group = master_window.getSliderGroup()
         master_slider_group.setEnabled(True)
-        associated_slider_group.setEnabled(True)
+        
+        if master_window.projectManager.isDifferential:
+            associated_slider_group= associated_window.getSliderGroup()
+            associated_slider_group.setEnabled(True)
 
     def disable_slider_group(self):
         # NOTE résolution issue 1 freeze le changement de slider pendant saisie de géométrie
         master_window, associated_window = self.get_master_windows()
-        associated_slider_group = associated_window.getSliderGroup()
         master_slider_group = master_window.getSliderGroup()
         master_slider_group.setEnabled(False)
-        associated_slider_group.setEnabled(False)
+        
+        if master_window.projectManager.isDifferential:
+            associated_slider_group = associated_window.getSliderGroup()
+            associated_slider_group.setEnabled(False)
 
     def startCapturing(self, e):
         """
