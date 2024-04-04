@@ -17,7 +17,7 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsLinePatternFillSymbolLayer,
                        QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
-from qgis.gui import ( QgsLayerTreeView )
+from qgis.gui import ( QgsLayerTreeView, QgsMapCanvas )
 from PyQt5 import QtCore
 from PyQt5.QtCore    import( Qt, QVariant )
 from PyQt5.QtGui     import( QColor, QBrush, QPalette,
@@ -1701,7 +1701,8 @@ class sliderGroup(groupQWidgets):
 
         slider = self.findChild(QSlider)
         slider.setMinimum( 1 )
-        slider.setMaximum( 6 )
+        layers_list = self.getListLabeledLayers()
+        slider.setMaximum( len(layers_list) )
         slider.setPageStep( 1 )
         slider.setValue( 1 )
         slider.setEnabled(False)
@@ -1746,7 +1747,7 @@ class sliderGroup(groupQWidgets):
         if layers_list:
             
             # Initialize all visibility to false, except last layer
-            for i in range(len(layers_list)-1):
+            for i in range(1, len(layers_list)-1):
                 layer = layers_list[i]
                 layer.setItemVisibilityChecked(False)
 
@@ -1789,6 +1790,17 @@ class sliderGroup(groupQWidgets):
             # # And set MapLayer to canvas  (ie is an active mapLayer)
             map_Canvas = mainWindow.findChild(mapCanvas)
             map_Canvas.setCurrentLayer(layers_list[newIndex].layer())
+
+            masterWindow = self.getMasterWindow()
+            masterCanvas = masterWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+            masterCanvas.refresh()
+
+            if masterWindow.projectManager.isDifferential:
+                associatedWindow = masterWindow.associatedWindow
+                associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+                associatedCanvas.refresh()
+
+                
 
 
     def setConnections(self):
@@ -2659,10 +2671,10 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "style":"no"
                                       }
         
-        self.styleSheet_patches = { "color":"",
-                                      "outline_color":"red",
+        self.styleSheet_patches = { "color":"grey",
+                                      "outline_color":"grey",
                                       "width_border":"0.20",
-                                      "style":"no"
+                                      "style":"solid"
                                       }
 
         self.styleSheet_transparent = { "color":"",
@@ -2853,17 +2865,15 @@ class TnTLayerTreeWidget(groupQWidgets):
         
         expression = "done=1"
         ruleKey = "done=1"
-        self.styleSheet_patches["outline_color"] = "green"
         sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
-        sym_n.setOpacity(0.60)
+        sym_n.setOpacity(0.80)
         rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
         rule_n.setRuleKey(ruleKey)
         rootrule.appendChild(rule_n)
 
         expression = "done IS Null"
         ruleKey = "done IS Null"
-        self.styleSheet_patches["outline_color"] = "red"
-        sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
+        sym_n = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
         sym_n.setOpacity(0.60)
         rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
         rule_n.setRuleKey(ruleKey)
