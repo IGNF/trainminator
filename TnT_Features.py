@@ -27,9 +27,73 @@ class TnTFeatures:
         for k in attrs.keys():
             self.attrs[k]=attrs[k]
 
+    def getChildren(self, patch_ok=False):
+        """
+        Return children of feature
+        If it is the patch layer, return children only if patch_ok=True
+        """
+        if self.layer.name()=="patches":
+            if patch_ok:
+                return self.children
+            return []
+        return self.children
+
+    def getParent(self, patch_ok=False):
+        if self.parent.layer.name()=="patches":
+            if patch_ok:
+                return self.parent
+            return None
+        return self.parent
+
+
+    def getLastLevelChildren(self):
+        """
+        Get all children of this feature in the most segmented layer
+        """
+        children = self.getChildren(patch_ok=True)
+        if len(children) == 0:
+            return [self]
+        else:
+            lastLevelChildrenList = []
+            for child in children:
+                for c in child.getLastLevelChildren():
+                    lastLevelChildrenList.append(c)
+            return lastLevelChildrenList
+
+
+    def getCodeValue(self):
+        """
+        Return code values for all vintages
+        """
+        prov = self.layer.dataProvider()
+        fieldNameMap = prov.fieldNameMap()
+        codeValues = []
+        for key in fieldNameMap.keys():
+            if key[:5]=="code_":
+                index = fieldNameMap[key]
+                codeValues.append(self.getAttributes()[index])
+        return codeValues
+    
+    
+    def checkPatches(self, differentialMode):
+        """
+        Check that each children of last level of the patch are completed in differential mode
+        """
+        if self.layer.name()!="patches" or not differentialMode:
+            return True, None
+        
+        lastLevelChildrenList = self.getLastLevelChildren()
+        for child in lastLevelChildrenList:
+            codeValues = child.getCodeValue()
+            if (codeValues[0] == NULL and codeValues[1] != NULL) or (codeValues[0] != NULL and codeValues[1] == NULL):
+                return False, child.feature
+        return True, None
+
 
     def changeAttribute(self, attrs):
-        # Change attributes of the feature
+        """
+        Change attributes of the feature
+        """
         if self.layer.name()=="patches":
             key = list(attrs.keys())[0]
         else:
@@ -38,16 +102,18 @@ class TnTFeatures:
 
 
         # Iterate on children
-        for child in self.children:
+        labelsSet = set()
+        
+        for child in self.getChildren():
             childAttributes = child.getAttributes()
             if childAttributes[key] == NULL or childAttributes[key] == attributesBeforeChange:
                 child.changeAttribute(attrs)
             
         labels = []
-        for child in self.children:
+        for child in self.getChildren():
             childAttributes = child.getAttributes()
             labels.append(childAttributes[key])
-
+        
         labelsSet = set(labels)
         
 
@@ -75,7 +141,9 @@ class TnTFeatures:
             caps = prov.capabilities()
             if caps and QgsVectorDataProvider.ChangeAttributeValues:
                 prov.changeAttributeValues({self.feature.id() : attrsNull})
-                self.changeAttrs(attrsNull) 
+                self.changeAttrs(attrsNull)
+
+        return True, None
 
     
     def removeCurrentClass(self, attrs, classId):
@@ -87,11 +155,8 @@ class TnTFeatures:
             self.changeAttrs(attrs)
         
         # Iterate on children
-        if self.layer.name()=="patches":
-            key = list(attrs.keys())[0]
-        else:
+        for child in self.getChildren():
             key = list(attrs.keys())[1]
-        for child in self.children:
             childAttributes = child.getAttributes()
             if str(childAttributes[key]) == classId:
                 child.removeCurrentClass(attrs, classId)
@@ -103,7 +168,7 @@ class TnTFeatures:
         if caps and QgsVectorDataProvider.ChangeAttributeValues:
             prov.changeAttributeValues({self.feature.id() : attrs})
             self.changeAttrs(attrs)
-            for child in self.children:
+            for child in self.getChildren():
                 child.removeAll(attrs)
 
 
@@ -114,7 +179,7 @@ class TnTFeatures:
     def check(self, attrs, attrsNull):
         key = list(attrs.keys())[1]
         labels = []
-        for child in self.children:
+        for child in self.getChildren():
             labels.append(child.getAttributes()[key])
         setLabels = set(labels)
 
@@ -144,8 +209,8 @@ class TnTFeatures:
                     self.changeAttrs(attrs)
                 modif = True
 
-        if modif and self.parent is not None:
-            self.parent.check(attrs, attrsNull)
+        if modif and self.getParent() is not None:
+            self.getParent().check(attrs, attrsNull)
 
 
 
@@ -215,7 +280,7 @@ class TnTFeaturesManager:
             compte += 1
             progress.setValue(compte)
 
-        for i in range(2, len(self.tntFeaturesLevel)): # children for patches layer are not computed
+        for i in range(1, len(self.tntFeaturesLevel)):
             tntFeaturesLevel_i = self.tntFeaturesLevel[i]
             tntFeaturesLevel_i1 = self.tntFeaturesLevel[i-1]
             tntFeaturesLevel_i1.searchChildren(tntFeaturesLevel_i)

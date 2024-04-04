@@ -548,8 +548,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
             tntFeature.removeAll(attrs)
-            if tntFeature.parent is not None:
-                parents.append(tntFeature.parent)
+            if tntFeature.getParent() is not None:
+                parents.append(tntFeature.getParent())
 
         for parent in set(parents):
             parent.check(attrs, attrs)
@@ -568,14 +568,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         attrs = {}
         attrs = self.getAttributeValues(provider=prov, attributs=attrs, remove=True)
 
-        if len(attrs.keys()) == 1:
+        if len(attrs.keys()) == 1:#Case with patch
             key = list(attrs.keys())[0]
-            for k in attrs.keys():
-                attrs[k]=None
         else:
             key = list(attrs.keys())[1]
         codeValue = attrs[key]
 
+        for k in attrs.keys():
+            attrs[k]=None
         
 
         masterWindow = self.parent.getMasterWindow()
@@ -587,8 +587,8 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             tntFeature = tntFeaturesLevel.features[featureId]
             if str(tntFeature.getAttributes()[key])==codeValue or self.layer.name()=="patches":
                 tntFeature.removeCurrentClass(attrs, codeValue)
-                if tntFeature.parent is not None:
-                    parents.append(tntFeature.parent)
+                if tntFeature.getParent() is not None:
+                    parents.append(tntFeature.getParent())
 
         for parent in set(parents):
             parent.check(attrs, attrs)
@@ -653,9 +653,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         parents = []
         for featureId in self.layer.selectedFeatureIds():
             tntFeature = tntFeaturesLevel.features[featureId]
-            tntFeature.changeAttribute(attrs)
-            if tntFeature.parent is not None:
-                parents.append(tntFeature.parent)
+            done, feature = tntFeature.checkPatches(masterWindow.projectManager.isDifferential)
+            if not done:
+                map_Canvas = masterWindow.findChild(mapCanvas)
+                map_Canvas.setExtent(feature.geometry().boundingBox())
+            else:
+                tntFeature.changeAttribute(attrs)
+                if tntFeature.getParent() is not None:
+                    parents.append(tntFeature.getParent())
 
         for parent in set(parents):
             parent.check(attrs, attrsNull)
