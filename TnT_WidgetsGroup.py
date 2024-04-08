@@ -17,7 +17,7 @@ from qgis.core import( QgsLayerTreeModel, QgsRasterLayer, QgsVectorLayer,
                        QgsLinePatternFillSymbolLayer,
                        QgsLineSymbol, QgsSymbol, QgsSimpleFillSymbolLayer, Qgis
                       )
-from qgis.gui import ( QgsLayerTreeView )
+from qgis.gui import ( QgsLayerTreeView, QgsMapCanvas )
 from PyQt5 import QtCore
 from PyQt5.QtCore    import( Qt, QVariant )
 from PyQt5.QtGui     import( QColor, QBrush, QPalette,
@@ -775,6 +775,16 @@ class displayToolsGroup(groupQPushButton):
                                       )
         layout.addWidget(button3)
 
+        button4 = self.setQPushButton(QPushButton(self),
+                                      checkable=True,
+                                      text="Disable check patch completion",
+                                      objectName="check_patch_completion",
+                                      accessibleName="check_patch_completion",
+                                      toolTip="Disable check patch completion",
+                                      keySequence=None
+                                      )
+        layout.addWidget(button4)
+
     def setConnections(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
@@ -785,6 +795,9 @@ class displayToolsGroup(groupQPushButton):
         showContext_pushButton = self.findChild(QPushButton, "show_Context")
         showContext_pushButton.pressed.connect(self.showContext)
         showContext_pushButton.released.connect(self.showContext)
+
+        showCurrent_pushButton = self.findChild(QPushButton, "check_patch_completion")
+        showCurrent_pushButton.clicked.connect(self.disableCheckPatchCompletion)
 
 
     def showCurrentClass(self, showCurrentClass:bool=False):
@@ -800,6 +813,17 @@ class displayToolsGroup(groupQPushButton):
 
         masterWindow = self.getMasterWindow()
         masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
+
+
+    def disableCheckPatchCompletion(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        sender = self.sender()
+        disableCheckPatchCompletion = sender.isChecked()
+
+        masterWindow = self.getMasterWindow()
+        masterWindow.disableCheckPatchCompletion(disableCheckPatchCompletion=disableCheckPatchCompletion)
 
 
     def showContext(self):
@@ -1701,7 +1725,8 @@ class sliderGroup(groupQWidgets):
 
         slider = self.findChild(QSlider)
         slider.setMinimum( 1 )
-        slider.setMaximum( 6 )
+        layers_list = self.getListLabeledLayers()
+        slider.setMaximum( len(layers_list) )
         slider.setPageStep( 1 )
         slider.setValue( 1 )
         slider.setEnabled(False)
@@ -1746,7 +1771,7 @@ class sliderGroup(groupQWidgets):
         if layers_list:
             
             # Initialize all visibility to false, except last layer
-            for i in range(len(layers_list)-1):
+            for i in range(1, len(layers_list)-1):
                 layer = layers_list[i]
                 layer.setItemVisibilityChecked(False)
 
@@ -1789,6 +1814,17 @@ class sliderGroup(groupQWidgets):
             # # And set MapLayer to canvas  (ie is an active mapLayer)
             map_Canvas = mainWindow.findChild(mapCanvas)
             map_Canvas.setCurrentLayer(layers_list[newIndex].layer())
+
+            masterWindow = self.getMasterWindow()
+            masterCanvas = masterWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+            masterCanvas.refresh()
+
+            if masterWindow.projectManager.isDifferential:
+                associatedWindow = masterWindow.associatedWindow
+                associatedCanvas = associatedWindow.centralWidget().findChild(QgsMapCanvas, "mapCanvas")
+                associatedCanvas.refresh()
+
+                
 
 
     def setConnections(self):
@@ -2658,6 +2694,12 @@ class TnTLayerTreeWidget(groupQWidgets):
                                       "width_border":"0.20",
                                       "style":"no"
                                       }
+        
+        self.styleSheet_patches = { "color":"grey",
+                                      "outline_color":"yellow",
+                                      "width_border":"0.20",
+                                      "style":"solid"
+                                      }
 
         self.styleSheet_transparent = { "color":"",
                                       "style":"no",
@@ -2835,6 +2877,34 @@ class TnTLayerTreeWidget(groupQWidgets):
                 mapLayer.triggerRepaint()
 
 
+    def createFillSymbolPatchesLayers(self):
+        """
+        """
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        symbol = QgsFillSymbol.createSimple(self.styleSheet_transparent)
+        renderer = QgsRuleBasedRenderer(symbol)
+        rootrule = renderer.rootRule().children()[0]
+        
+        
+        expression = "done=1"
+        ruleKey = "done=1"
+        sym_n = QgsFillSymbol.createSimple(self.styleSheet_patches)
+        sym_n.setOpacity(1.00)
+        rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
+        rule_n.setRuleKey(ruleKey)
+        rootrule.appendChild(rule_n)
+
+        expression = "done IS Null"
+        ruleKey = "done IS Null"
+        sym_n = QgsFillSymbol.createSimple(self.styleSheet_unlabeled)
+        sym_n.setOpacity(0.60)
+        rule_n = QgsRuleBasedRenderer.Rule(sym_n, 0, 0, expression)
+        rule_n.setRuleKey(ruleKey)
+        rootrule.appendChild(rule_n)
+        return renderer
+    
     def createFillSymbolLessSegmentedLayers(self):
         """
         """
@@ -2919,7 +2989,7 @@ class TnTLayerTreeWidget(groupQWidgets):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
         #       f"{inspect.currentframe().f_code.co_name}()")
 
-        for i in range(len(listLayers)-1):
+        for i in range(1, len(listLayers)-1):
             
             tlayer = listLayers[i]
             renderer = self.createFillSymbolLessSegmentedLayers()
@@ -2930,6 +3000,10 @@ class TnTLayerTreeWidget(groupQWidgets):
             fieldName=fieldName
         )
         tlayer = listLayers[-1]
+        tlayer.layer().setRenderer(renderer)
+
+        renderer = self.createFillSymbolPatchesLayers()
+        tlayer = listLayers[0]
         tlayer.layer().setRenderer(renderer)
     
     

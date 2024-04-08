@@ -75,6 +75,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         self.setObjectName(objectName)
         self.setAccessibleName(objectName)
         self.vintage = None
+        self.checkPatchCompletionDisabled = False
 
         self.resize(1300, 900)
         self.setStyleSheet()
@@ -314,6 +315,10 @@ class TraiNminaTor2Dialog_Differential(TraiNminaTor2Dialog_Base):
         
         layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
         layerTreeView_dock.showCurrentClass(showCurrentClass=showCurrentClass)
+
+
+    def disableCheckPatchCompletion(self, disableCheckPatchCompletion):
+        self.checkPatchCompletionDisabled = disableCheckPatchCompletion
    
         
     def currentNomenclatureChanged(self,
