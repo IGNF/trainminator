@@ -315,6 +315,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.disable_selecting_tool_group()
         self.disable_slider_group()
         self.capturing(e)
+
     def enable_fill_pyramid(self):
         main_window = self.parent.getMasterWindow()
         merge_tool_group = main_window.get_merge_tools_group()
@@ -361,6 +362,7 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         self.enable_selecting_tool_group()
         self.enable_slider_group()
         self.enable_fill_pyramid()
+
     def abortCapturing(self):
         """
             returns none:
@@ -378,15 +380,11 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         start_stop_group = master_window.get_start_stop_group()
         start_stop_group.setEnabled(True)
 
-
-
     def lockAtStartCapture(self):
         """
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-        
+        self.canvas.ongoing_capture = True
         #self.comm.lockAssociatedButton.emit()
 
 
@@ -394,11 +392,10 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
         """
             returns
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
         # NOTE résolution issue 1 freeze le changement de saisie pendant géométries, réactivation
         self.enable_selecting_tool_group()
         self.enable_slider_group()
+        self.canvas.ongoing_capture = False
         #self.comm.unLockAssociatedButton.emit()
 
  # END About CAPTURE ############################
@@ -744,14 +741,14 @@ class TnTmapToolEmitPoint(QgsMapToolEmitPoint):
             if e.type() == QEvent.MouseButtonPress:
                 self.canvas.setStyleSheet("border-width:5px; border-color:orange;")
                 associatedCanvas.setStyleSheet("border-width:5px; border-color:grey;")
-                if e.button() == Qt.LeftButton :
-                    if not self.getCapture() :
 
+                if e.button() == Qt.LeftButton :
+                    if not self.getCapture() and self.canvas.ongoing_capture==False and associatedCanvas.ongoing_capture==False:
                         self.startCapturing(e)
                     else :
-                        self.capturing(e)
+                        if self.canvas.ongoing_capture==True and associatedCanvas.ongoing_capture==False:
+                            self.capturing(e)
                 elif e.button() == Qt.RightButton and self.getCapture():
-
                     self.endCapturing()
                     self.processUserInput()              
 
@@ -907,20 +904,30 @@ class TnTmapToolEmitPline(TnTmapToolEmitPoint):
             param e:
             returns none:
         """
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
+        mainWindow = self.parent.getMainWindow()
+        if mainWindow == self.parent.getMasterWindow():
+            associatedWindow = mainWindow.associatedWindow
+        else:
+            associatedWindow = self.parent.getMasterWindow()
+        associatedCanvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
+
         master_window = self.parent.getMasterWindow()
         start_stop_group = master_window.get_start_stop_group()
         on_start_mode: bool = start_stop_group.on_start_mode
+
         if on_start_mode:
             if e.type() == QEvent.MouseButtonPress:
+                self.canvas.setStyleSheet("border-width:5px; border-color:orange;")
+                associatedCanvas.setStyleSheet("border-width:5px; border-color:grey;")
+
                 if e.button() == Qt.LeftButton:
-                    if not self.getCapture():
+                    if not self.getCapture() and self.canvas.ongoing_capture==False and associatedCanvas.ongoing_capture==False:
                         self.startCapturing(e)
                     else :
                         if self.pendingCapture:
                             self.pendingCapture=False
-                        self.capturing(e)
+                        if self.canvas.ongoing_capture==True and associatedCanvas.ongoing_capture==False:
+                            self.capturing(e)
                 elif (e.button() == Qt.RightButton and self.getCapture()) :
                     self.endCapturing()
                     self.processUserInput()
