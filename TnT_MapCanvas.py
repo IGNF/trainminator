@@ -52,6 +52,7 @@ class mapCanvas(QgsMapCanvas):
         self.marker = None
         self.synchroMode = True
         self.displayMode = False
+        self.ongoing_capture = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
