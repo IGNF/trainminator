@@ -224,7 +224,7 @@ class mapCanvas(QgsMapCanvas):
             
         if self.displayMode:
             qgspointXY = self.mapTool().toMapCoordinates(event.pos())
-            geo_pt =  QgsGeometry.fromPoint(QgsPoint(qgspointXY.x(), qgspointXY.y()))
+            geo_pt =  QgsGeometry.fromPointXY(qgspointXY)
             self.showDisplayLabels(geo_pt)       
             
         return QgsMapCanvas.mouseMoveEvent(self, event)
