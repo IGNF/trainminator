@@ -30,11 +30,12 @@ from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 from PyQt5.QtCore    import( Qt, QEvent )
 from PyQt5.QtGui     import( QColor, QFont, QMouseEvent, QEnterEvent )
 
-from qgis.core import QgsGeometry, QgsPoint, QgsTextBufferSettings, QgsTextFormat, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling
+from qgis.core import QgsGeometry, QgsPoint, QgsTextBufferSettings, QgsTextFormat, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsVectorLayer
 from PyQt5.QtWidgets import QLabel
 
 import numpy as np
 import math
+from .TnT_Features import TnTFeaturesManager
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -354,10 +355,20 @@ class mapCanvas(QgsMapCanvas):
             associated_label_settings = QgsVectorLayerSimpleLabeling(associated_label_settings)
             
 
-            master_layer = master_canvas.currentLayer()
+            if len(master_canvas.layers()) == 3:
+                master_moreSegmentedLayer = 1
+            else:
+                master_moreSegmentedLayer = 2
+            master_layer = master_canvas.layers()[master_moreSegmentedLayer]
             master_layer.setLabeling(master_label_settings)
-            associated_layer = associated_canvas.currentLayer()
+
+            if len(associated_canvas.layers()) == 3:
+                associated_moreSegmentedLayer = 1
+            else:
+                associated_moreSegmentedLayer = 2
+            associated_layer = associated_canvas.layers()[associated_moreSegmentedLayer]
             associated_layer.setLabeling(associated_label_settings)
+            
             
             if master_zoomLevel > 22 or associated_zoomLevel > 8:
                 master_layer.setLabelsEnabled(True)
