@@ -56,6 +56,7 @@ class mapCanvas(QgsMapCanvas):
         self.synchroMode = True
         self.displayMode = False
         self.label_settings = None
+        self.showBigZoomLabels = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
@@ -216,6 +217,39 @@ class mapCanvas(QgsMapCanvas):
         return canvas_list
     
 
+    def showClassesMoreSegmentedLayer(self):
+        masterWindow = self.getMasterWindow()
+        master_canvas = masterWindow.findChild(mapCanvas, "mapCanvas")
+        associatedWindow = masterWindow.associatedWindow
+        associated_canvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
+
+        #Labels settings
+        master_label_settings = self.label_settings
+        master_label_settings.fieldName = 'code_' + str(masterWindow.getVintage())
+        master_label_settings = QgsVectorLayerSimpleLabeling(master_label_settings)
+    
+        associated_label_settings = self.label_settings
+        associated_label_settings.fieldName = 'code_' + str(associatedWindow.getVintage())
+        associated_label_settings = QgsVectorLayerSimpleLabeling(associated_label_settings)
+
+        #Get the more segmented layers
+        if len(master_canvas.layers()) == 3:
+            master_moreSegmentedLayer = 1
+        else:
+            master_moreSegmentedLayer = 2
+        master_layer = master_canvas.layers()[master_moreSegmentedLayer]
+        master_layer.setLabeling(master_label_settings)
+
+        if len(associated_canvas.layers()) == 3:
+            associated_moreSegmentedLayer = 1
+        else:
+            associated_moreSegmentedLayer = 2
+        associated_layer = associated_canvas.layers()[associated_moreSegmentedLayer]
+        associated_layer.setLabeling(associated_label_settings)
+
+        return master_layer, associated_layer
+
+    
     def showMousePointerMarker(self, p):
         """
         This method display the mouse pointer (marker) at <p> position
@@ -228,7 +262,6 @@ class mapCanvas(QgsMapCanvas):
 
         self.marker.setCenter(p)
         self.marker.show()
-
 
     def mouseMoveEvent(self, event:QMouseEvent):
         """
@@ -336,6 +369,7 @@ class mapCanvas(QgsMapCanvas):
         on_start_mode: bool = start_stop_group.on_start_mode
 
         if on_start_mode:
+            #Zoom computation
             maxScalePerPixel = 156543.04
             inchesPerMeter = 39.37
 
@@ -346,38 +380,20 @@ class mapCanvas(QgsMapCanvas):
             associated_zoomLevel = int(round(math.log( ((associated_dpi * 39.37 *  156543.04) / associated_canvas.scale()), 2), 0))
 
 
-            master_label_settings = self.label_settings
-            master_label_settings.fieldName = 'code_' + str(masterWindow.getVintage())
-            master_label_settings = QgsVectorLayerSimpleLabeling(master_label_settings)
-        
-            associated_label_settings = self.label_settings
-            associated_label_settings.fieldName = 'code_' + str(associatedWindow.getVintage())
-            associated_label_settings = QgsVectorLayerSimpleLabeling(associated_label_settings)
-            
+            master_layer, associated_layer = self.showClassesMoreSegmentedLayer()
+            #Define the zoom level for displaying labels
+            if self.showBigZoomLabels == True:
+                if master_zoomLevel > 22 or associated_zoomLevel > 8:
+                    master_layer.setLabelsEnabled(True)
+                    master_layer.triggerRepaint()
 
-            if len(master_canvas.layers()) == 3:
-                master_moreSegmentedLayer = 1
+                    associated_layer.setLabelsEnabled(True)
+                    associated_layer.triggerRepaint()
+
+                elif master_zoomLevel <= 22 or associated_zoomLevel <= 8:
+                    master_layer.setLabelsEnabled(False)
+                    associated_layer.setLabelsEnabled(False)
             else:
-                master_moreSegmentedLayer = 2
-            master_layer = master_canvas.layers()[master_moreSegmentedLayer]
-            master_layer.setLabeling(master_label_settings)
-
-            if len(associated_canvas.layers()) == 3:
-                associated_moreSegmentedLayer = 1
-            else:
-                associated_moreSegmentedLayer = 2
-            associated_layer = associated_canvas.layers()[associated_moreSegmentedLayer]
-            associated_layer.setLabeling(associated_label_settings)
-            
-            
-            if master_zoomLevel > 22 or associated_zoomLevel > 8:
-                master_layer.setLabelsEnabled(True)
-                master_layer.triggerRepaint()
-
-                associated_layer.setLabelsEnabled(True)
-                associated_layer.triggerRepaint()
-
-            elif master_zoomLevel <= 22 or associated_zoomLevel <= 8:
                 master_layer.setLabelsEnabled(False)
                 associated_layer.setLabelsEnabled(False)
                
