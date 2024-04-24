@@ -792,6 +792,16 @@ class displayToolsGroup(groupQPushButton):
                                       )
         layout.addWidget(button4)
 
+        button5 = self.setQPushButton(QPushButton(self),
+                                      checkable=True,
+                                      text="IRC / RGB",
+                                      objectName="IRC_RGB",
+                                      accessibleName="IRC_RGB",
+                                      toolTip="Choose IRC or RGB",
+                                      keySequence=None
+                                      )
+        layout.addWidget(button5)
+
     def setConnections(self):
         showCurrent_pushButton = self.findChild(QPushButton, "show_Current")
         showCurrent_pushButton.clicked.connect(self.showCurrentClass)
@@ -805,6 +815,9 @@ class displayToolsGroup(groupQPushButton):
 
         showCurrent_pushButton = self.findChild(QPushButton, "check_patch_completion")
         showCurrent_pushButton.clicked.connect(self.disableCheckPatchCompletion)
+
+        IRC_RGB_pushButton = self.findChild(QPushButton, "IRC_RGB")
+        IRC_RGB_pushButton.clicked.connect(self.change_IRC_RGB)
 
 
     def showCurrentClass(self, showCurrentClass:bool=False):
@@ -848,6 +861,18 @@ class displayToolsGroup(groupQPushButton):
         masterWindow = self.getMasterWindow()
         masterWindow.disableCheckPatchCompletion(disableCheckPatchCompletion=disableCheckPatchCompletion)
 
+    
+    def change_IRC_RGB(self):
+        # print(f"line:{lineno()},{self.__class__.__name__}->"+
+        #       f"{inspect.currentframe().f_code.co_name}()")
+
+        mainWindow = self.getMainWindow()
+        mainWindow.change_IRC_RGB()
+
+        if mainWindow.projectManager.isDifferential:
+            associatedWindow = mainWindow.associatedWindow
+            associatedWindow.change_IRC_RGB()
+
 
     def showContext(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -880,7 +905,19 @@ class displayToolsGroup(groupQPushButton):
 
         self.setEnabled(True)
         self.findChild(QPushButton, "show_Classes").setEnabled(True)
+
+        # If there are not 5 bands in context, then disable IRC / RGB button
+        IRC_RGB_pushButton = self.findChild(QPushButton, "IRC_RGB")
+        mainWindow = self.getMainWindow()
+        nb_bands = mainWindow.getContextNBBands()
+
+        if mainWindow.projectManager.isDifferential:
+            associatedWindow = mainWindow.associatedWindow
+            nb_bands_associated_window = associatedWindow.getContextNBBands()
         
+        if nb_bands < 5 or nb_bands_associated_window < 5:
+            IRC_RGB_pushButton.setEnabled(False)
+
 
     def stop(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -3029,8 +3066,38 @@ class TnTLayerTreeWidget(groupQWidgets):
         renderer = self.createFillSymbolPatchesLayers()
         tlayer = listLayers[0]
         tlayer.layer().setRenderer(renderer)
+
     
-    
+    def change_IRC_RGB(self, context):
+        root = self.layerTreeRoot()
+        group = root.findGroup(context)
+        listLayers=group.findLayers()
+        for layer in listLayers:
+
+            raster_layer = layer.layer()
+            r = raster_layer.renderer().clone()
+            if self.getMainWindow().IRC:
+                r.setRedBand(4)
+                r.setGreenBand(1)
+                r.setBlueBand(2)
+            else:
+                r.setRedBand(1)
+                r.setGreenBand(2)
+                r.setBlueBand(3)
+            raster_layer.setRenderer(r)
+            raster_layer.triggerRepaint()
+
+
+    def getContextNBBands(self, context):
+        root = self.layerTreeRoot()
+        group = root.findGroup(context)
+        listLayers=group.findLayers()
+        nb_bands = 1e15
+        for layer in listLayers:
+            nb_bands = min(nb_bands, layer.layer().bandCount())
+        return nb_bands
+
+
     def setVintage(self, vintage:str=None):
         # print(f"line:{lineno()},{self.__class__.__name__}->" +
         #       f"{inspect.currentframe().f_code.co_name}()")

@@ -76,6 +76,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         self.setAccessibleName(objectName)
         self.vintage = None
         self.checkPatchCompletionDisabled = False
+        self.IRC = False
 
         self.resize(1300, 900)
         self.setStyleSheet()
@@ -214,6 +215,35 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         
         layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
         layerTreeView_dock.showContext(showContext=showContext, keepGroup=keepGroup)
+
+    
+    def change_IRC_RGB(self):
+        self.IRC = not self.IRC
+        
+        vintage = self.getVintage()
+        if vintage:
+            context = f"CONTEXT_{vintage}"
+        else:
+            context = "CONTEXT"
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeWidget = layerTreeView_dock.findChild(TnTLayerTreeWidget)
+        layerTreeWidget.change_IRC_RGB(context)
+
+
+    def getContextNBBands(self):
+        vintage = self.getVintage()
+        if vintage:
+            context = f"CONTEXT_{vintage}"
+        else:
+            context = "CONTEXT"
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeWidget = layerTreeView_dock.findChild(TnTLayerTreeWidget)
+        return layerTreeWidget.getContextNBBands(context)
+
+
+
         
         
                
