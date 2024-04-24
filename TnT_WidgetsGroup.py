@@ -749,9 +749,6 @@ class displayToolsGroup(groupQPushButton):
         self.layout().setSpacing(4)
 
     def setupUi(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
         layout = self.layout()
 
         button1 = self.setQPushButton(QPushButton(self),
@@ -759,11 +756,21 @@ class displayToolsGroup(groupQPushButton):
                                       text="Show Current",
                                       objectName="show_Current",
                                       accessibleName="show_Current",
-                                      toolTip="Show only current class.",
+                                      toolTip="Show only current class",
                                       keySequence=None
                                       )
         button1.setEnabled(True)
         layout.addWidget(button1)
+
+        button2 = self.setQPushButton(QPushButton(self),
+                                      checkable=True,
+                                      text="Show Classes",
+                                      objectName="show_Classes",
+                                      accessibleName="show_Classes",
+                                      toolTip="Show the more segmented layer's class",
+                                      keySequence=None
+                                      )
+        layout.addWidget(button2)
 
         button3 = self.setQPushButton(QPushButton(self),
                                       checkable=False,
@@ -796,11 +803,11 @@ class displayToolsGroup(groupQPushButton):
         layout.addWidget(button5)
 
     def setConnections(self):
-        # print(f"line:{lineno()},{self.__class__.__name__}->"+
-        #       f"{inspect.currentframe().f_code.co_name}()")
-
         showCurrent_pushButton = self.findChild(QPushButton, "show_Current")
         showCurrent_pushButton.clicked.connect(self.showCurrentClass)
+
+        showClasses_pushButton = self.findChild(QPushButton, "show_Classes")
+        showClasses_pushButton.clicked.connect(self.showClasses)
 
         showContext_pushButton = self.findChild(QPushButton, "show_Context")
         showContext_pushButton.pressed.connect(self.showContext)
@@ -827,6 +834,22 @@ class displayToolsGroup(groupQPushButton):
         masterWindow = self.getMasterWindow()
         masterWindow.showCurrentClass(showCurrentClass=showCurrentClass)
 
+
+    def showClasses(self, showClasses:bool=False):
+        sender = self.sender()
+        state = sender.isChecked()
+
+        masterWindow = self.getMasterWindow()
+        master_canvas = masterWindow.findChild(mapCanvas, "mapCanvas")
+        associated_canvas = masterWindow.associatedWindow.findChild(mapCanvas, "mapCanvas")
+
+        if state:
+            master_canvas.showBigZoomLabels = True
+            associated_canvas.showBigZoomLabels = True
+        else:
+            master_canvas.showBigZoomLabels = False
+            associated_canvas.showBigZoomLabels = False
+        
 
     def disableCheckPatchCompletion(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -881,6 +904,7 @@ class displayToolsGroup(groupQPushButton):
         #       f"{inspect.currentframe().f_code.co_name}()")
 
         self.setEnabled(True)
+        self.findChild(QPushButton, "show_Classes").setEnabled(True)
 
         # If there are not 5 bands in context, then disable IRC / RGB button
         IRC_RGB_pushButton = self.findChild(QPushButton, "IRC_RGB")

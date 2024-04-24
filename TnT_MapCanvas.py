@@ -28,11 +28,14 @@ import inspect
 from qgis.gui import( QgsMapCanvas, QgsVertexMarker, QgsMapTool )
 
 from PyQt5.QtCore    import( Qt, QEvent )
-from PyQt5.QtGui     import( QColor, QMouseEvent, QEnterEvent, QKeySequence )
+from PyQt5.QtGui     import( QColor, QFont, QMouseEvent, QEnterEvent )
 
-from qgis.core import QgsGeometry, QgsPoint
-from PyQt5.QtWidgets import QLabel, QShortcut
+from qgis.core import QgsGeometry, QgsPoint, QgsTextBufferSettings, QgsTextFormat, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsVectorLayer
+from PyQt5.QtWidgets import QLabel
+
 import numpy as np
+import math
+from .TnT_Features import TnTFeaturesManager
 
 def lineno():
     """Returns the current line number in Python source code"""
@@ -52,12 +55,12 @@ class mapCanvas(QgsMapCanvas):
         self.marker = None
         self.synchroMode = True
         self.displayMode = False
+        self.label_settings = None
+        self.showBigZoomLabels = False
         self.ongoing_capture = False
         self.setMapTool(QgsMapTool(self),False)
 
         self.setUpUi()
-
-        #self.getMainWindow()
 
 
     def setUpUi(self):
@@ -70,7 +73,7 @@ class mapCanvas(QgsMapCanvas):
         self.setCanvasColor(Qt.black)
         self.setDefaultMarker()
         self.setSynchroZoom()
-
+        self.setLabelsSettings()
 
     def getMasterWindow(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -93,6 +96,23 @@ class mapCanvas(QgsMapCanvas):
         self.marker.setIconSize( 25 )
         self.marker.setIconType( QgsVertexMarker.ICON_CROSS )
         self.marker.setPenWidth( 1 )
+
+    def setLabelsSettings(self):
+        buffer_settings = QgsTextBufferSettings()
+        buffer_settings.setEnabled(True)
+        buffer_settings.setSize(1)
+        buffer_settings.setColor(QColor("white"))
+
+        text_format = QgsTextFormat()
+        text_format.setFont(QFont("Arial", 12))
+        text_format.setSize(12)
+        text_format.setBuffer(buffer_settings)
+
+        label_settings = QgsPalLayerSettings()
+        label_settings.setFormat(text_format) 
+        label_settings.placement = QgsPalLayerSettings.AroundPoint #2
+        label_settings.enabled = True
+        self.label_settings = label_settings        
 
     def setDisplayMode(self):
         if self.displayMode == True:
@@ -198,6 +218,39 @@ class mapCanvas(QgsMapCanvas):
         return canvas_list
     
 
+    def showClassesMoreSegmentedLayer(self):
+        masterWindow = self.getMasterWindow()
+        master_canvas = masterWindow.findChild(mapCanvas, "mapCanvas")
+        associatedWindow = masterWindow.associatedWindow
+        associated_canvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
+
+        #Labels settings
+        master_label_settings = self.label_settings
+        master_label_settings.fieldName = 'code_' + str(masterWindow.getVintage())
+        master_label_settings = QgsVectorLayerSimpleLabeling(master_label_settings)
+    
+        associated_label_settings = self.label_settings
+        associated_label_settings.fieldName = 'code_' + str(associatedWindow.getVintage())
+        associated_label_settings = QgsVectorLayerSimpleLabeling(associated_label_settings)
+
+        #Get the more segmented layers
+        if len(master_canvas.layers()) == 3:
+            master_moreSegmentedLayer = 1
+        else:
+            master_moreSegmentedLayer = 2
+        master_layer = master_canvas.layers()[master_moreSegmentedLayer]
+        master_layer.setLabeling(master_label_settings)
+
+        if len(associated_canvas.layers()) == 3:
+            associated_moreSegmentedLayer = 1
+        else:
+            associated_moreSegmentedLayer = 2
+        associated_layer = associated_canvas.layers()[associated_moreSegmentedLayer]
+        associated_layer.setLabeling(associated_label_settings)
+
+        return master_layer, associated_layer
+
+    
     def showMousePointerMarker(self, p):
         """
         This method display the mouse pointer (marker) at <p> position
@@ -210,7 +263,6 @@ class mapCanvas(QgsMapCanvas):
 
         self.marker.setCenter(p)
         self.marker.show()
-
 
     def mouseMoveEvent(self, event:QMouseEvent):
         """
@@ -307,3 +359,43 @@ class mapCanvas(QgsMapCanvas):
             return True
     
         return QgsMapCanvas.event(self, event)
+    
+    def wheelEvent(self, event: QEvent.Wheel):
+        masterWindow = self.getMasterWindow()
+        master_canvas = masterWindow.findChild(mapCanvas, "mapCanvas")
+        associatedWindow = masterWindow.associatedWindow
+        associated_canvas = associatedWindow.findChild(mapCanvas, "mapCanvas")
+    
+        start_stop_group = masterWindow.get_start_stop_group()
+        on_start_mode: bool = start_stop_group.on_start_mode
+
+        if on_start_mode:
+            #Zoom computation
+            maxScalePerPixel = 156543.04
+            inchesPerMeter = 39.37
+
+            master_dpi = masterWindow.physicalDpiX()
+            master_zoomLevel = int(round(math.log( ((master_dpi * inchesPerMeter * maxScalePerPixel) / master_canvas.scale()), 2), 0))
+
+            associated_dpi = associatedWindow.physicalDpiX()
+            associated_zoomLevel = int(round(math.log( ((associated_dpi * 39.37 *  156543.04) / associated_canvas.scale()), 2), 0))
+
+
+            master_layer, associated_layer = self.showClassesMoreSegmentedLayer()
+            #Define the zoom level for displaying labels
+            if self.showBigZoomLabels == True:
+                if master_zoomLevel > 22 or associated_zoomLevel > 8:
+                    master_layer.setLabelsEnabled(True)
+                    master_layer.triggerRepaint()
+
+                    associated_layer.setLabelsEnabled(True)
+                    associated_layer.triggerRepaint()
+
+                elif master_zoomLevel <= 22 or associated_zoomLevel <= 8:
+                    master_layer.setLabelsEnabled(False)
+                    associated_layer.setLabelsEnabled(False)
+            else:
+                master_layer.setLabelsEnabled(False)
+                associated_layer.setLabelsEnabled(False)
+               
+        return QgsMapCanvas.wheelEvent(self, event)
