@@ -802,6 +802,16 @@ class displayToolsGroup(groupQPushButton):
                                       )
         layout.addWidget(button5)
 
+        button5 = self.setQPushButton(QPushButton(self),
+                                    checkable=True,
+                                    text="Switch ortho",
+                                    objectName="Switch_ortho",
+                                    accessibleName="Switch_ortho",
+                                    toolTip="Switch ortho",
+                                    keySequence=None
+                                    )
+        layout.addWidget(button5)
+
     def setConnections(self):
         showCurrent_pushButton = self.findChild(QPushButton, "show_Current")
         showCurrent_pushButton.clicked.connect(self.showCurrentClass)
@@ -818,6 +828,10 @@ class displayToolsGroup(groupQPushButton):
 
         IRC_RGB_pushButton = self.findChild(QPushButton, "IRC_RGB")
         IRC_RGB_pushButton.clicked.connect(self.change_IRC_RGB)
+
+        
+        Switch_ortho_pushButton = self.findChild(QPushButton, "Switch_ortho")
+        Switch_ortho_pushButton.clicked.connect(self.switch_ortho)
 
 
     def showCurrentClass(self, showCurrentClass:bool=False):
@@ -873,6 +887,10 @@ class displayToolsGroup(groupQPushButton):
             associatedWindow = mainWindow.associatedWindow
             associatedWindow.change_IRC_RGB()
 
+    def switch_ortho(self):
+        mainWindow = self.getMasterWindow()
+        mainWindow.switch_ortho()
+
 
     def showContext(self):
         # print(f"line:{lineno()},{self.__class__.__name__}->"+
@@ -911,9 +929,13 @@ class displayToolsGroup(groupQPushButton):
         mainWindow = self.getMainWindow()
         nb_bands = mainWindow.getContextNBBands()
 
+        nb_bands_associated_window = 5
         if mainWindow.projectManager.isDifferential:
             associatedWindow = mainWindow.associatedWindow
             nb_bands_associated_window = associatedWindow.getContextNBBands()
+        else:
+            switch_ortho_pushButton = self.findChild(QPushButton, "Switch_ortho")
+            switch_ortho_pushButton.setEnabled(False)
         
         if nb_bands < 5 or nb_bands_associated_window < 5:
             IRC_RGB_pushButton.setEnabled(False)
@@ -3161,6 +3183,17 @@ class TnTLayerTreeWidget(groupQWidgets):
                 )
 
             self.groupsVisibilityState.clear()
+
+    
+    def switch_ortho(self, new_context, old_context):
+        groupsName = self.layerTreeRoot().children()
+        for group in groupsName:
+            if group.name()==new_context:
+                group.setItemVisibilityChecked(True)
+                for child in group.children():
+                    child.setItemVisibilityChecked(True)
+            if group.name()==old_context:
+                group.setItemVisibilityChecked(False)
 
 
     def removedChild(self, node=None, indexFrom=None):
