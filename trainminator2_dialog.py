@@ -77,6 +77,7 @@ class TraiNminaTor2Dialog_Base(QMainWindow):
         self.vintage = None
         self.checkPatchCompletionDisabled = False
         self.IRC = False
+        self.main_ortho = True
 
         self.resize(1300, 900)
         self.setStyleSheet()
@@ -544,6 +545,33 @@ class TraiNminaTor2Dialog_Master(TraiNminaTor2Dialog_Differential):
 
         if self.projectManager.isDifferential:
             self.associatedWindow.showCurrentClass(showCurrentClass=showCurrentClass)
+
+    
+    def switch_ortho(self):
+        self.main_ortho = not self.main_ortho
+
+        vintage = self.getVintage()
+        if vintage:
+            main_context = f"CONTEXT_{vintage}"
+        else:
+            main_context = "CONTEXT"
+
+        vintage = self.associatedWindow.getVintage()
+        if vintage:
+            associated_context = f"CONTEXT_{vintage}"
+        else:
+            associated_context = "CONTEXT"
+
+        if self.main_ortho:
+            new_context = main_context
+            old_context = associated_context
+        else:
+            new_context = associated_context
+            old_context = main_context
+        
+        layerTreeView_dock = self.getDockWidget(TnTLayerTree_DockWidget)
+        layerTreeWidget = layerTreeView_dock.findChild(TnTLayerTreeWidget)
+        layerTreeWidget.switch_ortho(new_context, old_context)
 
         
     def setUpMenus(self):
