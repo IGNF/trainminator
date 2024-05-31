@@ -36,7 +36,7 @@ Ou encore au format pdf ici:  [documentation utilisateur(trice)](Documentation_d
 ## Documentation Utilisateur(trice)
 vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](Documentation_utilisateur.pdf)
 
-## Credtis
+## Credits
 
 TrainMinator a été développé en interne à l'[IGN/DSI/(SDM et SIMV)](https://www.ign.fr/) par Yann Le Borgne, Célestin Huet et Apolline De Wit. Ces dévelopements ont été aidés par Lucas Martelet, Maxime Dardy, Samy Khelifi, Pascal Voitot et Nicolas Gonthier. 
 
