@@ -8,12 +8,12 @@ qgisMinimumVersion=3.0
 description=Plugin de labellisation
 version=2.0
 author=IGN
-email=yann.le-borgne@ign.fr
+email=celestin.huet@ign.fr
 
-about=Plugin de labellisation
+about=Outil de labellisation monodate ou bidate pour la segmentation sémantique et la détection du changement appliquée à la géomatique / télédétection.
 
-tracker=http://bugs
-repository=http://gitlab.dockerforge.ign.fr/ocsge_ng
+tracker=https://github.com/IGNF/trainminator
+repository=https://github.com/IGNF/trainminator
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://gitlab.dockerforge.ign.fr/ocsge_ng
+homepage=https://github.com/IGNF/trainminator
 category=Plugins
 icon=icon.png
 # experimental flag
