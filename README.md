@@ -31,7 +31,7 @@ de nouvelles fonctionnalités, mais si vous voyez des bugs, nous vous serions re
 
 Si vous souhaitez adapter le projet à vos besoins, une très brève documentation développeur est disponible dans le wiki: https://github.com/IGNF/trainminator/wiki.
 
-Ou encore au format pdf ici:  [documentation utilisateur(trice)](Documentation_developpeur.pdf)
+Ou encore au format pdf ici:  [documentation utilisateur(trice)](docs/Documentation_developpeur.pdf)
 
 ## Documentation Utilisateur(trice)
-vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](Documentation_utilisateur.pdf)
+vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](docs/Documentation_utilisateur.pdf)

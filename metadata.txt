@@ -4,7 +4,7 @@
 
 [general]
 name=trainminator2
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.34
 description=Plugin de labellisation
 version=2.0
 author=IGN
