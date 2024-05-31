@@ -25,7 +25,7 @@ ou des précisions,
 vous pouvez créer une issue.
 
 Nous faisons de la maintenance pour nos besoins internes, et il n'est pas pour l'instant prévu de répondre à des demandes
-de nouvelles fonctionnalités, mais si vous voyez des bugs, nous vous serions reconnaissant de les signaler par une issue.
+de nouvelles fonctionnalités ni de maintenance externe, mais si vous voyez des bugs, nous vous serions reconnaissant de les signaler par une issue.
 
 ## Documentation Développeur(se)
 
@@ -34,4 +34,12 @@ Si vous souhaitez adapter le projet à vos besoins, une très brève documentati
 Ou encore au format pdf ici:  [documentation utilisateur(trice)](docs/Documentation_developpeur.pdf)
 
 ## Documentation Utilisateur(trice)
+
 vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](docs/Documentation_utilisateur.pdf)
+
+
+## Credits
+
+TrainMinator a été développé en interne à l'[IGN/DSI/(SDM et SIMV)](https://www.ign.fr/) par Yann Le Borgne, Célestin Huet et Apolline De Wit. Ces dévelopements ont été aidés par Lucas Martelet, Maxime Dardy, Samy Khelifi, Pascal Voitot et Nicolas Gonthier. 
+
+Lors de la réutilisation de cet outil, nous vous prions de bien vouloir citer l'IGN s'il vous plaît.
