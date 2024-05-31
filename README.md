@@ -31,14 +31,15 @@ de nouvelles fonctionnalités ni de maintenance externe, mais si vous voyez des 
 
 Si vous souhaitez adapter le projet à vos besoins, une très brève documentation développeur est disponible dans le wiki: https://github.com/IGNF/trainminator/wiki.
 
-Ou encore au format pdf ici:  [documentation utilisateur(trice)](Documentation_developpeur.pdf)
+Ou encore au format pdf ici:  [documentation utilisateur(trice)](docs/Documentation_developpeur.pdf)
 
 ## Documentation Utilisateur(trice)
-vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](Documentation_utilisateur.pdf)
+
+vous trouverez une documentation utilisateur ici: [documentation utilisateur(trice)](docs/Documentation_utilisateur.pdf)
+
 
 ## Credits
 
 TrainMinator a été développé en interne à l'[IGN/DSI/(SDM et SIMV)](https://www.ign.fr/) par Yann Le Borgne, Célestin Huet et Apolline De Wit. Ces dévelopements ont été aidés par Lucas Martelet, Maxime Dardy, Samy Khelifi, Pascal Voitot et Nicolas Gonthier. 
 
-Lors de la réutilisation de cet outil, nous vous prions de bien vouloir citer l'IGN s'il vous plaît. 
-
+Lors de la réutilisation de cet outil, nous vous prions de bien vouloir citer l'IGN s'il vous plaît.
